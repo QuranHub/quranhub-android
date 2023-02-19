@@ -45,7 +45,7 @@ public abstract class UserDatabase extends RoomDatabase {
             synchronized (UserDatabase.class) {
                 if (instance == null) {
                     instance = Room.databaseBuilder(context.getApplicationContext(),
-                            UserDatabase.class, DATABASE_NAME)
+                                    UserDatabase.class, DATABASE_NAME)
                             .fallbackToDestructiveMigration()
                             .addCallback(new Callback() {
                                 @Override

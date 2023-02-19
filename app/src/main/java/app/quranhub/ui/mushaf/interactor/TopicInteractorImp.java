@@ -42,21 +42,21 @@ public class TopicInteractorImp implements TopicInteractor {
 
         Single.zip(topicAyas, hizbQuarterData, (searchModels, hizbQuarters) -> {
 
-            int[] ayaHezbQuarterIndex = new int[6237];
-            for (HizbQuarter hizbQuarter : hizbQuarters) {
-                for (int i = hizbQuarter.getAyaFrom(); i <= hizbQuarter.getAyaTo(); i++) {
-                    ayaHezbQuarterIndex[i] = hizbQuarter.getId();
-                }
-            }
-            for (int i = 0; i < searchModels.size(); i++) {
-                int hezbQuarterData = ayaHezbQuarterIndex[searchModels.get(i).getId()];
-                int hezb = ((hezbQuarterData - 1) / 4) % 2 + 1;
-                int quarter = ((hezbQuarterData - 1) % 4) + 1;
-                searchModels.get(i).setHezb(hezb);
-                searchModels.get(i).setQuarter(quarter);
-            }
-            return searchModels;
-        }).subscribeOn(Schedulers.io())
+                    int[] ayaHezbQuarterIndex = new int[6237];
+                    for (HizbQuarter hizbQuarter : hizbQuarters) {
+                        for (int i = hizbQuarter.getAyaFrom(); i <= hizbQuarter.getAyaTo(); i++) {
+                            ayaHezbQuarterIndex[i] = hizbQuarter.getId();
+                        }
+                    }
+                    for (int i = 0; i < searchModels.size(); i++) {
+                        int hezbQuarterData = ayaHezbQuarterIndex[searchModels.get(i).getId()];
+                        int hezb = ((hezbQuarterData - 1) / 4) % 2 + 1;
+                        int quarter = ((hezbQuarterData - 1) % 4) + 1;
+                        searchModels.get(i).setHezb(hezb);
+                        searchModels.get(i).setQuarter(quarter);
+                    }
+                    return searchModels;
+                }).subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(result -> {
                     listener.onGetTopics(result);

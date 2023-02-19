@@ -58,17 +58,17 @@ public class NotesInteractorImp implements NotesInteractor {
         });
 
         Single.zip(noteList, noteDataList, (notes, myNoteModels) -> {
-            List<DisplayedNote> displayedNotes = new ArrayList<>();
-            for (int i = 0; i < notes.size(); i++) {
-                if (i < myNoteModels.size()) {
-                    displayedNotes.add(new DisplayedNote(notes.get(i).getAyaId(), notes.get(i).getNoteType(),
-                            notes.get(i).getNoteText(), notes.get(i).getNoteRecorderPath()
-                            , myNoteModels.get(i).getSura(), myNoteModels.get(i).getSura_aya(),
-                            myNoteModels.get(i).getPure_text(), myNoteModels.get(i).getText(), myNoteModels.get(i).getPage()));
-                }
-            }
-            return displayedNotes;
-        }).subscribeOn(Schedulers.io())
+                    List<DisplayedNote> displayedNotes = new ArrayList<>();
+                    for (int i = 0; i < notes.size(); i++) {
+                        if (i < myNoteModels.size()) {
+                            displayedNotes.add(new DisplayedNote(notes.get(i).getAyaId(), notes.get(i).getNoteType(),
+                                    notes.get(i).getNoteText(), notes.get(i).getNoteRecorderPath()
+                                    , myNoteModels.get(i).getSura(), myNoteModels.get(i).getSura_aya(),
+                                    myNoteModels.get(i).getPure_text(), myNoteModels.get(i).getText(), myNoteModels.get(i).getPage()));
+                        }
+                    }
+                    return displayedNotes;
+                }).subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(result -> {
                     notesLivedata.setValue(result);
@@ -83,45 +83,45 @@ public class NotesInteractorImp implements NotesInteractor {
     @Override
     public void editNote(Note note) {
         Completable.fromAction(() ->
-                userDatabase.getNoteDao().insertNote(note))
+                        userDatabase.getNoteDao().insertNote(note))
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeOn(Schedulers.io()).subscribe(new CompletableObserver() {
-            @Override
-            public void onSubscribe(Disposable d) {
+                    @Override
+                    public void onSubscribe(Disposable d) {
 
-            }
+                    }
 
-            @Override
-            public void onComplete() {
-            }
+                    @Override
+                    public void onComplete() {
+                    }
 
-            @Override
-            public void onError(Throwable e) {
+                    @Override
+                    public void onError(Throwable e) {
 
-            }
-        });
+                    }
+                });
     }
 
     @Override
     public void deleteNote(int ayaId) {
         Completable.fromAction(() ->
-                userDatabase.getNoteDao().deleteNote(ayaId))
+                        userDatabase.getNoteDao().deleteNote(ayaId))
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeOn(Schedulers.io()).subscribe(new CompletableObserver() {
-            @Override
-            public void onSubscribe(Disposable d) {
+                    @Override
+                    public void onSubscribe(Disposable d) {
 
-            }
+                    }
 
-            @Override
-            public void onComplete() {
-            }
+                    @Override
+                    public void onComplete() {
+                    }
 
-            @Override
-            public void onError(Throwable e) {
+                    @Override
+                    public void onError(Throwable e) {
 
-            }
-        });
+                    }
+                });
     }
 
 }

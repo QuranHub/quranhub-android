@@ -107,24 +107,24 @@ public class QuranPageInteractorImp implements QuranPageInteractor {
     @Override
     public void insertAyaBookmark(AyaBookmark ayaBookmark) {
         Completable.fromAction(() ->
-                userDatabase.getBookmarkDao().insertAyaBookmark(ayaBookmark))
+                        userDatabase.getBookmarkDao().insertAyaBookmark(ayaBookmark))
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeOn(Schedulers.io()).subscribe(new CompletableObserver() {
-            @Override
-            public void onSubscribe(Disposable d) {
+                    @Override
+                    public void onSubscribe(Disposable d) {
 
-            }
+                    }
 
-            @Override
-            public void onComplete() {
-                resultListener.showMessage(context.getString(R.string.success_insert_bookmark));
-            }
+                    @Override
+                    public void onComplete() {
+                        resultListener.showMessage(context.getString(R.string.success_insert_bookmark));
+                    }
 
-            @Override
-            public void onError(Throwable e) {
-                resultListener.showMessage(context.getString(R.string.insert_bookmark_failed));
-            }
-        });
+                    @Override
+                    public void onError(Throwable e) {
+                        resultListener.showMessage(context.getString(R.string.insert_bookmark_failed));
+                    }
+                });
     }
 
     @SuppressLint("CheckResult")
@@ -133,47 +133,47 @@ public class QuranPageInteractorImp implements QuranPageInteractor {
 
 
         Completable.fromAction(() ->
-                userDatabase.getBookmarkDao().deleteAyaBookmark(ayaId))
+                        userDatabase.getBookmarkDao().deleteAyaBookmark(ayaId))
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeOn(Schedulers.io()).subscribe(new CompletableObserver() {
-            @Override
-            public void onSubscribe(Disposable d) {
+                    @Override
+                    public void onSubscribe(Disposable d) {
 
-            }
+                    }
 
-            @Override
-            public void onComplete() {
-                resultListener.onSuccessRemoveBookmark();
-            }
+                    @Override
+                    public void onComplete() {
+                        resultListener.onSuccessRemoveBookmark();
+                    }
 
-            @Override
-            public void onError(Throwable e) {
-                resultListener.showMessage(context.getString(R.string.bookmark_failed_removed));
-            }
-        });
+                    @Override
+                    public void onError(Throwable e) {
+                        resultListener.showMessage(context.getString(R.string.bookmark_failed_removed));
+                    }
+                });
     }
 
     @Override
     public void addNote(Note note) {
         Completable.fromAction(() ->
-                userDatabase.getNoteDao().insertNote(note))
+                        userDatabase.getNoteDao().insertNote(note))
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeOn(Schedulers.io()).subscribe(new CompletableObserver() {
-            @Override
-            public void onSubscribe(Disposable d) {
+                    @Override
+                    public void onSubscribe(Disposable d) {
 
-            }
+                    }
 
-            @Override
-            public void onComplete() {
-                resultListener.onSuccessAddNote();
-            }
+                    @Override
+                    public void onComplete() {
+                        resultListener.onSuccessAddNote();
+                    }
 
-            @Override
-            public void onError(Throwable e) {
-                Log.e(TAG, "onError: ");
-            }
-        });
+                    @Override
+                    public void onError(Throwable e) {
+                        Log.e(TAG, "onError: ");
+                    }
+                });
     }
 
     @SuppressLint("CheckResult")
@@ -207,24 +207,24 @@ public class QuranPageInteractorImp implements QuranPageInteractor {
     public void insertCustomBookmark(Aya currentAya, BookmarkType type) {
 
         Completable.fromAction(() ->
-                userDatabase.getBookmarkDao().insertBookmarkType(type))
+                        userDatabase.getBookmarkDao().insertBookmarkType(type))
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeOn(Schedulers.io()).subscribe(new CompletableObserver() {
-            @Override
-            public void onSubscribe(Disposable d) {
+                    @Override
+                    public void onSubscribe(Disposable d) {
 
-            }
+                    }
 
-            @Override
-            public void onComplete() {
-                insertAyaBookmark(new AyaBookmark(currentAya.getId(), type.getTypeId(), currentAya));
-            }
+                    @Override
+                    public void onComplete() {
+                        insertAyaBookmark(new AyaBookmark(currentAya.getId(), type.getTypeId(), currentAya));
+                    }
 
-            @Override
-            public void onError(Throwable e) {
-                resultListener.showMessage(context.getString(R.string.insert_bookmark_failed));
-            }
-        });
+                    @Override
+                    public void onError(Throwable e) {
+                        resultListener.showMessage(context.getString(R.string.insert_bookmark_failed));
+                    }
+                });
 
     }
 

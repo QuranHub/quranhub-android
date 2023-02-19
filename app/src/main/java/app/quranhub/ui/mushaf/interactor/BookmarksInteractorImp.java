@@ -58,29 +58,29 @@ public class BookmarksInteractorImp implements BookmarksInteractor {
         Single<List<BookmarkType>> bookmarkTypes = userDatabase.getBookmarkDao().getBookmarkTypes().subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
 
         Single.zip(bookmarks, bookmarkTypes, (ayaBookmarks, types) -> {
-            List<DisplayableBookmark> displayableBookmarks = new ArrayList<>();
-            for (int i = 0; i < ayaBookmarks.size(); i++) {
-                DisplayableBookmark displayableBookmark = new DisplayableBookmark();
-                String suraName = context.getResources().getStringArray(R.array.sura_name)[ayaBookmarks.get(i).getAya().getSura() - 1];
-                displayableBookmark.setSuraName(suraName);
-                displayableBookmark.setBookmarkId(ayaBookmarks.get(i).getBookmarkId());
-                displayableBookmark.setBookmarkType(ayaBookmarks.get(i).getBookmarkTypeId());
-                displayableBookmark.setAyaContent(ayaBookmarks.get(i).getAya().getPureText());
-                displayableBookmark.setAyaId(ayaBookmarks.get(i).getAya().getId());
-                displayableBookmark.setSuraAyaNumber(ayaBookmarks.get(i).getAya().getSuraAya());
-                displayableBookmark.setGuz2Number(ayaBookmarks.get(i).getAya().getJuz());
-                displayableBookmark.setPageNumber(ayaBookmarks.get(i).getAya().getPage());
+                    List<DisplayableBookmark> displayableBookmarks = new ArrayList<>();
+                    for (int i = 0; i < ayaBookmarks.size(); i++) {
+                        DisplayableBookmark displayableBookmark = new DisplayableBookmark();
+                        String suraName = context.getResources().getStringArray(R.array.sura_name)[ayaBookmarks.get(i).getAya().getSura() - 1];
+                        displayableBookmark.setSuraName(suraName);
+                        displayableBookmark.setBookmarkId(ayaBookmarks.get(i).getBookmarkId());
+                        displayableBookmark.setBookmarkType(ayaBookmarks.get(i).getBookmarkTypeId());
+                        displayableBookmark.setAyaContent(ayaBookmarks.get(i).getAya().getPureText());
+                        displayableBookmark.setAyaId(ayaBookmarks.get(i).getAya().getId());
+                        displayableBookmark.setSuraAyaNumber(ayaBookmarks.get(i).getAya().getSuraAya());
+                        displayableBookmark.setGuz2Number(ayaBookmarks.get(i).getAya().getJuz());
+                        displayableBookmark.setPageNumber(ayaBookmarks.get(i).getAya().getPage());
 
-                for (int j = 0; j < types.size(); j++) {
-                    if (types.get(j).getTypeId() == ayaBookmarks.get(i).getBookmarkTypeId()) {
-                        displayableBookmark.setColorIndex(types.get(j).getColorIndex());
-                        break;
+                        for (int j = 0; j < types.size(); j++) {
+                            if (types.get(j).getTypeId() == ayaBookmarks.get(i).getBookmarkTypeId()) {
+                                displayableBookmark.setColorIndex(types.get(j).getColorIndex());
+                                break;
+                            }
+                        }
+                        displayableBookmarks.add(displayableBookmark);
                     }
-                }
-                displayableBookmarks.add(displayableBookmark);
-            }
-            return displayableBookmarks;
-        }).subscribeOn(Schedulers.io())
+                    return displayableBookmarks;
+                }).subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(result -> {
                     listLiveData.setValue(result);

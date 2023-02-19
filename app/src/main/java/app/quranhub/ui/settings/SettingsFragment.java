@@ -120,12 +120,12 @@ public class SettingsFragment extends Fragment implements OptionsListDialogFragm
         String reciterId = AppPreferencesManager.getReciterSheikhSetting(requireContext());
         if (reciterId != null) {
             final Disposable disposable = Single.create(
-                    (SingleOnSubscribe<String>) emitter -> {
-                        final Reciter reciter = UserDatabase.getInstance(requireContext())
-                                .getReciterDao()
-                                .getById(reciterId);
-                        emitter.onSuccess(reciter.getName());
-                    })
+                            (SingleOnSubscribe<String>) emitter -> {
+                                final Reciter reciter = UserDatabase.getInstance(requireContext())
+                                        .getReciterDao()
+                                        .getById(reciterId);
+                                emitter.onSuccess(reciter.getName());
+                            })
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(reciterName -> {

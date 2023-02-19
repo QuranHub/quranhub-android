@@ -490,7 +490,7 @@ public class MushafFragment extends Fragment implements MushafView, MushafBottom
     private void setCurrentQuranPageFragment() {
         if (quranPageFragment == null) {
             quranPageFragment = (QuranPageFragment) Objects.requireNonNull(viewPager
-                    .getAdapter())
+                            .getAdapter())
                     .instantiateItem(viewPager, viewPager.getCurrentItem());
         }
     }

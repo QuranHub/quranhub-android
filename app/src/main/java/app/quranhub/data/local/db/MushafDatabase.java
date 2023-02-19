@@ -36,7 +36,7 @@ public abstract class MushafDatabase extends RoomDatabase {
             synchronized (MushafDatabase.class) {
                 if (instance == null) {
                     instance = RoomAsset.databaseBuilder(context.getApplicationContext(),
-                            MushafDatabase.class, DATABASE_NAME, ASSET_DB_VERSION)
+                                    MushafDatabase.class, DATABASE_NAME, ASSET_DB_VERSION)
                             .build();
                 }
             }

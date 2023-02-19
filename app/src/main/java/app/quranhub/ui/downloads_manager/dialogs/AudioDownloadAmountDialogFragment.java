@@ -1,6 +1,9 @@
 package app.quranhub.ui.downloads_manager.dialogs;
 
 
+import static app.quranhub.util.DialogUtils.DIALOG_STD_WIDTH_SCREEN_RATIO_LANDSCAPE;
+import static app.quranhub.util.DialogUtils.DIALOG_STD_WIDTH_SCREEN_RATIO_PORTRAIT;
+
 import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.content.Context;
@@ -34,9 +37,6 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import butterknife.Unbinder;
-
-import static app.quranhub.util.DialogUtils.DIALOG_STD_WIDTH_SCREEN_RATIO_LANDSCAPE;
-import static app.quranhub.util.DialogUtils.DIALOG_STD_WIDTH_SCREEN_RATIO_PORTRAIT;
 
 /**
  * A {@code DialogFragment} that allows the user to choose the Quran audio amount he wants to download.

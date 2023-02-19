@@ -1,5 +1,8 @@
 package app.quranhub.ui.first_wizard;
 
+import static android.view.View.LAYOUT_DIRECTION_LTR;
+import static android.view.View.LAYOUT_DIRECTION_RTL;
+
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
@@ -31,9 +34,6 @@ import app.quranhub.util.LocaleUtils;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
-
-import static android.view.View.LAYOUT_DIRECTION_LTR;
-import static android.view.View.LAYOUT_DIRECTION_RTL;
 
 public class FirstTimeWizardActivity extends BaseActivity implements OptionsListFragment.OnOptionClickListener {
 

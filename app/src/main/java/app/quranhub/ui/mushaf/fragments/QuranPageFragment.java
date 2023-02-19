@@ -1,6 +1,8 @@
 package app.quranhub.ui.mushaf.fragments;
 
 
+import static android.view.View.GONE;
+
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.pm.ActivityInfo;
@@ -59,8 +61,6 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import butterknife.Unbinder;
-
-import static android.view.View.GONE;
 
 public class QuranPageFragment extends Fragment
         implements AyaActionsDialog.AyaPropertiesListener, AddNoteDialog.AddNoteListener,

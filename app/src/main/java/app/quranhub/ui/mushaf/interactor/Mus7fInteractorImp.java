@@ -180,21 +180,21 @@ public class Mus7fInteractorImp implements Mus7fInteractor {
         AyaRecorder ayaRecorder = new AyaRecorder(ayaId, recitation, recorderPath);
 
         Completable.fromAction(() ->
-                userDatabase.getQuranAudioDao().insertAyaRecorder(ayaRecorder))
+                        userDatabase.getQuranAudioDao().insertAyaRecorder(ayaRecorder))
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeOn(Schedulers.io()).subscribe(new CompletableObserver() {
-            @Override
-            public void onSubscribe(Disposable d) {
-            }
+                    @Override
+                    public void onSubscribe(Disposable d) {
+                    }
 
-            @Override
-            public void onComplete() {
-            }
+                    @Override
+                    public void onComplete() {
+                    }
 
-            @Override
-            public void onError(Throwable e) {
-            }
-        });
+                    @Override
+                    public void onError(Throwable e) {
+                    }
+                });
     }
 
     @SuppressLint("CheckResult")
@@ -215,22 +215,22 @@ public class Mus7fInteractorImp implements Mus7fInteractor {
         int recitation = AppPreferencesManager.getRecitationSetting(context);
 
         Completable.fromAction(() ->
-                userDatabase.getQuranAudioDao().deleteAyaVoiceRecorder(ayaId, recitation))
+                        userDatabase.getQuranAudioDao().deleteAyaVoiceRecorder(ayaId, recitation))
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeOn(Schedulers.io()).subscribe(new CompletableObserver() {
-            @Override
-            public void onSubscribe(Disposable d) {
-            }
+                    @Override
+                    public void onSubscribe(Disposable d) {
+                    }
 
-            @Override
-            public void onComplete() {
-                deleteRecorderLocally(ayaId, recitation);
-            }
+                    @Override
+                    public void onComplete() {
+                        deleteRecorderLocally(ayaId, recitation);
+                    }
 
-            @Override
-            public void onError(Throwable e) {
-            }
-        });
+                    @Override
+                    public void onError(Throwable e) {
+                    }
+                });
     }
 
     private void deleteRecorderLocally(int ayaId, int recitation) {

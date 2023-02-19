@@ -47,21 +47,21 @@ public class SearchInteractorImp implements SearchInteractor {
                 .observeOn(AndroidSchedulers.mainThread());
 
         Single.zip(searchModels, hizbQuarterData, (searchModels1, hizbQuarters) -> {
-            int[] ayaHezbQuarterIndex = new int[6237];
-            for (HizbQuarter hizbQuarter : hizbQuarters) {
-                for (int i = hizbQuarter.getAyaFrom(); i <= hizbQuarter.getAyaTo(); i++) {
-                    ayaHezbQuarterIndex[i] = hizbQuarter.getId();
-                }
-            }
-            for (int i = 0; i < searchModels1.size(); i++) {
-                int hezbQuarterData = ayaHezbQuarterIndex[searchModels1.get(i).getId()];
-                int hezb = ((hezbQuarterData - 1) / 4) % 2 + 1;
-                int quarter = ((hezbQuarterData - 1) % 4) + 1;
-                searchModels1.get(i).setHezb(hezb);
-                searchModels1.get(i).setQuarter(quarter);
-            }
-            return searchModels1;
-        }).subscribeOn(Schedulers.io())
+                    int[] ayaHezbQuarterIndex = new int[6237];
+                    for (HizbQuarter hizbQuarter : hizbQuarters) {
+                        for (int i = hizbQuarter.getAyaFrom(); i <= hizbQuarter.getAyaTo(); i++) {
+                            ayaHezbQuarterIndex[i] = hizbQuarter.getId();
+                        }
+                    }
+                    for (int i = 0; i < searchModels1.size(); i++) {
+                        int hezbQuarterData = ayaHezbQuarterIndex[searchModels1.get(i).getId()];
+                        int hezb = ((hezbQuarterData - 1) / 4) % 2 + 1;
+                        int quarter = ((hezbQuarterData - 1) % 4) + 1;
+                        searchModels1.get(i).setHezb(hezb);
+                        searchModels1.get(i).setQuarter(quarter);
+                    }
+                    return searchModels1;
+                }).subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(result -> {
                     listener.onGetTopics(result);

@@ -43,21 +43,21 @@ public class SubjectInteractorImp implements SubjectInteractor {
         Single<List<QuranSubjectCategory>> quranSubjectsCategory = mushafDatabase.getQuranSubjectCategoryDao().getAll().subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
 
         Single.zip(quranSubjects, quranSubjectsCategory, (quranSubjects1, quranSubjectCategories) -> {
-            List<TopicModel> results = new ArrayList<>();
-            List<TopicCategory> topicCategories = new ArrayList<>();
-            int topicIndex = 0;
-            for (int i = 0; i < quranSubjects1.size(); i++) {
+                    List<TopicModel> results = new ArrayList<>();
+                    List<TopicCategory> topicCategories = new ArrayList<>();
+                    int topicIndex = 0;
+                    for (int i = 0; i < quranSubjects1.size(); i++) {
 
-                if (i > 0 && quranSubjects1.get(i).getCategory() != quranSubjects1.get(i - 1).getCategory()) {
+                        if (i > 0 && quranSubjects1.get(i).getCategory() != quranSubjects1.get(i - 1).getCategory()) {
+                            results.add(new TopicModel(subjectsCategory.get(topicIndex), topicCategories));
+                            topicIndex++;
+                            topicCategories = new ArrayList<>();
+                        }
+                        topicCategories.add(new TopicCategory(subjects.get(i), quranSubjects1.get(i).getAyaCount(), quranSubjects1.get(i).getId()));
+                    }
                     results.add(new TopicModel(subjectsCategory.get(topicIndex), topicCategories));
-                    topicIndex++;
-                    topicCategories = new ArrayList<>();
-                }
-                topicCategories.add(new TopicCategory(subjects.get(i), quranSubjects1.get(i).getAyaCount(), quranSubjects1.get(i).getId()));
-            }
-            results.add(new TopicModel(subjectsCategory.get(topicIndex), topicCategories));
-            return results;
-        }).subscribeOn(Schedulers.io())
+                    return results;
+                }).subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(result -> {
                     listener.onGetSubjects(result);

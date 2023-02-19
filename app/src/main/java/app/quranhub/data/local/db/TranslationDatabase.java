@@ -17,7 +17,7 @@ public abstract class TranslationDatabase extends RoomDatabase {
 
     public static TranslationDatabase getInstance(@NonNull Context context, @NonNull String databaseName) {
         return Room.databaseBuilder(context.getApplicationContext(),
-                TranslationDatabase.class, databaseName)
+                        TranslationDatabase.class, databaseName)
                 .addMigrations(MIGRATION_1_2).build();
     }
 

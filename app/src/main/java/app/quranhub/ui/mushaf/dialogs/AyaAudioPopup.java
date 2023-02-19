@@ -1,5 +1,8 @@
 package app.quranhub.ui.mushaf.dialogs;
 
+import static android.content.Context.LAYOUT_INFLATER_SERVICE;
+import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
+
 import android.content.Context;
 import android.os.Build;
 import android.view.Gravity;
@@ -15,9 +18,6 @@ import app.quranhub.util.LocaleUtils;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
-
-import static android.content.Context.LAYOUT_INFLATER_SERVICE;
-import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 
 public class AyaAudioPopup {
 

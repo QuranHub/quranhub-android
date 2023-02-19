@@ -76,24 +76,24 @@ public class BooksInteractorImp implements BooksInteractor {
             results.add(new Book(content));
         }
         Completable.fromAction(() ->
-                userDatabase.getBookDao().insertDownloadedTranslation(results))
+                        userDatabase.getBookDao().insertDownloadedTranslation(results))
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeOn(Schedulers.io()).subscribe(new CompletableObserver() {
-            @Override
-            public void onSubscribe(Disposable d) {
+                    @Override
+                    public void onSubscribe(Disposable d) {
 
-            }
+                    }
 
-            @Override
-            public void onComplete() {
-                Log.d(TAG, "onComplete: ");
-            }
+                    @Override
+                    public void onComplete() {
+                        Log.d(TAG, "onComplete: ");
+                    }
 
-            @Override
-            public void onError(Throwable e) {
-                Log.d(TAG, "onError: ");
-            }
-        });
+                    @Override
+                    public void onError(Throwable e) {
+                        Log.d(TAG, "onError: ");
+                    }
+                });
 
 
     }
@@ -101,45 +101,45 @@ public class BooksInteractorImp implements BooksInteractor {
     @Override
     public void updateTranslationDownload(int id, int type, long downloadId) {
         Completable.fromAction(() ->
-                userDatabase.getBookDao().updateDownlodedTranslation(id, type, downloadId))
+                        userDatabase.getBookDao().updateDownlodedTranslation(id, type, downloadId))
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeOn(Schedulers.io()).subscribe(new CompletableObserver() {
-            @Override
-            public void onSubscribe(Disposable d) {
+                    @Override
+                    public void onSubscribe(Disposable d) {
 
-            }
+                    }
 
-            @Override
-            public void onComplete() {
-                Log.d("Ss5", "onComplete: ");
-            }
+                    @Override
+                    public void onComplete() {
+                        Log.d("Ss5", "onComplete: ");
+                    }
 
-            @Override
-            public void onError(Throwable e) {
-            }
-        });
+                    @Override
+                    public void onError(Throwable e) {
+                    }
+                });
     }
 
     @Override
     public void updateFinishedDownload(long downloadId, int type) {
         Completable.fromAction(() ->
-                userDatabase.getBookDao().updateFinishedDownload(downloadId, type))
+                        userDatabase.getBookDao().updateFinishedDownload(downloadId, type))
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeOn(Schedulers.io()).subscribe(new CompletableObserver() {
-            @Override
-            public void onSubscribe(Disposable d) {
+                    @Override
+                    public void onSubscribe(Disposable d) {
 
-            }
+                    }
 
-            @Override
-            public void onComplete() {
+                    @Override
+                    public void onComplete() {
 
-            }
+                    }
 
-            @Override
-            public void onError(Throwable e) {
-            }
-        });
+                    @Override
+                    public void onError(Throwable e) {
+                    }
+                });
     }
 
 }
