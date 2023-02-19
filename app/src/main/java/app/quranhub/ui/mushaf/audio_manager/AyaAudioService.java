@@ -177,23 +177,27 @@ public class AyaAudioService extends BaseService
 
     private void setActionsIntent() {
 
+        int pendingIntentFlags = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) ?
+                (PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT)
+                : PendingIntent.FLAG_UPDATE_CURRENT;
+
         notificationIntent = PendingIntent.getActivity(getApplicationContext(), REQUEST_CODE_MAIN,
-                getMainActivityIntent(), PendingIntent.FLAG_UPDATE_CURRENT);
+                getMainActivityIntent(), pendingIntentFlags);
 
         resumeIntent = PendingIntent.getService(getApplicationContext(), REQUEST_CODE_RESUME,
-                getAudioIntent(ACTION_RESUME), PendingIntent.FLAG_UPDATE_CURRENT);
+                getAudioIntent(ACTION_RESUME), pendingIntentFlags);
 
         nextIntent = PendingIntent.getService(getApplicationContext(), REQUEST_CODE_NEXT,
-                getAudioIntent(LocaleUtils.isRTL(this) ? ACTION_PREVIOUS : ACTION_NEXT), PendingIntent.FLAG_UPDATE_CURRENT);
+                getAudioIntent(LocaleUtils.isRTL(this) ? ACTION_PREVIOUS : ACTION_NEXT), pendingIntentFlags);
 
         prevIntent = PendingIntent.getService(getApplicationContext(), REQUEST_CODE_PREVIOUS,
-                getAudioIntent(LocaleUtils.isRTL(this) ? ACTION_NEXT : ACTION_PREVIOUS), PendingIntent.FLAG_UPDATE_CURRENT);
+                getAudioIntent(LocaleUtils.isRTL(this) ? ACTION_NEXT : ACTION_PREVIOUS), pendingIntentFlags);
 
         stopIntent = PendingIntent.getService(getApplicationContext(), REQUEST_CODE_STOP,
-                getAudioIntent(ACTION_STOP), PendingIntent.FLAG_UPDATE_CURRENT);
+                getAudioIntent(ACTION_STOP), pendingIntentFlags);
 
         pauseIntent = PendingIntent.getService(getApplicationContext(), REQUEST_CODE_PAUSE,
-                getAudioIntent(ACTION_PAUSE), PendingIntent.FLAG_UPDATE_CURRENT);
+                getAudioIntent(ACTION_PAUSE), pendingIntentFlags);
 
     }
 

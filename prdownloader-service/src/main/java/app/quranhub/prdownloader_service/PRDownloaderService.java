@@ -22,7 +22,6 @@ import com.downloader.PRDownloader;
 import com.downloader.Progress;
 import com.downloader.Status;
 import com.downloader.utils.Utils;
-import com.example.prdownloader_service.R;
 
 import java.io.File;
 import java.util.Objects;
@@ -304,13 +303,15 @@ public abstract class PRDownloaderService extends Service implements DownloadCal
         Intent cancelIntent = new Intent(this, this.getClass());
         cancelIntent.setAction(ACTION_CANCEL_ALL_DOWNLOADS);
         PendingIntent cancelPendingIntent;
+        int cancelPendingIntentFlags = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) ?
+                PendingIntent.FLAG_IMMUTABLE : 0;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             cancelPendingIntent = PendingIntent.getForegroundService(this, 0,
-                    cancelIntent, 0);
+                    cancelIntent, cancelPendingIntentFlags);
         } else {
             // Pre-O behavior.
             cancelPendingIntent = PendingIntent.getService(this, 0,
-                    cancelIntent, 0);
+                    cancelIntent, cancelPendingIntentFlags);
         }
         builder.addAction(R.drawable.ic_close, getString(R.string.download_notification_cancel_button_title),
                 cancelPendingIntent);

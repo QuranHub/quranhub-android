@@ -41,24 +41,31 @@ class FcmService : FirebaseMessagingService() {
     private fun showNotification(notification: RemoteMessage.Notification) {
         val intent = Intent(this, MainActivity::class.java)
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-        val pendingIntent = PendingIntent.getActivity(this, 0, intent,
-                PendingIntent.FLAG_ONE_SHOT)
+        val pendingIntent = PendingIntent.getActivity(
+            this, 0, intent,
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_ONE_SHOT
+            else PendingIntent.FLAG_ONE_SHOT
+        )
 
         val channelId = getString(R.string.fcm_notification_channel_id)
         val notificationBuilder = NotificationCompat.Builder(this, channelId)
-                .setSmallIcon(R.drawable.ic_stat_notification)
-                .setContentTitle(notification.title)
-                .setContentText(notification.body)
-                .setAutoCancel(true)
-                .setContentIntent(pendingIntent)
+            .setSmallIcon(R.drawable.ic_stat_notification)
+            .setContentTitle(notification.title)
+            .setContentText(notification.body)
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
 
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationManager =
+            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         // Since android Oreo notification channel is needed.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(channelId,
-                    "Updates and info",
-                    NotificationManager.IMPORTANCE_HIGH)
+            val channel = NotificationChannel(
+                channelId,
+                "Updates and info",
+                NotificationManager.IMPORTANCE_HIGH
+            )
             notificationManager.createNotificationChannel(channel)
         }
 
