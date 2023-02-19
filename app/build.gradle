@@ -55,6 +55,7 @@ android {
     lint {
         abortOnError false
     }
+    namespace 'app.quranhub'
 }
 
 dependencies {
