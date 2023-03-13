@@ -7,7 +7,7 @@
 
 ![QuranHub Banner Image](https://www.quranhub.app/image/quranhub_banner.png)
 
-[QuranHub](https://quranhub.app) is an open-source project that aims to be the single destination to read & study the Quran.
+[QuranHub](https://quranhub.app) is a project that aims to be the single destination to read & study the Quran.
 
 The QuranHub Android mobile app provides the following features:
 - The Quran in both Hafs & Warsh recitations.
@@ -58,8 +58,3 @@ We use  [SemVer](http://semver.org/)  for versioning.
 
 #### Documentation & Wiki
 Info and documentation are available in this repository's [GitHub Wiki](https://github.com/QuranHub/quranhub-android/wiki). If you have any questions feel free to open a new issue on this repository.
-
-## License
-[![GNU GPL-3.0 Logo](https://www.gnu.org/graphics/gplv3-127x51.png)](https://www.gnu.org/licenses/gpl-3.0.en.html)
-
-This project is licensed under the **GNU General Public License v3.0** - see the [LICENSE](https://github.com/QuranHub/quranhub-android/blob/master/LICENSE) file for details.
