@@ -22,28 +22,25 @@ public final class QuranAudioDownloadUtils {
     @Nullable
     public static String getDownloadUrlPath(int recitationId, String sheikhId, int sura, int aya) {
         /*
-        Aya audio file download path should be on the format:
-             /{recitation_key}/sound/{sheikh_id}/{filename}
+            Aya audio file download path should be on the format:
+                /{repo_name}/verses/{file_name}
         */
 
         StringBuilder sb = new StringBuilder();
-        sb.append("/quran/audio/");
 
-
-        // recitation part
-        if (recitationId == Constants.Recitation.HAFS_ID)
-            sb.append(Constants.Recitation.HAFS_KEY);
-        else if (recitationId == Constants.Recitation.WARSH_ID)
-            sb.append(Constants.Recitation.WARSH_KEY);
-        else return null;
+        // repo_name part
         sb.append("/");
+        if (sheikhId.equals("husary") && recitationId == Constants.Recitation.HAFS_ID) {
+            sb.append("quran-audio-hafs-husary");
+        } else if (sheikhId.equals("sudais") && recitationId == Constants.Recitation.HAFS_ID) {
+            sb.append("quran-audio-hafs-sudais");
+        } else if (sheikhId.equals("yassin_aljazaery") && recitationId == Constants.Recitation.WARSH_ID) {
+            sb.append("quran-audio-warsh-aljazaery");
+        }
 
-        // reciter part
-        if (sheikhId != null) sb.append(sheikhId);
-        else return null;
-        sb.append("/");
+        sb.append("/verses/");
 
-        // file name part
+        // file_name part
         String fileName = QuranAudioFileUtils.getFileName(sura, aya);
         if (fileName != null) sb.append(fileName);
         else return null;

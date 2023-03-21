@@ -8,17 +8,16 @@ import java.util.List;
 
 import app.quranhub.data.model.ReciterModel;
 import io.reactivex.Single;
-import io.reactivex.SingleOnSubscribe;
 
 public class RecitationsRepository {
 
     private static final String TAG = RecitationsRepository.class.getSimpleName();
 
-    private FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private final FirebaseFirestore db = FirebaseFirestore.getInstance();
 
     @NonNull
     public Single<List<ReciterModel>> getRecitersForRecitation(@NonNull String recitationKey) {
-        return Single.create((SingleOnSubscribe<List<ReciterModel>>) emitter -> {
+        return Single.create(emitter -> {
             db.collection("recitations")
                     .document(recitationKey)
                     .collection("reciters")
