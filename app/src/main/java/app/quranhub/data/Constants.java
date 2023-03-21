@@ -13,17 +13,17 @@ public final class Constants {
     }
 
     public static final String API_BASE_URL = "https://api.quranhub.app";
-    public static final String STATIC_FILES_BASE_URL = "https://s.quranhub.app";
+    public static final String STATIC_FILES_BASE_URL = "https://www.quranhub.app";
 
     public static final class Quran {
 
         private Quran() {
         }
 
-        public static final String HAFS_OTLOOHA_IMAGE_BASE_URL =
-                STATIC_FILES_BASE_URL + "/quran/image/hafs/otlooha/";
-        public static final String WARSH_OTLOOHA_IMAGE_BASE_URL =
-                STATIC_FILES_BASE_URL + "/quran/image/warsh/otlooha/";
+        public static final String HAFS_IMG_BASE_URL =
+                STATIC_FILES_BASE_URL + "/quran-pages-images/ayat/hafs/";
+        public static final String WARSH_IMG_BASE_URL =
+                STATIC_FILES_BASE_URL + "/quran-pages-images/ayat/warsh/";
 
         public static final int NUM_OF_PAGES = 604;
 

@@ -530,10 +530,10 @@ public class MushafFragment extends Fragment implements MushafView, MushafBottom
         String quranImageBaseUrl;
         switch (recitationId) {
             case Constants.Recitation.HAFS_ID:
-                quranImageBaseUrl = Constants.Quran.HAFS_OTLOOHA_IMAGE_BASE_URL;
+                quranImageBaseUrl = Constants.Quran.HAFS_IMG_BASE_URL;
                 break;
             case Constants.Recitation.WARSH_ID:
-                quranImageBaseUrl = Constants.Quran.WARSH_OTLOOHA_IMAGE_BASE_URL;
+                quranImageBaseUrl = Constants.Quran.WARSH_IMG_BASE_URL;
                 break;
             default:
                 throw new RuntimeException("Cannot identify recitation");
