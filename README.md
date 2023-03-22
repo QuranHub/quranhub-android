@@ -1,13 +1,12 @@
 # QuranHub for Android
 
-[![PayPal Donation Badge](https://img.shields.io/badge/donate-PayPal-blue)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=abdallah.abdelazim96@gmail.com&lc=US&item_name=Donation+to+QuranHub&no_note=0&cn=&currency_code=USD&bn=PP-DonationsBF:btn_donateCC_LG.gif:NonHosted)
 [![License Badge](https://img.shields.io/github/license/QuranHub/quranhub-android)](https://github.com/QuranHub/quranhub-android/blob/master/LICENSE)
 [![Latest Release Badge](https://img.shields.io/github/v/release/QuranHub/quranhub-android)](https://github.com/QuranHub/quranhub-android/releases/latest)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat)](http://makeapullrequest.com)
 
 ![QuranHub Banner Image](https://www.quranhub.app/image/quranhub_banner.png)
 
-[QuranHub](https://quranhub.app) is a project that aims to be the single destination to read & study the Quran.
+[QuranHub](https://www.quranhub.app) is a project that aims to be the single destination to read & study the Quran.
 
 The QuranHub Android mobile app provides the following features:
 - The Quran in both Hafs & Warsh recitations.
