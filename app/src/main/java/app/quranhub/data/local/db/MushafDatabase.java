@@ -21,13 +21,12 @@ import app.quranhub.data.local.entity.QuranSubject;
 import app.quranhub.data.local.entity.QuranSubjectCategory;
 import app.quranhub.data.local.entity.Sura;
 
-
 @Database(entities = {Sura.class, Aya.class, HizbQuarter.class, Juz.class, QuranSubjectCategory.class
         , QuranSubject.class, AyaQuranSubject.class}, version = 2, exportSchema = false)
 public abstract class MushafDatabase extends RoomDatabase {
 
     public static final String DATABASE_NAME = "mushaf_metadata.db";
-    public static final int ASSET_DB_VERSION = 1;
+    public static final int ASSET_DB_VERSION = 2;
 
     private static volatile MushafDatabase instance;
 
