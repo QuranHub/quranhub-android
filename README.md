@@ -3,6 +3,7 @@
 [![License Badge](https://img.shields.io/github/license/QuranHub/quranhub-android)](https://github.com/QuranHub/quranhub-android/blob/master/LICENSE)
 [![Latest Release Badge](https://img.shields.io/github/v/release/QuranHub/quranhub-android)](https://github.com/QuranHub/quranhub-android/releases/latest)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat)](http://makeapullrequest.com)
+[![Android CI](https://github.com/QuranHub/quranhub-android/actions/workflows/android.yml/badge.svg)](https://github.com/QuranHub/quranhub-android/actions/workflows/android.yml)
 
 ![QuranHub Banner Image](https://www.quranhub.app/image/quranhub_banner.png)
 
