@@ -6,11 +6,13 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import app.quranhub.BuildConfig;
 import app.quranhub.R;
 import app.quranhub.data.Constants;
 import app.quranhub.data.local.db.UserDatabase;
@@ -179,8 +181,8 @@ public class SettingsFragment extends Fragment implements OptionsListDialogFragm
 
         binding.settingAboutAppVersion.setOnClickListener(v -> {
             // TODO aboutAppVersionSetting click listener
-//            Toast.makeText(requireContext(), "v" + BuildConfig.VERSION_NAME,
-//                    Toast.LENGTH_SHORT).show();
+            Toast.makeText(requireContext(), "v" + BuildConfig.VERSION_NAME,
+                    Toast.LENGTH_SHORT).show();
         });
 
         binding.settingShareApp.setOnClickListener(v -> {
