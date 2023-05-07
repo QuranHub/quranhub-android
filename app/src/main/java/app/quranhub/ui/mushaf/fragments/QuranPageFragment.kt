@@ -1,907 +1,857 @@
-package app.quranhub.ui.mushaf.fragments;
+package app.quranhub.ui.mushaf.fragments
 
+import android.annotation.SuppressLint
+import android.app.Activity
+import android.content.pm.ActivityInfo
+import android.graphics.Color
+import android.graphics.drawable.Drawable
+import android.os.Bundle
+import android.util.Log
+import android.view.LayoutInflater
+import android.view.MotionEvent
+import android.view.View
+import android.view.ViewGroup
+import android.view.ViewTreeObserver.OnGlobalLayoutListener
+import android.widget.RelativeLayout
+import android.widget.Toast
+import androidx.fragment.app.Fragment
+import app.quranhub.R
+import app.quranhub.data.Constants
+import app.quranhub.data.local.entity.Aya
+import app.quranhub.data.local.entity.AyaBookmark
+import app.quranhub.data.local.entity.BookmarkType
+import app.quranhub.data.local.entity.Note
+import app.quranhub.data.local.prefs.AppPreferencesManager
+import app.quranhub.data.model.ReciterModel
+import app.quranhub.databinding.FragmentQuranPageBinding
+import app.quranhub.ui.downloads_manager.dialogs.AudioDownloadAmountDialogFragment
+import app.quranhub.ui.downloads_manager.dialogs.AudioDownloadAmountDialogFragment.AudioDownloadListener
+import app.quranhub.ui.downloads_manager.dialogs.QuranRecitersDialogFragment
+import app.quranhub.ui.downloads_manager.dialogs.QuranRecitersDialogFragment.ReciterSelectionListener
+import app.quranhub.ui.mushaf.dialogs.AddBookmarkDialog
+import app.quranhub.ui.mushaf.dialogs.AddBookmarkDialog.AddBookmarkListener
+import app.quranhub.ui.mushaf.dialogs.AddNoteDialog
+import app.quranhub.ui.mushaf.dialogs.AddNoteDialog.AddNoteListener
+import app.quranhub.ui.mushaf.dialogs.AyaActionsDialog
+import app.quranhub.ui.mushaf.dialogs.AyaActionsDialog.AyaPropertiesListener
+import app.quranhub.ui.mushaf.model.BookmarkModel
+import app.quranhub.ui.mushaf.presenter.QuranPagePresenter
+import app.quranhub.ui.mushaf.presenter.QuranPagePresenterImp
+import app.quranhub.ui.mushaf.view.QuranPageView
+import app.quranhub.util.FragmentUtils
+import app.quranhub.util.GlideApp
+import app.quranhub.util.ImageUtil
+import app.quranhub.util.IntentUtils
+import app.quranhub.util.ScreenUtils
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.target.Target
 
-import static android.view.View.GONE;
+class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, QuranPageView,
+    AddBookmarkListener, ReciterSelectionListener, AudioDownloadListener {
 
-import android.annotation.SuppressLint;
-import android.app.Activity;
-import android.content.pm.ActivityInfo;
-import android.graphics.Color;
-import android.graphics.drawable.Drawable;
-import android.os.Bundle;
-import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.view.ViewTreeObserver;
-import android.widget.RelativeLayout;
-import android.widget.Toast;
+    private var _binding: FragmentQuranPageBinding? = null
+    private val binding get() = _binding!!
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
+    private var mushafFragment: MushafFragment? = null
 
-import com.bumptech.glide.load.DataSource;
-import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.bumptech.glide.load.engine.GlideException;
-import com.bumptech.glide.request.RequestListener;
-import com.bumptech.glide.request.target.Target;
+    private var quranImageUrl: String? = null
 
-import java.util.ArrayList;
-import java.util.List;
+    private var quranPageNum = 0
 
-import app.quranhub.R;
-import app.quranhub.data.Constants;
-import app.quranhub.data.local.entity.Aya;
-import app.quranhub.data.local.entity.AyaBookmark;
-import app.quranhub.data.local.entity.BookmarkType;
-import app.quranhub.data.local.entity.Note;
-import app.quranhub.data.local.prefs.AppPreferencesManager;
-import app.quranhub.data.model.ReciterModel;
-import app.quranhub.databinding.FragmentQuranPageBinding;
-import app.quranhub.ui.downloads_manager.dialogs.AudioDownloadAmountDialogFragment;
-import app.quranhub.ui.downloads_manager.dialogs.QuranRecitersDialogFragment;
-import app.quranhub.ui.mushaf.dialogs.AddBookmarkDialog;
-import app.quranhub.ui.mushaf.dialogs.AddNoteDialog;
-import app.quranhub.ui.mushaf.dialogs.AyaActionsDialog;
-import app.quranhub.ui.mushaf.model.BookmarkModel;
-import app.quranhub.ui.mushaf.presenter.QuranPagePresenter;
-import app.quranhub.ui.mushaf.presenter.QuranPagePresenterImp;
-import app.quranhub.ui.mushaf.view.QuranPageView;
-import app.quranhub.util.FragmentUtils;
-import app.quranhub.util.GlideApp;
-import app.quranhub.util.ImageUtil;
-import app.quranhub.util.IntentUtils;
-import app.quranhub.util.ScreenUtils;
+    private var initSelectedAyaId = 0
 
-public class QuranPageFragment extends Fragment
-        implements AyaActionsDialog.AyaPropertiesListener, AddNoteDialog.AddNoteListener,
-        QuranPageView, AddBookmarkDialog.AddBookmarkListener,
-        QuranRecitersDialogFragment.ReciterSelectionListener, AudioDownloadAmountDialogFragment.AudioDownloadListener {
+    private var nightMode = false
 
-    private static final String TAG = QuranPageFragment.class.getSimpleName();
+    var numOfAyaInPage = 0
+        private set
 
-    private static final String ARG_QURAN_PAGE_NUM = "ARG_QURAN_PAGE_NUM";
-    private static final String ARG_QURAN_IMAGE_URL = "ARG_QURAN_IMAGE_URL";
-    private static final String ARG_INIT_SELECTED_AYA_ID = "ARG_INIT_SELECTED_AYA_ID";
-    private static final String ARG_NIGHT_MODE = "ARG_NIGHT_MODE";
+    private var isPageShown = false
 
-    private FragmentQuranPageBinding binding;
+    private var noteDialogOpen = false
 
-    private MushafFragment mushafFragment;
-    private String quranImageUrl;
-    private int quranPageNum;
-    private int initSelectedAyaId;
-    private boolean nightMode = false;
-    private int numOfAyaInPage;
-    private boolean isPageShown = false, noteDialogOpen = false;
-    private int quranImageContainerHeight, quranImageContainerWidth;
-    private Bundle ayaActionsArgs;
-    private AyaActionsDialog ayaActionsDialog;
-    private AddBookmarkDialog bookmarkDialog;
-    private int longClickXlocation, longClickYlocation;
-    private Aya currentAya, previousAya;
-    private int currentAyaIndex;
-    private double imageScaleFactor;
-    private List<Aya> pageAyasList;
-    private List<View> ayaShadowsViews;
-    private QuranPagePresenter presenter;
-    private int recitationId;
-    private int margin;
-    private double start, lineHeight, top, end;
-    private double xfactor, xoffset, yfactor, yoffset;
-    private boolean isAyaBookmark = false, playFirstAyaAudio = false, playMiddleAyaAudio = false, ayaAudioDownloaded = false;
-    private Note selectedAyaNote;
-    private boolean isVisibleToUser;
-    private boolean drawShadowFromNotification = false;
+    private var quranImageContainerHeight = 0
 
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param quranImageUrl
-     * @param quranPageNum
-     * @param initSelectedAyaId
-     * @param nightMode
-     * @return A new instance of fragment @{@link QuranPageFragment}
-     */
-    public static QuranPageFragment getInstance(@NonNull String quranImageUrl, int quranPageNum
-            , int initSelectedAyaId, boolean nightMode) {
-        Log.d(TAG, "Loading page number: " + quranPageNum);
-        QuranPageFragment fragment = new QuranPageFragment();
-        Bundle bundle = new Bundle();
-        bundle.putString(ARG_QURAN_IMAGE_URL, quranImageUrl);
-        bundle.putInt(ARG_QURAN_PAGE_NUM, quranPageNum);
-        bundle.putInt(ARG_INIT_SELECTED_AYA_ID, initSelectedAyaId);
-        bundle.putBoolean(ARG_NIGHT_MODE, nightMode);
-        fragment.setArguments(bundle);
-        return fragment;
-    }
+    private var quranImageContainerWidth = 0
 
-    @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    private var ayaActionsArgs: Bundle? = null
 
-        if (getArguments() != null) {
-            quranImageUrl = getArguments().getString(ARG_QURAN_IMAGE_URL);
-            quranPageNum = getArguments().getInt(ARG_QURAN_PAGE_NUM);
-            initSelectedAyaId = getArguments().getInt(ARG_INIT_SELECTED_AYA_ID, -1);
-            nightMode = getArguments().getBoolean(ARG_NIGHT_MODE, false);
+    private var ayaActionsDialog: AyaActionsDialog? = null
+
+    private var bookmarkDialog: AddBookmarkDialog? = null
+
+    private var longClickXLocation = 0
+
+    private var longClickYLocation = 0
+
+    var currentAya: Aya? = null
+        private set
+
+    private var previousAya: Aya? = null
+
+    var currentAyaIndex = 0
+        private set
+
+    private var imageScaleFactor = 0.0
+
+    private var pageAyasList: MutableList<Aya>? = null
+
+    private var ayaShadowsViews: MutableList<View>? = null
+
+    private var presenter: QuranPagePresenter<QuranPageView>? = null
+
+    private var recitationId = 0
+
+    private var margin = 0
+
+    private var start = 0.0
+
+    private var lineHeight = 0.0
+
+    private var top = 0.0
+
+    private var end = 0.0
+
+    private var isAyaBookmark = false
+
+    private var playFirstAyaAudio = false
+
+    private var playMiddleAyaAudio = false
+
+    var isAyaAudioDownloaded = false
+
+    private var selectedAyaNote: Note? = null
+
+    private var isVisibleToUser = false
+
+    private var drawShadowFromNotification = false
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        if (arguments != null) {
+            quranImageUrl = requireArguments().getString(ARG_QURAN_IMAGE_URL)
+            quranPageNum = requireArguments().getInt(ARG_QURAN_PAGE_NUM)
+            initSelectedAyaId = requireArguments().getInt(ARG_INIT_SELECTED_AYA_ID, -1)
+            nightMode = requireArguments().getBoolean(ARG_NIGHT_MODE, false)
         }
     }
 
-    @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        binding = FragmentQuranPageBinding.inflate(inflater, container, false);
-        return binding.getRoot();
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
+    ): View {
+        _binding = FragmentQuranPageBinding.inflate(inflater, container, false)
+        return binding.getRoot()
     }
 
-    @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
         if (nightMode) {
-            binding.root.setBackgroundColor(Color.BLACK);
+            binding.root.setBackgroundColor(Color.BLACK)
         }
+        setParentFragment()
+        recitationId = AppPreferencesManager.getRecitationSetting(requireContext())
+        currentPageAyas
+        binding.containerSv.viewTreeObserver.addOnGlobalLayoutListener(object :
+            OnGlobalLayoutListener {
+            override fun onGlobalLayout() {
+                if (binding.containerSv.viewTreeObserver != null) binding.containerSv.viewTreeObserver.removeOnGlobalLayoutListener(
+                    this
+                )
 
-        setParentFragment();
-        recitationId = AppPreferencesManager.getRecitationSetting(requireContext());
-        getCurrentPageAyas();
-        binding.containerSv.getViewTreeObserver().addOnGlobalLayoutListener(
-                new ViewTreeObserver.OnGlobalLayoutListener() {
-                    @Override
-                    public void onGlobalLayout() {
-                        if (binding.containerSv.getViewTreeObserver() != null)
-                            binding.containerSv.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-
-                        // get quran iv container width and lineHeight
-                        quranImageContainerWidth = binding.containerSv.getWidth();
-                        quranImageContainerHeight = binding.containerSv.getHeight();
-                        Log.d(TAG, "quran image container: " + quranImageContainerWidth + " , " + quranImageContainerHeight);
-                        scaleQuranImage();
-                        calculateImageMetrics();
-                        ayaActionsArgs = new Bundle();
-                        initOnLongClickQuranPage();
-
-                        if (savedInstanceState == null) {
-                            initBookmarkDialog();
-                        } else {
-                            getPrevSavedInstance(savedInstanceState);
-                        }
-                        showQuranPage();
-                    }
-                });
-
-        binding.pageIv.setOnClickListener(v -> onQuranPageClick());
+                // get quran iv container width and lineHeight
+                quranImageContainerWidth = binding.containerSv.width
+                quranImageContainerHeight = binding.containerSv.height
+                Log.d(
+                    TAG,
+                    "quran image container: $quranImageContainerWidth , $quranImageContainerHeight"
+                )
+                scaleQuranImage()
+                calculateImageMetrics()
+                ayaActionsArgs = Bundle()
+                initOnLongClickQuranPage()
+                if (savedInstanceState == null) {
+                    initBookmarkDialog()
+                } else {
+                    getPrevSavedInstance(savedInstanceState)
+                }
+                showQuranPage()
+            }
+        })
+        binding.pageIv.setOnClickListener { v: View? -> onQuranPageClick() }
     }
 
-    private void setParentFragment() {
+    private fun setParentFragment() {
         if (mushafFragment == null) {
-            mushafFragment = (MushafFragment) getParentFragment();
+            mushafFragment = parentFragment as MushafFragment?
         }
     }
 
-
-    @Override
-    public void drawInitAyaShadow(@NonNull Aya aya, @Nullable Aya previousAya) {
-        isAyaBookmark = false;
-        this.currentAya = aya;
-        this.previousAya = previousAya;
-        drawShadow();
+    override fun drawInitAyaShadow(aya: Aya, previousAya: Aya?) {
+        isAyaBookmark = false
+        currentAya = aya
+        this.previousAya = previousAya
+        drawShadow()
     }
 
-    private void getPrevSavedInstance(Bundle savedInstanceState) {
-
+    private fun getPrevSavedInstance(savedInstanceState: Bundle?) {
         if (savedInstanceState != null) {
-
-            numOfAyaInPage = savedInstanceState.getInt("num_of_ayas");
-            currentAya = savedInstanceState.getParcelable("current_aya");
-            previousAya = savedInstanceState.getParcelable("prev_aya");
-            currentAyaIndex = savedInstanceState.getInt("CURRENT_AYA_INDEX");
-            ayaAudioDownloaded = savedInstanceState.getBoolean("AYA_AUDIO_DOWNLOADED");
-            ayaActionsDialog = (AyaActionsDialog) getChildFragmentManager().findFragmentByTag("AyaActionsDialog");
-            bookmarkDialog = (AddBookmarkDialog) getChildFragmentManager().findFragmentByTag("AddBookmarkDialog");
-
+            numOfAyaInPage = savedInstanceState.getInt("num_of_ayas")
+            currentAya = savedInstanceState.getParcelable("current_aya")
+            previousAya = savedInstanceState.getParcelable("prev_aya")
+            currentAyaIndex = savedInstanceState.getInt("CURRENT_AYA_INDEX")
+            isAyaAudioDownloaded = savedInstanceState.getBoolean("AYA_AUDIO_DOWNLOADED")
+            ayaActionsDialog =
+                childFragmentManager.findFragmentByTag("AyaActionsDialog") as AyaActionsDialog?
+            bookmarkDialog =
+                childFragmentManager.findFragmentByTag("AddBookmarkDialog") as AddBookmarkDialog?
             if (currentAya != null) {
-                presenter.getAyaBookmarkType(currentAya.getId());
-                presenter.checkAyaHasNote(currentAya.getId());
-                int currentAyaY;
-                switch (recitationId) {
-                    case Constants.Recitation.HAFS_ID:
-                        currentAyaY = currentAya.getY();
-                        break;
-                    case Constants.Recitation.WARSH_ID:
-                        currentAyaY = currentAya.getYw();
-                        break;
-                    default:
-                        throw new RuntimeException("Cannot identify recitation");
+                presenter!!.getAyaBookmarkType(currentAya!!.id)
+                presenter!!.checkAyaHasNote(currentAya!!.id)
+                val currentAyaY: Int = when (recitationId) {
+                    Constants.Recitation.HAFS_ID -> currentAya!!.y
+                    Constants.Recitation.WARSH_ID -> currentAya!!.yw
+                    else -> throw RuntimeException("Cannot identify recitation")
                 }
 
                 // scroll to selected aya after landscape orientation
-                binding.containerSv.post(() -> {
-                    binding.containerSv.scrollTo(0, (int) (currentAyaY * imageScaleFactor));
-                });
-
+                binding.containerSv.post {
+                    binding.containerSv.scrollTo(0, (currentAyaY * imageScaleFactor).toInt())
+                }
             }
-
-            noteDialogOpen = savedInstanceState.getBoolean("open_dialog");
+            noteDialogOpen = savedInstanceState.getBoolean("open_dialog")
             if (noteDialogOpen) {
-                noteDialogOpen = false;
-                selectedAyaNote = savedInstanceState.getParcelable("selected_note");
-                openAddNoteDialog();
+                noteDialogOpen = false
+                selectedAyaNote = savedInstanceState.getParcelable("selected_note")
+                openAddNoteDialog()
+            }
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putParcelable("current_aya", currentAya)
+        outState.putParcelable("prev_aya", previousAya)
+        outState.putParcelable("selected_note", selectedAyaNote)
+        outState.putBoolean("open_dialog", noteDialogOpen)
+        outState.putInt("CURRENT_AYA_INDEX", currentAyaIndex)
+        outState.putInt("num_of_ayas", numOfAyaInPage)
+        outState.putBoolean("AYA_AUDIO_DOWNLOADED", isAyaAudioDownloaded)
+    }
+
+    private fun calculateImageMetrics() {
+        when (recitationId) {
+            Constants.Recitation.HAFS_ID -> {
+                lineHeight = (if (quranPageNum in 1..2) 50 else 70) * imageScaleFactor
+                end = (if (quranPageNum in 1..2) 628 else 729) * imageScaleFactor
+                start = (if (quranPageNum in 1..2) 218 else 79) * imageScaleFactor
+                top = (if (quranPageNum in 1..2) 390 else 75) * imageScaleFactor
+                margin = if (quranPageNum in 1..2) 5 else 10
             }
 
+            Constants.Recitation.WARSH_ID -> {
+                lineHeight =
+                    (if (quranPageNum == 1 || quranPageNum == 2) 37 else 63) * imageScaleFactor
+                end = (if (quranPageNum == 1 || quranPageNum == 2) 454 else 580) * imageScaleFactor
+                start =
+                    (if (quranPageNum == 2) 148 else if (quranPageNum == 1) 170 else 41) * imageScaleFactor
+                top = (if (quranPageNum == 1 || quranPageNum == 2) 378 else 42) * imageScaleFactor
+                margin = if (quranPageNum == 1 || quranPageNum == 2) 8 else 5
+            }
+
+            else -> {
+                error("Cannot identify recitation")
+            }
         }
     }
 
-    @Override
-    public void onSaveInstanceState(@NonNull Bundle outState) {
-        super.onSaveInstanceState(outState);
-        outState.putParcelable("current_aya", currentAya);
-        outState.putParcelable("prev_aya", previousAya);
-        outState.putParcelable("selected_note", selectedAyaNote);
-        outState.putBoolean("open_dialog", noteDialogOpen);
-        outState.putInt("CURRENT_AYA_INDEX", currentAyaIndex);
-        outState.putInt("num_of_ayas", numOfAyaInPage);
-        outState.putBoolean("AYA_AUDIO_DOWNLOADED", ayaAudioDownloaded);
-    }
+    private fun getScaledY(y: Int, withHeight: Boolean) =
+        (y - margin) * imageScaleFactor + if (withHeight) lineHeight else 0.0
 
-    private void calculateImageMetrics() {
-        if (recitationId == Constants.Recitation.WARSH_ID) {
-            lineHeight = ((quranPageNum == 1 || quranPageNum == 2) ? 37 : 63) * imageScaleFactor;
-            end = ((quranPageNum == 1 || quranPageNum == 2) ? 454 : 580) * imageScaleFactor;
-            start = (quranPageNum == 2 ? 148 : quranPageNum == 1 ? 170 : 41) * imageScaleFactor;
-            top = (quranPageNum == 1 || quranPageNum == 2 ? 378 : 42) * imageScaleFactor;
-            xfactor = (quranPageNum == 1 || quranPageNum == 2) ? 1.377d : 1.367d;
-            xoffset = (quranPageNum == 1 || quranPageNum == 2) ? 13.424d : 18.921d;
-            yfactor = (quranPageNum == 1 || quranPageNum == 2) ? 1.365d : 1.359d;
-            yoffset = (quranPageNum == 1 || quranPageNum == 2) ? 15.462d : 25.375d;
-            margin = ((quranPageNum == 1 || quranPageNum == 2) ? 8 : 5);
+    private fun getScaledX(x: Int) = x * imageScaleFactor
 
-        } else if (recitationId == Constants.Recitation.HAFS_ID) {
-            lineHeight = ((quranPageNum == 1 || quranPageNum == 2) ? 38 : 53) * imageScaleFactor;
-            end = ((quranPageNum == 1 || quranPageNum == 2) ? 454 : 554) * imageScaleFactor;
-            start = ((quranPageNum == 1 || quranPageNum == 2) ? 170 : 70) * imageScaleFactor;
-            top = ((quranPageNum == 1 ? 389 : quranPageNum == 2 ? 418 : 85)) * imageScaleFactor;
-            xfactor = 1.367d;
-            xoffset = 13.827d;
-            yfactor = 1.369d;
-            yoffset = 20.723d;
-            margin = ((quranPageNum == 1 || quranPageNum == 2) ? 4 : 9);
-        } else {
-            throw new RuntimeException("Cannot identify recitation");
+    private val currentPageAyas: Unit
+        get() {
+            ayaShadowsViews = ArrayList()
+            presenter = QuranPagePresenterImp(activity)
+            presenter!!.onAttach(this)
+            presenter!!.getPageAyas(quranPageNum)
         }
-    }
 
-    private double getScaledY(int y, boolean withHeight) {
-        return (yfactor * y - yoffset - margin) * imageScaleFactor + (withHeight ? lineHeight : 0);
-    }
-
-    private double getScaledX(int x) {
-        return (xfactor * x - xoffset) * imageScaleFactor;
-    }
-
-    private void getCurrentPageAyas() {
-        ayaShadowsViews = new ArrayList<>();
-        presenter = new QuranPagePresenterImp(getActivity());
-        presenter.onAttach(this);
-        presenter.getPageAyas(quranPageNum);
-    }
-
-    private void initBookmarkDialog() {
-        bookmarkDialog = new AddBookmarkDialog();
+    private fun initBookmarkDialog() {
+        bookmarkDialog = AddBookmarkDialog()
     }
 
     @SuppressLint("ClickableViewAccessibility")
-    private void initOnLongClickQuranPage() {
-
-        binding.pageIv.setOnTouchListener((v, event) -> {
-            longClickXlocation = (int) event.getX();
-            longClickYlocation = (int) event.getY();
-            return false;
-        });
-
-        binding.pageIv.setOnLongClickListener(v -> {
-            if (!isPageShown)
-                return false;
-            isAyaBookmark = false;
-            ayaAudioDownloaded = false;
-            selectedAyaNote = null;
-            getSelectedAya();
+    private fun initOnLongClickQuranPage() {
+        binding.pageIv.setOnTouchListener { v: View?, event: MotionEvent ->
+            longClickXLocation = event.x.toInt()
+            longClickYLocation = event.y.toInt()
+            false
+        }
+        binding.pageIv.setOnLongClickListener { v: View? ->
+            if (!isPageShown) return@setOnLongClickListener false
+            isAyaBookmark = false
+            isAyaAudioDownloaded = false
+            selectedAyaNote = null
+            selectedAya
             if (currentAya != null) {
-                drawShadow();
-                showActionsDialog();
+                drawShadow()
+                showActionsDialog()
             } else {
-                removePrevAyaShadows();
+                removePrevAyaShadows()
             }
-            return true;
-        });
+            true
+        }
     }
 
-
-    private void showActionsDialog() {
-        /* the dialog coordinates itself to the window origin,
+    private fun showActionsDialog() {/* the dialog coordinates itself to the window origin,
            instead we want it to coordinate to the quran image origin */
-
-        int yLocation = ScreenUtils.getStatusBarHeight(requireContext(), binding.pageIv); // base yLocation
-        int y;
-        switch (recitationId) {
-            case Constants.Recitation.HAFS_ID:
-                y = currentAya.getY();
-                break;
-            case Constants.Recitation.WARSH_ID:
-                y = currentAya.getYw();
-                break;
-            default:
-                throw new RuntimeException("Cannot identify recitation");
+        var yLocation =
+            ScreenUtils.getStatusBarHeight(requireContext(), binding.pageIv) // base yLocation
+        val y: Int = when (recitationId) {
+            Constants.Recitation.HAFS_ID -> currentAya!!.y
+            Constants.Recitation.WARSH_ID -> currentAya!!.yw
+            else -> throw RuntimeException("Cannot identify recitation")
         }
-        yLocation += getScaledY(y, false) + (1.2 * lineHeight);
-        ayaActionsDialog = new AyaActionsDialog();
-        ayaActionsArgs.putInt(AyaActionsDialog.ARG_Y_LOCATION, yLocation);
-        ayaActionsDialog.setArguments(ayaActionsArgs);
-        ayaActionsDialog.show(getChildFragmentManager(), "AyaActionsDialog");
-
-        presenter.getAyaBookmarkType(currentAya.getId());
-        presenter.checkAyaHasNote(currentAya.getId());
+        yLocation += (getScaledY(y, false) + 1.2 * lineHeight).toInt()
+        ayaActionsDialog = AyaActionsDialog()
+        ayaActionsArgs!!.putInt(AyaActionsDialog.ARG_Y_LOCATION, yLocation)
+        ayaActionsDialog!!.arguments = ayaActionsArgs
+        ayaActionsDialog!!.show(childFragmentManager, "AyaActionsDialog")
+        presenter!!.getAyaBookmarkType(currentAya!!.id)
+        presenter!!.checkAyaHasNote(currentAya!!.id)
     }
 
-    private void removePrevAyaShadows() {
-        for (View view : ayaShadowsViews) {
-            binding.quranPageContainer.removeView(view);
+    private fun removePrevAyaShadows() {
+        for (view in ayaShadowsViews!!) {
+            binding.quranPageContainer.removeView(view)
         }
-        ayaShadowsViews.clear();
+        ayaShadowsViews!!.clear()
     }
 
+    // We have found the clicked Aya
+    private val selectedAya: Unit
+        get() {
+            currentAya = null
+            previousAya = null
+            if (pageAyasList != null && pageAyasList!!.size > 0) {
+                var ayaX: Double
+                var ayaY: Double
+                var prev: Aya? = null
+                for (i in pageAyasList!!.indices) {
+                    val aya = pageAyasList!![i]
+                    var x: Int
+                    var y: Int
+                    when (recitationId) {
+                        Constants.Recitation.HAFS_ID -> {
+                            x = aya.x
+                            y = aya.y
+                        }
 
-    private void getSelectedAya() {
-        currentAya = null;
-        previousAya = null;
-        if (pageAyasList != null && pageAyasList.size() > 0) {
-            double ayaX, ayaY;
-            Aya prev = null;
-            for (int i = 0; i < pageAyasList.size(); i++) {
-                Aya aya = pageAyasList.get(i);
-                int x, y;
-                switch (recitationId) {
-                    case Constants.Recitation.HAFS_ID:
-                        x = aya.getX();
-                        y = aya.getY();
-                        break;
-                    case Constants.Recitation.WARSH_ID:
-                        x = aya.getXw();
-                        y = aya.getYw();
-                        break;
-                    default:
-                        throw new RuntimeException("Cannot identify recitation");
-                }
-                ayaX = getScaledX(x);
-                ayaY = getScaledY(y, true);
+                        Constants.Recitation.WARSH_ID -> {
+                            x = aya.xw
+                            y = aya.yw
+                        }
 
-
-                if (longClickYlocation <= ayaY) {
-                    if ((ayaY - longClickYlocation <= lineHeight) && longClickXlocation < ayaX) {
-                        prev = aya;
-                        continue;
+                        else -> throw RuntimeException("Cannot identify recitation")
                     }
-                    // We have found the clicked Aya
-                    currentAyaIndex = i;
-                    currentAya = aya;
-                    previousAya = prev;
-
-                    Log.d(TAG, "currentAya: " + currentAya);
-                    Log.d(TAG, "previousAya: " + previousAya);
-
-                    break;
+                    ayaX = getScaledX(x)
+                    ayaY = getScaledY(y, true)
+                    if (longClickYLocation <= ayaY) {
+                        if (ayaY - longClickYLocation <= lineHeight && longClickXLocation < ayaX) {
+                            prev = aya
+                            continue
+                        }
+                        // We have found the clicked Aya
+                        currentAyaIndex = i
+                        currentAya = aya
+                        previousAya = prev
+                        Log.d(TAG, "currentAya: $currentAya")
+                        Log.d(TAG, "previousAya: $previousAya")
+                        break
+                    }
+                    prev = aya
                 }
-                prev = aya;
+            } else {
+                Toast.makeText(activity, R.string.select_aya_fail, Toast.LENGTH_LONG).show()
+            }
+        }
+
+    private fun scaleQuranImage() {
+        val quranPageOriginalWidth: Int
+        val quranPageOriginalHeight: Int
+        when (recitationId) {
+            Constants.Recitation.HAFS_ID -> {
+                if (quranPageNum in 1..2) {
+                    quranPageOriginalWidth = Constants.Quran.HAFS_PAGE_IMG_FIRST_TWO_ORIGINAL_WIDTH
+                    quranPageOriginalHeight =
+                        Constants.Quran.HAFS_PAGE_IMG_FIRST_TWO_ORIGINAL_HEIGHT
+                } else {
+                    quranPageOriginalWidth = Constants.Quran.HAFS_PAGE_IMG_ORIGINAL_WIDTH
+                    quranPageOriginalHeight = Constants.Quran.HAFS_PAGE_IMG_ORIGINAL_HEIGHT
+                }
             }
 
-        } else {
-            Toast.makeText(getActivity(), R.string.select_aya_fail, Toast.LENGTH_LONG).show();
-        }
+            Constants.Recitation.WARSH_ID -> {
+                if (quranPageNum in 1..2) {
+                    quranPageOriginalWidth = Constants.Quran.WARSH_PAGE_IMG_FIRST_TWO_ORIGINAL_WIDTH
+                    quranPageOriginalHeight =
+                        Constants.Quran.WARSH_PAGE_IMG_FIRST_TWO_ORIGINAL_HEIGHT
+                } else {
+                    quranPageOriginalWidth = Constants.Quran.WARSH_PAGE_IMG_ORIGINAL_WIDTH
+                    quranPageOriginalHeight = Constants.Quran.WARSH_PAGE_IMG_ORIGINAL_HEIGHT
+                }
+            }
 
-    }
-
-
-    private void scaleQuranImage() {
-        RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) binding.pageIv.getLayoutParams();
-        int quranPageOriginalWidth, quranPageOriginalHeight;
-        switch (recitationId) {
-            case Constants.Recitation.HAFS_ID:
-                quranPageOriginalWidth = Constants.Quran.HAFS_OTLOOHA_PAGE_ORIGINAL_WIDTH;
-                quranPageOriginalHeight = Constants.Quran.HAFS_OTLOOHA_PAGE_ORIGINAL_HEIGHT;
-                break;
-            case Constants.Recitation.WARSH_ID:
-                quranPageOriginalWidth = Constants.Quran.WARSH_OTLOOHA_PAGE_ORIGINAL_WIDTH;
-                quranPageOriginalHeight = Constants.Quran.WARSH_OTLOOHA_PAGE_ORIGINAL_HEIGHT;
-                break;
-            default:
-                throw new RuntimeException("Cannot identify recitation");
+            else -> error("Cannot identify recitation")
         }
 
         // make width fit in mobile screen and lineHeight scale
+        val params = binding.pageIv.layoutParams as RelativeLayout.LayoutParams
         if (quranPageOriginalWidth != quranImageContainerWidth) {
-            imageScaleFactor = (float) quranImageContainerWidth / quranPageOriginalWidth;
-            params.width = quranImageContainerWidth;
-            params.height = (int) (quranPageOriginalHeight * imageScaleFactor);
-            binding.pageIv.setLayoutParams(params);
+            imageScaleFactor =
+                (quranImageContainerWidth.toFloat() / quranPageOriginalWidth).toDouble()
+            params.width = quranImageContainerWidth
+            params.height = (quranPageOriginalHeight * imageScaleFactor).toInt()
+            binding.pageIv.layoutParams = params
         }
 
         // handle if lineHeight will be bigger than container lineHeight when above "if" is true
-        if (getContext() != null && ScreenUtils.isPortrait(getContext()) && params.height > quranImageContainerHeight) {
-            Log.d(TAG, "TRUE: portrait && params.lineHeight > quranImageContainerHeight");
-            float ratioEdit = (float) quranImageContainerHeight / params.height;
-            imageScaleFactor *= ratioEdit; // the total scale done on the image
-            params.height = quranImageContainerHeight;
-            params.width *= ratioEdit;
-            binding.pageIv.setLayoutParams(params);
+        if (context != null && ScreenUtils.isPortrait(requireContext()) && params.height > quranImageContainerHeight) {
+            Log.d(TAG, "TRUE: portrait && params.lineHeight > quranImageContainerHeight")
+            val ratioEdit = quranImageContainerHeight.toFloat() / params.height
+            imageScaleFactor *= ratioEdit.toDouble() // the total scale done on the image
+            params.height = quranImageContainerHeight
+            params.width *= ratioEdit.toInt()
+            binding.pageIv.layoutParams = params
         }
-        Log.d(TAG, "final ImageScaleFactor: " + imageScaleFactor);
+        Log.d(TAG, "final ImageScaleFactor: $imageScaleFactor")
     }
 
-
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        binding = null;
-        presenter.onDetach();
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+        presenter!!.onDetach()
     }
 
-
-    @Override
-    public void onShareClick() {
+    override fun onShareClick() {
         if (currentAya != null) {
-            startActivity(IntentUtils.getShareIntent(currentAya.getText(), requireActivity()));
+            startActivity(IntentUtils.getShareIntent(currentAya!!.text, requireActivity()))
         }
     }
 
-    @Override
-    public void onFasilClick() {
-        ayaActionsDialog.dismiss();
+    override fun onFasilClick() {
+        ayaActionsDialog!!.dismiss()
         if (isAyaBookmark) {                // remove from bookmark
-            presenter.removeBookmark(currentAya.getId());
+            presenter!!.removeBookmark(currentAya!!.id)
         } else {                        // add to bookmark
-            presenter.getBookmarkTypes();
+            presenter!!.getBookmarkTypes()
         }
     }
 
-
-    @Override
-    public void onGetAyaBookmarkTypes(List<BookmarkType> bookmarkTypes) {
-        bookmarkDialog = AddBookmarkDialog.getInstance(bookmarkTypes, true);
-        bookmarkDialog.show(getChildFragmentManager(), "AddBookmarkDialog");
+    override fun onGetAyaBookmarkTypes(bookmarkTypes: List<BookmarkType>) {
+        bookmarkDialog = AddBookmarkDialog.getInstance(bookmarkTypes, true)
+        bookmarkDialog!!.show(childFragmentManager, "AddBookmarkDialog")
     }
 
-
-    @Override
-    public void addNormalBookmark(int bookmarkType) {
+    override fun addNormalBookmark(bookmarkType: Int) {
         if (currentAya != null) {
-            presenter.insertAyaBookmark(new AyaBookmark(currentAya.getId(), bookmarkType, currentAya));
+            presenter!!.insertAyaBookmark(AyaBookmark(currentAya!!.id, bookmarkType, currentAya))
         }
     }
 
-    @Override
-    public void addCustomBookmark(BookmarkType type) {
+    override fun addCustomBookmark(type: BookmarkType) {
         if (currentAya != null) {
-            presenter.insertCustomBookmark(currentAya, type);
+            presenter!!.insertCustomBookmark(currentAya, type)
         }
     }
 
-    @Override
-    public void onTafserClick() {
-        Fragment fragment = getParentFragment();
-        if (fragment instanceof MushafFragment) {
-            ((MushafFragment) fragment).openTranslationDialog(
-                    currentAya);
+    override fun onTafserClick() {
+        val fragment = parentFragment
+        if (fragment is MushafFragment) {
+            fragment.openTranslationDialog(
+                currentAya
+            )
         }
     }
 
-    @Override
-    public void onNoteClick() {
-        if (ScreenUtils.getOrientationState(requireActivity()).equals(ScreenUtils.PORTRAIT_STATE)) {
-            openAddNoteDialog();
+    @SuppressLint("SourceLockedOrientationActivity")
+    override fun onNoteClick() {
+        if (ScreenUtils.getOrientationState(requireActivity()) == ScreenUtils.PORTRAIT_STATE) {
+            openAddNoteDialog()
         } else {
-            noteDialogOpen = true;
+            noteDialogOpen = true
         }
-        requireActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
     }
 
-    private void openAddNoteDialog() {
-
-        AddNoteDialog dialog;
-        if (selectedAyaNote != null) {
-            dialog = AddNoteDialog.getInstance(selectedAyaNote);
+    private fun openAddNoteDialog() {
+        val dialog: AddNoteDialog = if (selectedAyaNote != null) {
+            AddNoteDialog.getInstance(selectedAyaNote)
         } else {
-            dialog = AddNoteDialog.getInstance(currentAya.getId());
+            AddNoteDialog.getInstance(currentAya!!.id)
         }
-        dialog.show(getChildFragmentManager(), "AddNoteDialog");
+        dialog.show(childFragmentManager, "AddNoteDialog")
     }
 
-    public int getNumOfAyaInPage() {
-        return numOfAyaInPage;
+    override fun onGetPageAya(ayaList: List<Aya>) {
+        pageAyasList = mutableListOf()
+        pageAyasList?.addAll(ayaList)
+        numOfAyaInPage = pageAyasList?.size ?: 0
+        if (playFirstAyaAudio) checkPlayFirstAyaAudio()
+        else if (playMiddleAyaAudio) checkPlayMiddleAyaAudio()
+        else if (drawShadowFromNotification) drawAyaNotificationShadow()
     }
 
-    @Override
-    public void onGetPageAya(List<Aya> ayaList) {
-        pageAyasList = new ArrayList<>();
-        pageAyasList.addAll(ayaList);
-        numOfAyaInPage = pageAyasList.size();
-        if (playFirstAyaAudio)
-            checkPlayFirstAyaAudio();
-        else if (playMiddleAyaAudio)
-            checkPlayMiddleAyaAudio();
-        else if (drawShadowFromNotification) {
-            drawAyaNotificationShadow();
-        }
-    }
-
-
-    @Override
-    public void onGetAyaBookmarkType(BookmarkModel bookmarkModel) {
+    override fun onGetAyaBookmarkType(bookmarkModel: BookmarkModel) {
         if (ayaActionsDialog != null) {
-            isAyaBookmark = true;
-            ayaActionsDialog.setBookmarkTypeIcon(bookmarkModel);
+            isAyaBookmark = true
+            ayaActionsDialog!!.setBookmarkTypeIcon(bookmarkModel)
         }
     }
 
-    @Override
-    public void onSuccessRemoveBookmark() {
-        ayaActionsDialog.dismiss();
-        Toast.makeText(getActivity(), getString(R.string.bookmark_removed), Toast.LENGTH_SHORT).show();
+    override fun onSuccessRemoveBookmark() {
+        ayaActionsDialog!!.dismiss()
+        Toast.makeText(activity, getString(R.string.bookmark_removed), Toast.LENGTH_SHORT).show()
     }
 
-    @Override
-    public void onAyaHasNote(Note note) {
-        if (note != null && ayaActionsDialog != null) {
-            selectedAyaNote = note;
-            ayaActionsDialog.setAyaHasNote();
+    override fun onAyaHasNote(note: Note) {
+        if (ayaActionsDialog != null) {
+            selectedAyaNote = note
+            ayaActionsDialog!!.setAyaHasNote()
         }
     }
-
 
     // draw shadow when user make prev or next action on aya
-    public void drawActionShadow(boolean isClickPrev) {
-        if (pageAyasList == null)
-            return;
+    fun drawActionShadow(isClickPrev: Boolean) {
+        if (pageAyasList == null) return
         if (isClickPrev) {
-            if (currentAyaIndex - 1 > 0)
-                previousAya = pageAyasList.get(currentAyaIndex - 2);
-            else
-                previousAya = null;
-            currentAya = pageAyasList.get(currentAyaIndex - 1);
-            currentAyaIndex--;
+            previousAya = if (currentAyaIndex - 1 > 0) pageAyasList!![currentAyaIndex - 2] else null
+            currentAya = pageAyasList!![currentAyaIndex - 1]
+            currentAyaIndex--
         } else {
-            previousAya = pageAyasList.get(currentAyaIndex);
-            currentAya = pageAyasList.get(currentAyaIndex + 1);
-            currentAyaIndex++;
+            previousAya = pageAyasList!![currentAyaIndex]
+            currentAya = pageAyasList!![currentAyaIndex + 1]
+            currentAyaIndex++
         }
-        drawShadow();
+        drawShadow()
     }
 
     // draw shadow on the selected aya
-    private void drawShadow() {
-
-        removePrevAyaShadows(); // remove any if exists
-
-        View shadowView;
-        RelativeLayout.LayoutParams params;
-
-        double prevAyaY, prevAyaX;
+    private fun drawShadow() {
+        removePrevAyaShadows() // remove any if exists
+        var shadowView: View
+        var params: RelativeLayout.LayoutParams
+        val prevAyaY: Double
+        val prevAyaX: Double
         if (previousAya != null) {
-            int prevX, prevY;
-            switch (recitationId) {
-                case Constants.Recitation.HAFS_ID:
-                    prevY = previousAya.getY();
-                    prevX = previousAya.getX();
-                    break;
-                case Constants.Recitation.WARSH_ID:
-                    prevY = previousAya.getYw();
-                    prevX = previousAya.getXw();
-                    break;
-                default:
-                    throw new RuntimeException("Cannot identify recitation");
+            val prevX: Int
+            val prevY: Int
+            when (recitationId) {
+                Constants.Recitation.HAFS_ID -> {
+                    prevY = previousAya!!.y
+                    prevX = previousAya!!.x
+                }
+
+                Constants.Recitation.WARSH_ID -> {
+                    prevY = previousAya!!.yw
+                    prevX = previousAya!!.xw
+                }
+
+                else -> throw RuntimeException("Cannot identify recitation")
             }
-            prevAyaY = getScaledY(prevY, false);
-            prevAyaX = getScaledX(prevX);
+            prevAyaY = getScaledY(prevY, false)
+            prevAyaX = getScaledX(prevX)
         } else {
-            prevAyaY = top;
-            prevAyaX = end;
+            prevAyaY = top
+            prevAyaX = end
         }
-        int curX, curY;
-        switch (recitationId) {
-            case Constants.Recitation.HAFS_ID:
-                curX = currentAya.getX();
-                curY = currentAya.getY();
-                break;
-            case Constants.Recitation.WARSH_ID:
-                curX = currentAya.getXw();
-                curY = currentAya.getYw();
-                break;
-            default:
-                throw new RuntimeException("Cannot identify recitation");
-        }
-        double currentAyaY = getScaledY(curY, false);
-        double currentAyaX = getScaledX(curX);
-
-        double endWidth = end, startWidth = currentAyaX;
-        boolean firstLine = true;
-        // draw line from current aya line to prev aya
-
-        while (currentAyaY >= (prevAyaY - lineHeight * 0.66)) {
-
-            shadowView = new View(getActivity());
-            ayaShadowsViews.add(shadowView);
-            binding.quranPageContainer.addView(shadowView);
-            params = (RelativeLayout.LayoutParams) shadowView.getLayoutParams();
-            if (nightMode) {
-                shadowView.setBackgroundColor(getResources().getColor(R.color.aya_shadow_color_night_mode));
-            } else {
-                shadowView.setBackgroundColor(getResources().getColor(R.color.aya_shadow_color));
+        val curX: Int
+        val curY: Int
+        when (recitationId) {
+            Constants.Recitation.HAFS_ID -> {
+                curX = currentAya!!.x
+                curY = currentAya!!.y
             }
 
+            Constants.Recitation.WARSH_ID -> {
+                curX = currentAya!!.xw
+                curY = currentAya!!.yw
+            }
+
+            else -> throw RuntimeException("Cannot identify recitation")
+        }
+        var currentAyaY = getScaledY(curY, false)
+        val currentAyaX = getScaledX(curX)
+        var endWidth = end
+        var startWidth = currentAyaX
+        var firstLine = true
+        // draw line from current aya line to prev aya
+        while (currentAyaY >= prevAyaY - lineHeight * 0.66) {
+            shadowView = View(activity)
+            ayaShadowsViews!!.add(shadowView)
+            binding.quranPageContainer.addView(shadowView)
+            params = shadowView.layoutParams as RelativeLayout.LayoutParams
+            if (nightMode) {
+                shadowView.setBackgroundColor(resources.getColor(R.color.aya_shadow_color_night_mode))
+            } else {
+                shadowView.setBackgroundColor(resources.getColor(R.color.aya_shadow_color))
+            }
             if (!firstLine) {
-                startWidth = (int) start;
+                startWidth = start.toInt().toDouble()
             }
             if (currentAyaY - prevAyaY < lineHeight * 0.66) {
-                endWidth = prevAyaX;
+                endWidth = prevAyaX
             }
-
-            params.leftMargin = (int) startWidth;
-            params.topMargin = (int) currentAyaY;
-            params.width = (int) Math.abs(endWidth - startWidth);
-            params.height = (int) (lineHeight);
-            shadowView.setLayoutParams(params);
-            currentAyaY -= lineHeight;
-            firstLine = false;
+            params.leftMargin = startWidth.toInt()
+            params.topMargin = currentAyaY.toInt()
+            params.width = Math.abs(endWidth - startWidth).toInt()
+            params.height = lineHeight.toInt()
+            shadowView.layoutParams = params
+            currentAyaY -= lineHeight
+            firstLine = false
         }
     }
 
-    @Override
-    public void showMessage(String message) {
-        Toast.makeText(getActivity(), message, Toast.LENGTH_SHORT).show();
+    override fun showMessage(message: String) {
+        Toast.makeText(activity, message, Toast.LENGTH_SHORT).show()
     }
 
-    @Override
-    public void showLoading() {
-        binding.progreesBar.setVisibility(View.VISIBLE);
+    override fun showLoading() {
+        binding.progreesBar.visibility = View.VISIBLE
     }
 
-    @Override
-    public void hideLoading() {
-        binding.progreesBar.setVisibility(GONE);
+    override fun hideLoading() {
+        binding.progreesBar.visibility = View.GONE
     }
 
-    private void onQuranPageClick() {
-        presenter.handleQuranPageClick();
+    private fun onQuranPageClick() {
+        presenter!!.handleQuranPageClick()
     }
 
-    public int getCurrentAyaIndex() {
-        return currentAyaIndex;
-    }
+    val currentAyaId: Int
+        get() = currentAya!!.id
 
-
-    public Aya getCurrentAya() {
-        return currentAya;
-    }
-
-    public int getCurrentAyaId() {
-        return currentAya.getId();
-    }
-
-    @Override
-    public void onAddNote(Note note, boolean isEditable) {
-        requireActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
-        presenter.addNote(note);
+    override fun onAddNote(note: Note, isEditable: Boolean) {
+        requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        presenter!!.addNote(note)
         if (isEditable) {
-            Toast.makeText(getActivity(), getString(R.string.note_edited), Toast.LENGTH_LONG).show();
+            Toast.makeText(activity, getString(R.string.note_edited), Toast.LENGTH_LONG).show()
         } else {
-            Toast.makeText(getActivity(), getString(R.string.note_added), Toast.LENGTH_LONG).show();
+            Toast.makeText(activity, getString(R.string.note_added), Toast.LENGTH_LONG).show()
         }
     }
 
-    @Override
-    public void onDismissDialog() {
-        requireActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+    override fun onDismissDialog() {
+        requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
     }
 
-
-    private void showQuranPage() {
-
-        GlideApp.with(requireActivity())
-                .load(quranImageUrl)
-                .diskCacheStrategy(DiskCacheStrategy.ALL)
-                .listener(new RequestListener<Drawable>() {
-                    @Override
-                    public boolean onLoadFailed(@Nullable GlideException e, Object model
-                            , Target<Drawable> target, boolean isFirstResource) {
-
-                        Log.d(TAG, "onLoadFailed: GlideApp");
-                        if (FragmentUtils.isSafeFragment(QuranPageFragment.this)) {
-                            binding.progreesBar.setVisibility(GONE);
-                            binding.loadFailedContainer.getRoot().setVisibility(View.VISIBLE);
-                        }
-                        return false;
+    private fun showQuranPage() {
+        GlideApp.with(requireActivity()).load(quranImageUrl)
+            .diskCacheStrategy(DiskCacheStrategy.ALL).listener(object : RequestListener<Drawable?> {
+                override fun onLoadFailed(
+                    e: GlideException?,
+                    model: Any,
+                    target: Target<Drawable?>,
+                    isFirstResource: Boolean
+                ): Boolean {
+                    Log.d(TAG, "onLoadFailed: GlideApp")
+                    if (FragmentUtils.isSafeFragment(this@QuranPageFragment)) {
+                        binding.progreesBar.visibility = View.GONE
+                        binding.loadFailedContainer.root.visibility = View.VISIBLE
                     }
+                    return false
+                }
 
-                    @Override
-                    public boolean onResourceReady(Drawable resource, Object model
-                            , Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
-
-                        if (FragmentUtils.isSafeFragment(QuranPageFragment.this)) {
-                            binding.progreesBar.setVisibility(GONE);
-                            binding.loadFailedContainer.getRoot().setVisibility(GONE);
-                            isPageShown = true;
-
-
-                            if (nightMode) {
-                                ImageUtil.invertDrawable(resource);
-                            }
-
-                            // auto play aya audio if audio player is playing  after image is loaded
-
-                            if (playFirstAyaAudio && isVisibleToUser)
-                                checkPlayFirstAyaAudio();
-                            else if (playMiddleAyaAudio && isVisibleToUser)
-                                checkPlayMiddleAyaAudio();
-                            else if (drawShadowFromNotification && isVisibleToUser)
-                                drawAyaNotificationShadow();
-                            else {
-                                if (currentAya == null) {
-                                    presenter.drawInitAyaShadow(quranPageNum, initSelectedAyaId);
-                                } else {
-                                    // draw shadow if it is exist before orientation changed
-                                    drawShadow();
-                                }
-                            }
-
+                override fun onResourceReady(
+                    resource: Drawable?,
+                    model: Any,
+                    target: Target<Drawable?>,
+                    dataSource: DataSource,
+                    isFirstResource: Boolean
+                ): Boolean {
+                    if (FragmentUtils.isSafeFragment(this@QuranPageFragment)) {
+                        binding.progreesBar.visibility = View.GONE
+                        binding.loadFailedContainer.root.visibility = View.GONE
+                        isPageShown = true
+                        if (nightMode) {
+                            ImageUtil.invertDrawable(resource)
                         }
-                        return false;
+
+                        // auto play aya audio if audio player is playing  after image is loaded
+                        if (playFirstAyaAudio && isVisibleToUser) checkPlayFirstAyaAudio() else if (playMiddleAyaAudio && isVisibleToUser) checkPlayMiddleAyaAudio() else if (drawShadowFromNotification && isVisibleToUser) drawAyaNotificationShadow() else {
+                            if (currentAya == null) {
+                                presenter!!.drawInitAyaShadow(quranPageNum, initSelectedAyaId)
+                            } else {
+                                // draw shadow if it is exist before orientation changed
+                                drawShadow()
+                            }
+                        }
                     }
-                })
-                .into(binding.pageIv);
+                    return false
+                }
+            }).into(binding.pageIv)
     }
 
-    public boolean isAyaAudioDownloaded() {
-        return ayaAudioDownloaded;
-    }
-
-    public void setAyaAudioDownloaded(boolean ayaAudioDownloaded) {
-        this.ayaAudioDownloaded = ayaAudioDownloaded;
-    }
-
-    @Override
-    public void setUserVisibleHint(boolean isVisibleToUser) {
-        super.setUserVisibleHint(isVisibleToUser);
-        this.isVisibleToUser = isVisibleToUser;
-        Activity activity = getActivity();
-        if (activity != null && !activity.isChangingConfigurations() && !isVisibleToUser) {
-            ayaAudioDownloaded = false;
+    override fun setUserVisibleHint(isVisibleToUser: Boolean) {
+        super.setUserVisibleHint(isVisibleToUser)
+        this.isVisibleToUser = isVisibleToUser
+        val activity: Activity? = activity
+        if (activity != null && !activity.isChangingConfigurations && !isVisibleToUser) {
+            isAyaAudioDownloaded = false
         }
     }
 
-    public void onAyaAudioNotFound() {
-        mushafFragment.togglePauseState(false);
-        ayaAudioDownloaded = false;
-
-        String reciterId = AppPreferencesManager.getReciterSheikhSetting(requireContext());
+    fun onAyaAudioNotFound() {
+        mushafFragment!!.togglePauseState(false)
+        isAyaAudioDownloaded = false
+        val reciterId = AppPreferencesManager.getReciterSheikhSetting(requireContext())
         if (reciterId != null) {
-            openDownloadAmountDialog(reciterId);
+            openDownloadAmountDialog(reciterId)
         } else {
             // user didn't choose any reciter yet
-            openRecitersDialog();
+            openRecitersDialog()
         }
     }
 
-
-    private void openDownloadAmountDialog(@NonNull String reciterId) {
-        AudioDownloadAmountDialogFragment downloadAmountDialogFragment;
-        if (currentAya != null) {
-            downloadAmountDialogFragment = AudioDownloadAmountDialogFragment.newInstance(
-                    recitationId, reciterId, currentAya.getSura());
-        } else {
-            downloadAmountDialogFragment = AudioDownloadAmountDialogFragment.newInstance(
-                    recitationId, reciterId);
-        }
-        downloadAmountDialogFragment.show(getChildFragmentManager(), "AudioDownloadAmountDialogFragment");
+    private fun openDownloadAmountDialog(reciterId: String) {
+        val downloadAmountDialogFragment: AudioDownloadAmountDialogFragment =
+            if (currentAya != null) {
+                AudioDownloadAmountDialogFragment.newInstance(
+                    recitationId, reciterId, currentAya!!.sura
+                )
+            } else {
+                AudioDownloadAmountDialogFragment.newInstance(
+                    recitationId, reciterId
+                )
+            }
+        downloadAmountDialogFragment.show(childFragmentManager, "AudioDownloadAmountDialogFragment")
     }
 
-    private void openRecitersDialog() {
-        QuranRecitersDialogFragment recitersDialogFragment = QuranRecitersDialogFragment
-                .newInstance(recitationId);
-        recitersDialogFragment.show(getChildFragmentManager(), "QuranRecitersDialogFragment");
+    private fun openRecitersDialog() {
+        val recitersDialogFragment = QuranRecitersDialogFragment.newInstance(recitationId)
+        recitersDialogFragment.show(childFragmentManager, "QuranRecitersDialogFragment")
     }
 
-    @Override
-    public void onListenClick() {
-        mushafFragment.openAyaAudioDialog();
-        mushafFragment.checkAyaRecorderState(currentAya.getId());
-        mushafFragment.playAudioService();
+    override fun onListenClick() {
+        mushafFragment!!.openAyaAudioDialog()
+        mushafFragment!!.checkAyaRecorderState(currentAya!!.id)
+        mushafFragment!!.playAudioService()
     }
 
     // get aya position of start repeat interval in current page
-    private int getFirstAyaNumberInPage() {
-        if (pageAyasList.get(0).getSura() != mushafFragment.getFromSuraDownloaded()) {
-            for (int i = 0; i < pageAyasList.size(); i++) {
-                if (pageAyasList.get(i).getSura() == mushafFragment.getFromSuraDownloaded() && pageAyasList.get(i).getSuraAya() == mushafFragment.getFirstAyaInRepeatGroup()) {
-                    return i;
+    private val firstAyaNumberInPage: Int
+        get() {
+            if (pageAyasList!![0].sura != mushafFragment!!.fromSuraDownloaded) {
+                for (i in pageAyasList!!.indices) {
+                    if (pageAyasList!![i].sura == mushafFragment!!.fromSuraDownloaded && pageAyasList!![i].suraAya == mushafFragment!!.firstAyaInRepeatGroup) {
+                        return i
+                    }
                 }
             }
+            return mushafFragment!!.firstAyaInRepeatGroup - pageAyasList!![0].suraAya
         }
-        return mushafFragment.getFirstAyaInRepeatGroup() - pageAyasList.get(0).getSuraAya();
-    }
 
     // draw shadow of current aya played in notification audio when launch app from notification
-    private void drawAyaNotificationShadow() {
+    private fun drawAyaNotificationShadow() {
         if (pageAyasList != null && drawShadowFromNotification && isPageShown) {
-            drawShadowFromNotification = false;
-            if (currentAya.getId() != pageAyasList.get(0).getId()) {
-                for (int i = 1; i < pageAyasList.size(); i++) {
-                    if (pageAyasList.get(i).getId() == currentAya.getId()) {
-                        previousAya = pageAyasList.get(i - 1);
-                        currentAyaIndex = i;
-                        break;
+            drawShadowFromNotification = false
+            if (currentAya!!.id != pageAyasList!![0].id) {
+                for (i in 1 until pageAyasList!!.size) {
+                    if (pageAyasList!![i].id == currentAya!!.id) {
+                        previousAya = pageAyasList!![i - 1]
+                        currentAyaIndex = i
+                        break
                     }
                 }
             } else {
-                currentAyaIndex = 0;
-                previousAya = null;
+                currentAyaIndex = 0
+                previousAya = null
             }
-            drawShadow();
+            drawShadow()
         }
     }
 
-    private void checkPlayFirstAyaAudio() {
+    private fun checkPlayFirstAyaAudio() {
         if (isPageShown && pageAyasList != null && playFirstAyaAudio) {
-            currentAyaIndex = 0;
-            currentAya = pageAyasList.get(currentAyaIndex);
-            previousAya = null;
-            drawShadow();
-            mushafFragment.checkAyaRecorderState(currentAya.getId());
-            playFirstAyaAudio = false;
-            mushafFragment.playAudioService();
+            currentAyaIndex = 0
+            currentAya = pageAyasList!![currentAyaIndex]
+            previousAya = null
+            drawShadow()
+            mushafFragment!!.checkAyaRecorderState(currentAya!!.id)
+            playFirstAyaAudio = false
+            mushafFragment!!.playAudioService()
         }
     }
 
-    private void checkPlayMiddleAyaAudio() {
+    private fun checkPlayMiddleAyaAudio() {
         if (playMiddleAyaAudio && isPageShown && pageAyasList != null) {
-            currentAyaIndex = getFirstAyaNumberInPage();
-            currentAya = pageAyasList.get(currentAyaIndex);
-            if (currentAyaIndex > 0)
-                previousAya = pageAyasList.get(currentAyaIndex - 1);
-            else
-                previousAya = null;
-            drawShadow();
-            mushafFragment.checkAyaRecorderState(currentAya.getId());
-            playMiddleAyaAudio = false;
-            mushafFragment.playAudioService();
+            currentAyaIndex = firstAyaNumberInPage
+            currentAya = pageAyasList!![currentAyaIndex]
+            previousAya = if (currentAyaIndex > 0) pageAyasList!![currentAyaIndex - 1] else null
+            drawShadow()
+            mushafFragment!!.checkAyaRecorderState(currentAya!!.id)
+            playMiddleAyaAudio = false
+            mushafFragment!!.playAudioService()
         }
     }
 
-    public void playFirstAyaAudio() {
-        playFirstAyaAudio = true;
-        checkPlayFirstAyaAudio();
+    fun playFirstAyaAudio() {
+        playFirstAyaAudio = true
+        checkPlayFirstAyaAudio()
     }
 
-    public void playMiddleAyaAudio() {
-        playMiddleAyaAudio = true;
-        checkPlayMiddleAyaAudio();
+    fun playMiddleAyaAudio() {
+        playMiddleAyaAudio = true
+        checkPlayMiddleAyaAudio()
     }
 
-    @Override
-    public void onReciterSelected(int recitationId, @NonNull ReciterModel reciter) {
-        openDownloadAmountDialog(reciter.getId());
+    override fun onReciterSelected(recitationId: Int, reciter: ReciterModel) {
+        openDownloadAmountDialog(reciter.id)
     }
 
-    @Override
-    public void onClickDownload() {
-        mushafFragment.setSelectedAyaAudio(currentAya);
+    override fun onClickDownload() {
+        mushafFragment!!.setSelectedAyaAudio(currentAya)
     }
 
-    public void setCurrentAyaFromNotification(Aya aya) {
-        currentAya = aya;
-        drawShadowFromNotification = true;
-        drawAyaNotificationShadow();
+    fun setCurrentAyaFromNotification(aya: Aya?) {
+        currentAya = aya
+        drawShadowFromNotification = true
+        drawAyaNotificationShadow()
     }
 
+    companion object {
+        private val TAG = QuranPageFragment::class.java.simpleName
+        private const val ARG_QURAN_PAGE_NUM = "ARG_QURAN_PAGE_NUM"
+        private const val ARG_QURAN_IMAGE_URL = "ARG_QURAN_IMAGE_URL"
+        private const val ARG_INIT_SELECTED_AYA_ID = "ARG_INIT_SELECTED_AYA_ID"
+        private const val ARG_NIGHT_MODE = "ARG_NIGHT_MODE"
+
+        /**
+         * Use this factory method to create a new instance of
+         * this fragment using the provided parameters.
+         *
+         * @param quranImageUrl
+         * @param quranPageNum
+         * @param initSelectedAyaId
+         * @param nightMode
+         * @return A new instance of fragment @[QuranPageFragment]
+         */
+        @JvmStatic
+        fun getInstance(
+            quranImageUrl: String, quranPageNum: Int, initSelectedAyaId: Int, nightMode: Boolean
+        ): QuranPageFragment {
+            Log.d(TAG, "Loading page number: $quranPageNum")
+            val fragment = QuranPageFragment()
+            val bundle = Bundle()
+            bundle.putString(ARG_QURAN_IMAGE_URL, quranImageUrl)
+            bundle.putInt(ARG_QURAN_PAGE_NUM, quranPageNum)
+            bundle.putInt(ARG_INIT_SELECTED_AYA_ID, initSelectedAyaId)
+            bundle.putBoolean(ARG_NIGHT_MODE, nightMode)
+            fragment.arguments = bundle
+            return fragment
+        }
+    }
 }

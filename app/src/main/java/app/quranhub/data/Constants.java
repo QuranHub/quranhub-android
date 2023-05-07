@@ -21,17 +21,22 @@ public final class Constants {
         }
 
         public static final String HAFS_IMG_BASE_URL =
-                STATIC_FILES_BASE_URL + "/quran-pages-images/ayat/hafs/";
+                STATIC_FILES_BASE_URL + "/quran-pages-images/kfgqpc/hafs-wasat/";
         public static final String WARSH_IMG_BASE_URL =
-                STATIC_FILES_BASE_URL + "/quran-pages-images/ayat/warsh/";
+                STATIC_FILES_BASE_URL + "/quran-pages-images/kfgqpc/warsh/";
 
         public static final int NUM_OF_PAGES = 604;
 
-        // Quran page sizes in pixels
-        public static final int HAFS_OTLOOHA_PAGE_ORIGINAL_WIDTH = 622;
-        public static final int HAFS_OTLOOHA_PAGE_ORIGINAL_HEIGHT = 917;
-        public static final int WARSH_OTLOOHA_PAGE_ORIGINAL_WIDTH = 620;
-        public static final int WARSH_OTLOOHA_PAGE_ORIGINAL_HEIGHT = 1005;
+        // Quran pages sizes in pixels
+        public static final int HAFS_PAGE_IMG_ORIGINAL_WIDTH = 807;
+        public static final int HAFS_PAGE_IMG_ORIGINAL_HEIGHT = 1205;
+        public static final int HAFS_PAGE_IMG_FIRST_TWO_ORIGINAL_WIDTH = 843;
+        public static final int HAFS_PAGE_IMG_FIRST_TWO_ORIGINAL_HEIGHT = 1140;
+
+        public static final int WARSH_PAGE_IMG_ORIGINAL_WIDTH = 1064;
+        public static final int WARSH_PAGE_IMG_ORIGINAL_HEIGHT = 1570;
+        public static final int WARSH_PAGE_IMG_FIRST_TWO_ORIGINAL_WIDTH = 1211;
+        public static final int WARSH_PAGE_IMG_FIRST_TWO_ORIGINAL_HEIGHT = 1640;
 
         public static final int NUM_OF_VERSES = 6236;
     }

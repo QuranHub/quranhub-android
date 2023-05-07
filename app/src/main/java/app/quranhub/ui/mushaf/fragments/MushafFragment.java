@@ -30,6 +30,7 @@ import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 import app.quranhub.R;
@@ -512,7 +513,8 @@ public class MushafFragment extends Fragment implements MushafView, MushafBottom
         }
         List<String> quranPageImages = new ArrayList<>();
         for (int i = Constants.Quran.NUM_OF_PAGES; i >= 1; i--) {
-            quranPageImages.add(quranImageBaseUrl + i + ".png");
+            String imageName = String.format(Locale.US, "%03d.jpg", i);
+            quranPageImages.add(quranImageBaseUrl + imageName);
         }
         pagerAdapter = new QuranViewPagerAdapter(getChildFragmentManager()
                 , quranPageImages, presenter.getNightMode(), initAyaId);
