@@ -1,78 +1,79 @@
-package app.quranhub.prdownloader_service;
+package app.quranhub.prdownloader_service
 
-
-import com.downloader.Error;
-import com.downloader.Progress;
+import com.downloader.Error
+import com.downloader.Progress
 
 /**
- * Various callbacks for {@code PRDownloaderService}.
- * <p>
+ * Various callbacks for `PRDownloaderService`.
+ *
+ *
  * Do not call any of these methods directly.
  *
- * @author Abdallah Abdelazim <a href="mailto:abdallah.abdelazim@hotmail.com">abdallah.abdelazim@hotmail.com</a>
+ * @author Abdallah Abdelazim [abdallah.abdelazim@hotmail.com](mailto:abdallah.abdelazim@hotmail.com)
  * @see PRDownloaderService
  */
-interface DownloadCallbacks {
+internal interface DownloadCallbacks {
 
     /**
      * Called when the service is being created, before any download request starts.
-     * <p>This method is called only once across the lifetime of the service. You can use it for any
+     *
+     * This method is called only once across the lifetime of the service. You can use it for any
      * initialization.
-     * Override this method instead of {@link android.app.Service#onCreate()}</p>
+     * Override this method instead of [android.app.Service.onCreate]
      */
-    void onStart();
+    fun onStart()
 
     /**
      * Called when a download request is being started or resumed.
      *
-     * @param downloadRequestInfo The {@code DownloadRequestInfo} for which this callback was called.
+     * @param downloadRequestInfo The `DownloadRequestInfo` for which this callback was called.
      */
-    void onDownloadStartOrResume(DownloadRequestInfo downloadRequestInfo);
+    fun onDownloadStartOrResume(downloadRequestInfo: DownloadRequestInfo)
 
     /**
      * Called when a download request is being paused.
      *
-     * @param downloadRequestInfo The {@code DownloadRequestInfo} for which this callback was called.
+     * @param downloadRequestInfo The `DownloadRequestInfo` for which this callback was called.
      */
-    void onDownloadPause(DownloadRequestInfo downloadRequestInfo);
+    fun onDownloadPause(downloadRequestInfo: DownloadRequestInfo)
 
     /**
      * Called when a download request is being cancelled.
      *
-     * @param downloadRequestInfo The {@code DownloadRequestInfo} for which this callback was called.
+     * @param downloadRequestInfo The `DownloadRequestInfo` for which this callback was called.
      */
-    void onDownloadCancel(DownloadRequestInfo downloadRequestInfo);
+    fun onDownloadCancel(downloadRequestInfo: DownloadRequestInfo)
 
     /**
      * Called as a download request progress is updating.
      *
-     * @param downloadRequestInfo The {@code DownloadRequestInfo} for which this callback was called.
+     * @param downloadRequestInfo The `DownloadRequestInfo` for which this callback was called.
      * @param progress            Information about the progress.
      */
-    void onDownloadProgress(DownloadRequestInfo downloadRequestInfo, Progress progress);
+    fun onDownloadProgress(downloadRequestInfo: DownloadRequestInfo, progress: Progress)
 
     /**
      * Called when a download request has finished downloading successfully.
      *
-     * @param downloadRequestInfo The {@code DownloadRequestInfo} for which this callback was called.
+     * @param downloadRequestInfo The `DownloadRequestInfo` for which this callback was called.
      */
-    void onDownloadComplete(DownloadRequestInfo downloadRequestInfo);
+    fun onDownloadComplete(downloadRequestInfo: DownloadRequestInfo)
 
     /**
      * Called when a download request fails downloading.
      *
-     * @param downloadRequestInfo The {@code DownloadRequestInfo} for which this callback was called.
+     * @param downloadRequestInfo The `DownloadRequestInfo` for which this callback was called.
      * @param error               Information about the error.
      */
-    void onDownloadError(DownloadRequestInfo downloadRequestInfo, Error error);
+    fun onDownloadError(downloadRequestInfo: DownloadRequestInfo, error: Error)
 
     /**
      * Called when all the download requests has finished downloading and the service is stopping,
      * before being destroyed.
-     * <p>This method is called only once across the lifetime of the service. You should use this
+     *
+     * This method is called only once across the lifetime of the service. You should use this
      * callback method to clean up any resources you have created.
-     * Override this method instead of {@link android.app.Service#onDestroy()}</p>
+     * Override this method instead of [android.app.Service.onDestroy]
      */
-    void onStop();
-
+    fun onStop()
 }

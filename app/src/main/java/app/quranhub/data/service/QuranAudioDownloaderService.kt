@@ -42,7 +42,7 @@ import org.greenrobot.eventbus.EventBus
  */
 class QuranAudioDownloaderService : PRDownloaderService() {
 
-    override fun provideDownloadRequestInfos(startIntent: Intent): Array<DownloadRequestInfo>? {
+    override fun provideDownloadRequestInfos(startIntent: Intent): Array<DownloadRequestInfo> {
         val startAyaId = startIntent.getIntExtra(EXTRA_START_AYA_ID, -1)
         val endAyaId = startIntent.getIntExtra(EXTRA_END_AYA_ID, -1)
         val recitationId = startIntent.getIntExtra(EXTRA_RECITATION_ID, -1)
@@ -109,7 +109,12 @@ class QuranAudioDownloaderService : PRDownloaderService() {
         Log.d(TAG, "onDownloadCancel :: downloadRequestInfo=$downloadRequestInfo")
     }
 
-    override fun onDownloadProgress(downloadRequestInfo: DownloadRequestInfo, progress: Progress) {}
+    override fun onDownloadProgress(
+        downloadRequestInfo: DownloadRequestInfo,
+        progress: Progress
+    ) {
+    }
+
     override fun onDownloadComplete(downloadRequestInfo: DownloadRequestInfo) {
         Log.d(TAG, "onDownloadComplete :: downloadRequestInfo=$downloadRequestInfo")
         object : Thread() {
