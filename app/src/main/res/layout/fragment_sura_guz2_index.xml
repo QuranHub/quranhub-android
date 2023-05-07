@@ -54,13 +54,11 @@
             app:tabTextColor="@android:color/white">
 
             <com.google.android.material.tabs.TabItem
-                android:id="@+id/sura_index_tab"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:text="@string/sura_index" />
 
             <com.google.android.material.tabs.TabItem
-                android:id="@+id/guz2_index_tab"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:text="@string/guz2_index" />
