@@ -4,10 +4,8 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
@@ -15,10 +13,8 @@ import java.util.List;
 
 import app.quranhub.R;
 import app.quranhub.data.local.prefs.AppPreferencesManager;
+import app.quranhub.databinding.TafseerRowBinding;
 import app.quranhub.ui.mushaf.model.TafseerModel;
-import at.blogc.android.views.ExpandableTextView;
-import butterknife.BindView;
-import butterknife.ButterKnife;
 
 public class TafseerAdapter extends RecyclerView.Adapter<TafseerAdapter.ViewHolder> {
 
@@ -50,40 +46,40 @@ public class TafseerAdapter extends RecyclerView.Adapter<TafseerAdapter.ViewHold
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
 
         TafseerModel model = tafseerFilteredModelList.get(position);
-        holder.ayaTv.setText(model.getText());
-        holder.tafseerTv.setText(model.getTafseer());
-        holder.linesTv.setText(model.getTafseer());
+        holder.binding.ayaTv.setText(model.getText());
+        holder.binding.tafseerTv.setText(model.getTafseer());
+        holder.binding.numlinesTv.setText(model.getTafseer());
 
         if (model.isExpandable()) {
-            holder.tafseerTv.expand();
+            holder.binding.tafseerTv.expand();
         } else {
-            holder.tafseerTv.collapse();
+            holder.binding.tafseerTv.collapse();
         }
 
 
-        holder.linesTv.post(() -> {
-            final int lineCount = holder.linesTv.getLineCount();
-            holder.linesTv.setVisibility(View.GONE);
+        holder.binding.numlinesTv.post(() -> {
+            final int lineCount = holder.binding.numlinesTv.getLineCount();
+            holder.binding.numlinesTv.setVisibility(View.GONE);
             if (lineCount < 5) {
-                holder.moreTv.setVisibility(View.GONE);
+                holder.binding.numlinesTv.setVisibility(View.GONE);
             } else {
-                holder.moreTv.setVisibility(View.VISIBLE);
+                holder.binding.numlinesTv.setVisibility(View.VISIBLE);
             }
         });
 
 
         if (!AppPreferencesManager.getAppLangSetting(context).equals("ar") && !AppPreferencesManager.getQuranTranslationLanguage(context).equals("ar")) {             // !LocaleUtils.getTranslationLanguage().equals("ar")
-            holder.parentLayout.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+            holder.binding.parentLayout.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
         }
 
-        holder.moreTv.setOnClickListener(v -> {
-            if (holder.tafseerTv.isExpanded()) {
-                holder.moreTv.setText(context.getString(R.string.more));
-                holder.tafseerTv.collapse();
+        holder.binding.moreTv.setOnClickListener(v -> {
+            if (holder.binding.tafseerTv.isExpanded()) {
+                holder.binding.moreTv.setText(context.getString(R.string.more));
+                holder.binding.tafseerTv.collapse();
                 tafseerFilteredModelList.get(position).setExpandable(false);
             } else {
-                holder.moreTv.setText(context.getString(R.string.collapse));
-                holder.tafseerTv.expand();
+                holder.binding.moreTv.setText(context.getString(R.string.collapse));
+                holder.binding.tafseerTv.expand();
                 tafseerFilteredModelList.get(position).setExpandable(true);
             }
         });
@@ -110,22 +106,13 @@ public class TafseerAdapter extends RecyclerView.Adapter<TafseerAdapter.ViewHold
         notifyDataSetChanged();
     }
 
-    public class ViewHolder extends RecyclerView.ViewHolder {
+    public static class ViewHolder extends RecyclerView.ViewHolder {
 
-        @BindView(R.id.tafseer_tv)
-        ExpandableTextView tafseerTv;
-        @BindView(R.id.aya_tv)
-        TextView ayaTv;
-        @BindView(R.id.more_tv)
-        TextView moreTv;
-        @BindView(R.id.numlines_tv)
-        TextView linesTv;
-        @BindView(R.id.parent_layout)
-        ConstraintLayout parentLayout;
+        TafseerRowBinding binding;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            ButterKnife.bind(this, itemView);
+            binding = TafseerRowBinding.bind(itemView);
         }
 
 

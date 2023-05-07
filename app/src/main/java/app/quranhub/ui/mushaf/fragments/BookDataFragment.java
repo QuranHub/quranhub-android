@@ -19,12 +19,10 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.content.FileProvider;
 import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.Fragment;
@@ -42,6 +40,7 @@ import app.quranhub.data.Constants;
 import app.quranhub.data.local.entity.Book;
 import app.quranhub.data.remote.BookDownloadManager;
 import app.quranhub.data.remote.model.BookContent;
+import app.quranhub.databinding.FragmentBookDataBinding;
 import app.quranhub.ui.common.interfaces.Searchable;
 import app.quranhub.ui.main.MainActivity;
 import app.quranhub.ui.mushaf.adapter.BookAdapter;
@@ -49,8 +48,6 @@ import app.quranhub.ui.mushaf.dialogs.OpenFileDialog;
 import app.quranhub.ui.mushaf.viewmodel.BooksViewModel;
 import app.quranhub.util.FragmentUtils;
 import app.quranhub.util.NetworkUtil;
-import butterknife.BindView;
-import butterknife.ButterKnife;
 import pub.devrel.easypermissions.EasyPermissions;
 
 // todo add edit button to delete downloaded translation
@@ -63,13 +60,6 @@ public class BookDataFragment extends Fragment implements Searchable, EasyPermis
 
     private boolean allowOpenFiles = true; // whether to allow the user to open downloaded file on click or not
 
-    @BindView(R.id.load_failed_container)
-    ConstraintLayout loadFailedContainer;
-    @BindView(R.id.progress_bar)
-    ProgressBar progressBar;
-    @BindView(R.id.translation_rv)
-    RecyclerView translationRv;
-
     private static final int STORAGE_REQUEST_CODE = 100;
     private String inputSearch = "";
     private BookAdapter adapter;
@@ -80,6 +70,8 @@ public class BookDataFragment extends Fragment implements Searchable, EasyPermis
     private boolean firstTime = true, internetConnection = true, isEditable = false;
     private List<BookContent> bookContents;
     private List<Book> books;
+
+    private FragmentBookDataBinding binding;
 
     public static BookDataFragment getInstance(boolean allowOpenFiles) {
         BookDataFragment fragment = new BookDataFragment();
@@ -116,20 +108,19 @@ public class BookDataFragment extends Fragment implements Searchable, EasyPermis
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_book_data, container, false);
-        ButterKnife.bind(this, view);
-        return view;
+        binding = FragmentBookDataBinding.inflate(inflater, container, false);
+        return binding.getRoot();
     }
 
     @Override
-    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
         initRecycler();
         if (savedInstanceState != null) {
             getPrevState(savedInstanceState);
         }
         bindViewModel(savedInstanceState != null);
-        bookDownloadManager = new BookDownloadManager(getActivity());
+        bookDownloadManager = new BookDownloadManager(requireActivity());
         checkInternetConnection();
     }
 
@@ -175,13 +166,13 @@ public class BookDataFragment extends Fragment implements Searchable, EasyPermis
             }
 
             if (!internetConnection) {
-                progressBar.setVisibility(View.GONE);
-                loadFailedContainer.setVisibility(View.VISIBLE);
+                binding.progressBar.setVisibility(View.GONE);
+                binding.partialLoadFailedView.getRoot().setVisibility(View.VISIBLE);
                 return;
             } else if (translationModels.size() > 0) {
                 this.bookContents = translationModels;
-                progressBar.setVisibility(View.GONE);
-                loadFailedContainer.setVisibility(View.GONE);
+                binding.progressBar.setVisibility(View.GONE);
+                binding.partialLoadFailedView.getRoot().setVisibility(View.GONE);
             }
 
             // if the data is in editable state (get only downloads translations) with remove download
@@ -270,11 +261,11 @@ public class BookDataFragment extends Fragment implements Searchable, EasyPermis
     private void initRecycler() {
         layoutManager = new LinearLayoutManager(getActivity());
         adapter = new BookAdapter(this);
-        translationRv.setLayoutManager(layoutManager);
-        translationRv.setAdapter(adapter);
+        binding.translationRv.setLayoutManager(layoutManager);
+        binding.translationRv.setAdapter(adapter);
         DividerItemDecoration dividerItemDecoration = new DividerItemDecoration(getContext(),
                 DividerItemDecoration.VERTICAL);
-        translationRv.addItemDecoration(dividerItemDecoration);
+        binding.translationRv.addItemDecoration(dividerItemDecoration);
     }
 
     @Override
@@ -408,6 +399,7 @@ public class BookDataFragment extends Fragment implements Searchable, EasyPermis
         super.onDestroyView();
         if (FragmentUtils.isSafeFragment(this))
             getActivity().unregisterReceiver(onDownloadComplete);
+        binding = null;
     }
 
     @Override

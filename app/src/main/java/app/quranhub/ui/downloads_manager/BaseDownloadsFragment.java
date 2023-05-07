@@ -8,15 +8,12 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ProgressBar;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -25,13 +22,10 @@ import org.greenrobot.eventbus.ThreadMode;
 import java.util.ArrayList;
 import java.util.List;
 
-import app.quranhub.R;
 import app.quranhub.data.service.QuranAudioDownloaderService;
+import app.quranhub.databinding.FragmentDownloadsBinding;
 import app.quranhub.ui.downloads_manager.adapters.DownloadsAdapter;
 import app.quranhub.ui.downloads_manager.model.DisplayableDownload;
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.Unbinder;
 
 /**
  * Base for downloads screen fragments.
@@ -53,14 +47,7 @@ public abstract class BaseDownloadsFragment extends Fragment
 
     private static final String STATE_EDITABLE = "STATE_EDITABLE";
 
-    @BindView(R.id.tv_description)
-    TextView descriptionTextView;
-    @BindView(R.id.rv_downloads)
-    RecyclerView downloadsRecyclerView;
-    @BindView(R.id.progress_bar)
-    ProgressBar progressBar;
-
-    private Unbinder butterknifeUnbinder;
+    private FragmentDownloadsBinding binding;
 
     private List<DisplayableDownload> displayableDownloads;
     private DownloadsAdapter downloadsAdapter;
@@ -76,7 +63,7 @@ public abstract class BaseDownloadsFragment extends Fragment
     }
 
     @Override
-    public void onAttach(Context context) {
+    public void onAttach(@NonNull Context context) {
         super.onAttach(context);
 
         if (context instanceof DownloadsManagerNavigationCallbacks) {
@@ -102,9 +89,8 @@ public abstract class BaseDownloadsFragment extends Fragment
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_downloads, container, false);
-        butterknifeUnbinder = ButterKnife.bind(this, view);
-        return view;
+        binding = FragmentDownloadsBinding.inflate(inflater, container, false);
+        return binding.getRoot();
     }
 
     @Override
@@ -121,26 +107,26 @@ public abstract class BaseDownloadsFragment extends Fragment
 
     private void setupDescription() {
         if (description != null) {
-            descriptionTextView.setText(description);
+            binding.tvDescription.setText(description);
         } else {
-            descriptionTextView.setVisibility(View.GONE);
+            binding.tvDescription.setVisibility(View.GONE);
         }
     }
 
     private void setupDownloadsRecyclerView() {
-        downloadsRecyclerView.setHasFixedSize(true);
+        binding.rvDownloads.setHasFixedSize(true);
 
         LinearLayoutManager layoutManager = new LinearLayoutManager(requireContext());
-        downloadsRecyclerView.setLayoutManager(layoutManager);
+        binding.rvDownloads.setLayoutManager(layoutManager);
 
         // add dividers between RecyclerView items
         DividerItemDecoration dividerItemDecoration = new DividerItemDecoration(requireContext(),
                 layoutManager.getOrientation());
-        downloadsRecyclerView.addItemDecoration(dividerItemDecoration);
+        binding.rvDownloads.addItemDecoration(dividerItemDecoration);
 
         displayableDownloads = new ArrayList<>();
         downloadsAdapter = new DownloadsAdapter(displayableDownloads, this, editable);
-        downloadsRecyclerView.setAdapter(downloadsAdapter);
+        binding.rvDownloads.setAdapter(downloadsAdapter);
     }
 
     @Override
@@ -156,7 +142,7 @@ public abstract class BaseDownloadsFragment extends Fragment
 
             @Override
             protected void onPreExecute() {
-                progressBar.setVisibility(View.VISIBLE);
+                binding.progressBar.setVisibility(View.VISIBLE);
             }
 
             @Override
@@ -169,7 +155,7 @@ public abstract class BaseDownloadsFragment extends Fragment
                 Log.d(TAG, "Provided displayableDownloads=" + downloads);
                 displayableDownloads = downloads;
                 downloadsAdapter.setDisplayableDownloads(displayableDownloads);
-                progressBar.setVisibility(View.GONE);
+                binding.progressBar.setVisibility(View.GONE);
             }
         }.execute();
     }
@@ -216,7 +202,7 @@ public abstract class BaseDownloadsFragment extends Fragment
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        butterknifeUnbinder.unbind();
+        binding = null;
     }
 
     @Override

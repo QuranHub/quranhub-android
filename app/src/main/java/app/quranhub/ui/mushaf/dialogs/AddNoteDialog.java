@@ -10,21 +10,13 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.SystemClock;
 import android.text.TextUtils;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Window;
-import android.widget.Button;
-import android.widget.Chronometer;
-import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.RadioButton;
-import android.widget.RadioGroup;
 import android.widget.SeekBar;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.constraintlayout.widget.Group;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.DialogFragment;
 
@@ -35,41 +27,16 @@ import java.util.Objects;
 import app.quranhub.R;
 import app.quranhub.data.Constants;
 import app.quranhub.data.local.entity.Note;
+import app.quranhub.databinding.DialogAddNoteBinding;
 import app.quranhub.util.DialogUtils;
 import app.quranhub.util.RecorderMediaHelper;
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
 
 public class AddNoteDialog extends DialogFragment implements RecorderMediaHelper.MediaPlayerCallback {
 
-    @BindView(R.id.note_type_group)
-    RadioGroup noteRadioGroup;
-    @BindView(R.id.add_note_et)
-    EditText addNoteEt;
-    @BindView(R.id.add_recorder_iv)
-    ImageView addRecorderIv;
-    @BindView(R.id.voice_status_tv)
-    TextView voiceStatusTv;
-    @BindView(R.id.voice_timer_tv)
-    TextView voiceTiemrTv;
-    @BindView(R.id.recorder_chronometer)
-    Chronometer chronometer;
-    @BindView(R.id.play_iv)
-    ImageView playIv;
-    @BindView(R.id.recorder_progress)
-    SeekBar progressRecorder;
-    @BindView(R.id.record_group)
-    Group recordGroup;
-    @BindView(R.id.save_btn)
-    Button saveButton;
-    @BindView(R.id.tv_title)
-    TextView dialogHeaderTv;
-
+    private DialogAddNoteBinding binding;
 
     private boolean isRecord = false, isPlaying = false, isRecorderAttatched = false, userIsSeeking = false, firstPlay = true;
     private int userSelectedPosition;
-    private View dialogView;
     private Dialog dialog;
     private AddNoteListener listener;
     private String[] permissions;
@@ -105,17 +72,15 @@ public class AddNoteDialog extends DialogFragment implements RecorderMediaHelper
     }
 
 
+    @NonNull
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
-        LayoutInflater inflater = getActivity().getLayoutInflater();
-        dialogView = inflater.inflate(R.layout.dialog_add_note, null);
-        ButterKnife.bind(this, dialogView);
+        binding = DialogAddNoteBinding.inflate(getLayoutInflater());
         initializeDialog();
         getArgs();
         listenToSeekbarChanges();
         return dialog;
     }
-
 
     @Override
     public void onResume() {
@@ -125,14 +90,14 @@ public class AddNoteDialog extends DialogFragment implements RecorderMediaHelper
                 , DialogUtils.DIALOG_STD_WIDTH_SCREEN_RATIO_LANDSCAPE, DialogUtils.DIALOG_STD_HEIGHT_SCREEN_RATIO_LANDSCAPE);
     }
 
-
     public void initializeDialog() {
         dialog = new Dialog(requireActivity());
         dialog.getWindow().requestFeature(Window.FEATURE_NO_TITLE);
-        dialog.setContentView(dialogView);
+        dialog.setContentView(binding.getRoot());
         Objects.requireNonNull(dialog.getWindow()).setBackgroundDrawableResource(android.R.color.transparent);
         dialog.setCanceledOnTouchOutside(false);
         permissions = new String[]{Manifest.permission.RECORD_AUDIO, Manifest.permission.WRITE_EXTERNAL_STORAGE};
+        attachListeners();
     }
 
     private void getArgs() {
@@ -143,16 +108,16 @@ public class AddNoteDialog extends DialogFragment implements RecorderMediaHelper
             if (note != null) {
                 isEditable = true;
                 setEditView();
-                saveButton.setText(getString(R.string.save));
+                binding.saveBtn.setText(getString(R.string.save));
             }
         }
     }
 
     private void setEditView() {
-        dialogHeaderTv.setText(getString(R.string.edit_note));
-        ((RadioButton) noteRadioGroup.getChildAt(note.getNoteType())).setChecked(true);
+        binding.tvTitle.setText(getString(R.string.edit_note));
+        ((RadioButton) binding.noteTypeGroup.getChildAt(note.getNoteType())).setChecked(true);
         if (note.getNoteText() != null) {
-            addNoteEt.setText(note.getNoteText());
+            binding.addNoteEt.setText(note.getNoteText());
         }
         if (!note.getNoteRecorderPath().isEmpty()) {
             setAudioViewsVisible();
@@ -163,10 +128,10 @@ public class AddNoteDialog extends DialogFragment implements RecorderMediaHelper
     }
 
     private void setAudioViewsVisible() {
-        voiceTiemrTv.setVisibility(View.VISIBLE);
-        recordGroup.setVisibility(View.VISIBLE);
-        addRecorderIv.setVisibility(View.INVISIBLE);
-        voiceStatusTv.setText(getString(R.string.voice_listen));
+        binding.voiceTimerTv.setVisibility(View.VISIBLE);
+        binding.recordGroup.setVisibility(View.VISIBLE);
+        binding.addRecorderIv.setVisibility(View.INVISIBLE);
+        binding.voiceStatusTv.setText(getString(R.string.voice_listen));
     }
 
     private void createRecordingFile() {
@@ -180,10 +145,16 @@ public class AddNoteDialog extends DialogFragment implements RecorderMediaHelper
         outputFile = new File(outputRecorderPath);
     }
 
+    private void attachListeners() {
+        binding.saveBtn.setOnClickListener(v -> onAddNote());
+        binding.cancelBtn.setOnClickListener(v -> onCancel());
+        binding.addRecorderIv.setOnClickListener(v -> onClickRecord());
+        binding.playIv.setOnClickListener(v -> onPlayRecorder());
+        binding.removeRecordIv.setOnClickListener(v -> onRemoveRecord());
+    }
 
-    @OnClick(R.id.save_btn)
-    public void onAddNote() {
-        if (TextUtils.isEmpty(addNoteEt.getText()) && !isRecorderAttatched && !isRecord) {
+    private void onAddNote() {
+        if (TextUtils.isEmpty(binding.addNoteEt.getText()) && !isRecorderAttatched && !isRecord) {
             Toast.makeText(getActivity(), getString(R.string.note_empty), Toast.LENGTH_LONG).show();
         } else {
             String path = "";
@@ -192,20 +163,20 @@ public class AddNoteDialog extends DialogFragment implements RecorderMediaHelper
             } else {
                 deleteRecorderFile();
             }
-            int selectedType = noteRadioGroup.indexOfChild(dialogView.findViewById(noteRadioGroup.getCheckedRadioButtonId()));
-            listener.onAddNote(new Note(ayaId, selectedType, addNoteEt.getText().toString(), path), isEditable);
+            int selectedType = binding.noteTypeGroup.indexOfChild(
+                    binding.getRoot().findViewById(binding.noteTypeGroup.getCheckedRadioButtonId())
+            );
+            listener.onAddNote(new Note(ayaId, selectedType, binding.addNoteEt.getText().toString(), path), isEditable);
             dismiss();
         }
     }
 
-    @OnClick(R.id.cancel_btn)
-    public void onCancel() {
+    private void onCancel() {
         listener.onDismissDialog();
         dismiss();
     }
 
-    @OnClick(R.id.add_recorder_iv)
-    public void onClickRecord() {
+    private void onClickRecord() {
         if (isRecord) {
             setAudioViewsVisible();
             stopTimer();
@@ -246,32 +217,30 @@ public class AddNoteDialog extends DialogFragment implements RecorderMediaHelper
         }
     }
 
-    @OnClick(R.id.play_iv)
-    public void onPlayRecorder() {
+    private void onPlayRecorder() {
 
         if (isPlaying) {
-            playIv.setImageResource(R.drawable.player_play_white_ic);
+            binding.playIv.setImageResource(R.drawable.player_play_white_ic);
             recorderMediaHelper.pause();
         } else {
-            playIv.setImageResource(R.drawable.ic_pause);
+            binding.playIv.setImageResource(R.drawable.ic_pause);
             recorderMediaHelper.play();
             recorderMediaHelper.startUpdatingAudioTime();
             if (firstPlay) {
                 firstPlay = false;
-                voiceTiemrTv.setText("0:00");
+                binding.voiceTimerTv.setText("0:00");
             }
         }
 
         isPlaying = !isPlaying;
     }
 
-    @OnClick(R.id.remove_record_iv)
-    public void onRemoveRecord() {
-        recordGroup.setVisibility(View.GONE);
-        voiceTiemrTv.setVisibility(View.GONE);
-        addRecorderIv.setVisibility(View.VISIBLE);
-        addRecorderIv.setBackgroundResource(R.drawable.corner_primary_dialog);
-        voiceStatusTv.setText(getString(R.string.add_voice));
+    private void onRemoveRecord() {
+        binding.recordGroup.setVisibility(View.GONE);
+        binding.voiceTimerTv.setVisibility(View.GONE);
+        binding.addRecorderIv.setVisibility(View.VISIBLE);
+        binding.addRecorderIv.setBackgroundResource(R.drawable.corner_primary_dialog);
+        binding.voiceStatusTv.setText(getString(R.string.add_voice));
         recorderMediaHelper.release();
         isRecorderAttatched = false;
     }
@@ -283,7 +252,7 @@ public class AddNoteDialog extends DialogFragment implements RecorderMediaHelper
     }
 
     private void listenToSeekbarChanges() {
-        progressRecorder.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+        binding.recorderProgress.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
 
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
@@ -308,8 +277,8 @@ public class AddNoteDialog extends DialogFragment implements RecorderMediaHelper
 
     private void initRecording() {
         isRecord = true;
-        addRecorderIv.setBackgroundResource(R.drawable.red_corner);
-        voiceStatusTv.setText(getString(R.string.voice_recorded));
+        binding.addRecorderIv.setBackgroundResource(R.drawable.red_corner);
+        binding.voiceStatusTv.setText(getString(R.string.voice_recorded));
         startTimer();
         startRecord();
     }
@@ -318,7 +287,7 @@ public class AddNoteDialog extends DialogFragment implements RecorderMediaHelper
         audioRecorder = new MediaRecorder();
         audioRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
         audioRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-        audioRecorder.setAudioEncoder(MediaRecorder.OutputFormat.AMR_NB);
+        audioRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);
         audioRecorder.setOutputFile(outputRecorderPath);
         try {
             audioRecorder.prepare();
@@ -329,14 +298,14 @@ public class AddNoteDialog extends DialogFragment implements RecorderMediaHelper
     }
 
     private void stopTimer() {
-        chronometer.setVisibility(View.GONE);
-        chronometer.stop();
+        binding.recorderChronometer.setVisibility(View.GONE);
+        binding.recorderChronometer.stop();
     }
 
     private void startTimer() {
-        chronometer.setVisibility(View.VISIBLE);
-        chronometer.setBase(SystemClock.elapsedRealtime());
-        chronometer.start();
+        binding.recorderChronometer.setVisibility(View.VISIBLE);
+        binding.recorderChronometer.setBase(SystemClock.elapsedRealtime());
+        binding.recorderChronometer.start();
     }
 
     @Override
@@ -362,20 +331,21 @@ public class AddNoteDialog extends DialogFragment implements RecorderMediaHelper
         super.onDestroyView();
         listener.onDismissDialog();
         stopRecorderMedia();
+        binding = null;
     }
 
     @Override
     public void onGetMaxDuration(int duration) {
-        progressRecorder.setMax(duration);
+        binding.recorderProgress.setMax(duration);
     }
 
     @Override
     public void onPositionChanged(int position) {
         if (!userIsSeeking) {
             if (Build.VERSION.SDK_INT >= 24) {
-                progressRecorder.setProgress(position, true);
+                binding.recorderProgress.setProgress(position, true);
             } else {
-                progressRecorder.setProgress(position);
+                binding.recorderProgress.setProgress(position);
             }
         }
     }
@@ -383,16 +353,16 @@ public class AddNoteDialog extends DialogFragment implements RecorderMediaHelper
     @Override
     public void onStateChanged(int state) {
         if (state == State.COMPLETED) {
-            progressRecorder.setProgress(0);
+            binding.recorderProgress.setProgress(0);
             isPlaying = false;
             firstPlay = true;
-            playIv.setImageResource(R.drawable.player_play_white_ic);
+            binding.playIv.setImageResource(R.drawable.player_play_white_ic);
         }
     }
 
     @Override
     public void onUpdatedTime(String time) {
-        voiceTiemrTv.setText(time);
+        binding.voiceTimerTv.setText(time);
     }
 
     public interface AddNoteListener {

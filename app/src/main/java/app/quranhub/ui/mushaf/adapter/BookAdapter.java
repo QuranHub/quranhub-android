@@ -4,9 +4,6 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
-import android.widget.ProgressBar;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -17,10 +14,9 @@ import java.util.List;
 import app.quranhub.R;
 import app.quranhub.data.local.entity.Book;
 import app.quranhub.data.remote.model.BookContent;
+import app.quranhub.databinding.ItemBookBinding;
 import app.quranhub.ui.mushaf.listener.ItemSelectionListener;
 import app.quranhub.util.LocaleUtils;
-import butterknife.BindView;
-import butterknife.ButterKnife;
 
 public class BookAdapter extends RecyclerView.Adapter<BookAdapter.ViewHolder> {
 
@@ -50,25 +46,25 @@ public class BookAdapter extends RecyclerView.Adapter<BookAdapter.ViewHolder> {
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         BookContent model = translationFiliterList.get(position);
-        holder.translateName.setText(model.getName());
+        holder.binding.translationTv.setText(model.getName());
         if (isEditable) {
-            holder.translateIcon.setImageResource(R.drawable.ic_delete);
+            holder.binding.translationIv.setImageResource(R.drawable.ic_delete);
             changeIconType(false, holder);
         } else if (model.getDownloadStatus() == TRANSLATION_DOWNLOADED) {
-            holder.translateIcon.setImageResource(R.drawable.check_gold_ic);
+            holder.binding.translationIv.setImageResource(R.drawable.check_gold_ic);
             changeIconType(false, holder);
         } else if (model.getDownloadStatus() == TRANSLATION_NOT_DOWNLOADED) {
-            holder.translateIcon.setImageResource(R.drawable.ic_download);
+            holder.binding.translationIv.setImageResource(R.drawable.ic_download);
             changeIconType(false, holder);
         } else if (model.getDownloadStatus() == TRANSLATION_DOWNLOADED_IN_PROGRESS) {
             changeIconType(true, holder);
         }
 
         if (!LocaleUtils.getAppLanguage().equals("ar")) {
-            holder.translateName.setGravity(Gravity.LEFT);
+            holder.binding.translationTv.setGravity(Gravity.LEFT);
         }
 
-        holder.translateName.setOnClickListener(v -> {
+        holder.binding.translationTv.setOnClickListener(v -> {
             if (model.getDownloadStatus() == TRANSLATION_NOT_DOWNLOADED) {                             // open file in pdf if it exist in local storage and downloaded before
                 translationActionsListener.onDownloadTranslation(model);
             } else if (model.getDownloadStatus() == TRANSLATION_DOWNLOADED) {
@@ -76,11 +72,11 @@ public class BookAdapter extends RecyclerView.Adapter<BookAdapter.ViewHolder> {
             }
         });
 
-        holder.progressBar.setOnClickListener(v -> {
+        holder.binding.downloadProgress.setOnClickListener(v -> {
             translationActionsListener.onCancelDownload(model);
         });
 
-        holder.translateIcon.setOnClickListener(v -> {
+        holder.binding.translationIv.setOnClickListener(v -> {
             if (isEditable) {
                 translationActionsListener.onDeleteTranslation(model);
             } else if (model.getDownloadStatus() == TRANSLATION_NOT_DOWNLOADED) {
@@ -91,16 +87,15 @@ public class BookAdapter extends RecyclerView.Adapter<BookAdapter.ViewHolder> {
 
     private void changeIconType(boolean isDownloadProgress, ViewHolder holder) {
         if (isDownloadProgress) {
-            holder.cancelIcon.setVisibility(View.VISIBLE);
-            holder.progressBar.setVisibility(View.VISIBLE);
-            holder.translateIcon.setVisibility(View.INVISIBLE);
+            holder.binding.cancelDownload.setVisibility(View.VISIBLE);
+            holder.binding.downloadProgress.setVisibility(View.VISIBLE);
+            holder.binding.translationIv.setVisibility(View.INVISIBLE);
         } else {
-            holder.cancelIcon.setVisibility(View.INVISIBLE);
-            holder.progressBar.setVisibility(View.INVISIBLE);
-            holder.translateIcon.setVisibility(View.VISIBLE);
+            holder.binding.cancelDownload.setVisibility(View.INVISIBLE);
+            holder.binding.downloadProgress.setVisibility(View.INVISIBLE);
+            holder.binding.translationIv.setVisibility(View.VISIBLE);
         }
     }
-
 
     @Override
     public int getItemCount() {
@@ -185,18 +180,11 @@ public class BookAdapter extends RecyclerView.Adapter<BookAdapter.ViewHolder> {
 
     public class ViewHolder extends RecyclerView.ViewHolder {
 
-        @BindView(R.id.translation_tv)
-        TextView translateName;
-        @BindView(R.id.translation_iv)
-        ImageView translateIcon;
-        @BindView(R.id.cancel_download)
-        ImageView cancelIcon;
-        @BindView(R.id.download_progress)
-        ProgressBar progressBar;
+        ItemBookBinding binding;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            ButterKnife.bind(this, itemView);
+            binding = ItemBookBinding.bind(itemView);
         }
     }
 

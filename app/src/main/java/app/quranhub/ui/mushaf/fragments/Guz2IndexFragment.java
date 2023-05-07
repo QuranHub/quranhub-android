@@ -7,7 +7,6 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ProgressBar;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -15,16 +14,12 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
-import app.quranhub.R;
+import app.quranhub.databinding.FragmentGuz2IndexBinding;
 import app.quranhub.ui.mushaf.adapter.Guz2IndexAdapter;
 import app.quranhub.ui.mushaf.listener.QuranNavigationCallbacks;
 import app.quranhub.ui.mushaf.model.HizbQuarterDataModel;
 import app.quranhub.ui.mushaf.viewmodel.Guz2IndexViewModel;
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.Unbinder;
 
 /**
  * Fragment that displays a list containing Juz' index with its Hizb & Hizb Quarters.
@@ -36,11 +31,7 @@ public class Guz2IndexFragment extends Fragment implements Guz2IndexAdapter.Inde
     private static final String ARG_FILTER_GUZ2 = "ARG_FILTER_GUZ2";
     private static final String STATE_FILTER_GUZ2 = "STATE_FILTER_GUZ2";
 
-    @BindView(R.id.rv_guz2_index)
-    RecyclerView guz2IndexRecyclerView;
-    @BindView(R.id.guz2_index_progress_bar)
-    ProgressBar progressBar;
-    private Unbinder butterknifeUnbinder;
+    private FragmentGuz2IndexBinding binding;
 
     private QuranNavigationCallbacks quranNavigationCallbacks;
 
@@ -64,7 +55,7 @@ public class Guz2IndexFragment extends Fragment implements Guz2IndexAdapter.Inde
     }
 
     @Override
-    public void onAttach(Context context) {
+    public void onAttach(@NonNull Context context) {
         super.onAttach(context);
 
         if (context instanceof QuranNavigationCallbacks) {
@@ -86,16 +77,13 @@ public class Guz2IndexFragment extends Fragment implements Guz2IndexAdapter.Inde
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
-        View fragmentView = inflater.inflate(R.layout.fragment_guz2_index, container, false);
-        butterknifeUnbinder = ButterKnife.bind(this, fragmentView);
-        return fragmentView;
+        binding = FragmentGuz2IndexBinding.inflate(inflater, container, false);
+        return binding.getRoot();
     }
 
     @Override
-    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
-
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
         if (savedInstanceState != null) {
             filterGuz2 = savedInstanceState.getInt(STATE_FILTER_GUZ2, Guz2IndexAdapter.FILTER_GUZ2_ALL);
         }
@@ -106,8 +94,8 @@ public class Guz2IndexFragment extends Fragment implements Guz2IndexAdapter.Inde
         guz2IndexViewModel.getHizbQuarterDataModelsLiveData().observe(getViewLifecycleOwner(), hizbQuarterDataModels -> {
             Log.d(TAG, "hizbQuarterDataModels = " + hizbQuarterDataModels);
 
-            if (progressBar.getVisibility() == View.VISIBLE) {
-                progressBar.setVisibility(View.GONE);
+            if (binding.guz2IndexProgressBar.getVisibility() == View.VISIBLE) {
+                binding.guz2IndexProgressBar.setVisibility(View.GONE);
             }
             adapter.setHizbQuarterDataModels(hizbQuarterDataModels);
         });
@@ -116,18 +104,17 @@ public class Guz2IndexFragment extends Fragment implements Guz2IndexAdapter.Inde
     }
 
     private void initGuz2IndexRecyclerView() {
-        guz2IndexRecyclerView.setHasFixedSize(true);
+        binding.rvGuz2Index.setHasFixedSize(true);
 
         LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
-        guz2IndexRecyclerView.setLayoutManager(layoutManager);
-
+        binding.rvGuz2Index.setLayoutManager(layoutManager);
 
         DividerItemDecoration dividerItemDecoration = new DividerItemDecoration(requireContext(),
                 layoutManager.getOrientation());
-        guz2IndexRecyclerView.addItemDecoration(dividerItemDecoration);
+        binding.rvGuz2Index.addItemDecoration(dividerItemDecoration);
 
         adapter = new Guz2IndexAdapter(null, filterGuz2, this);
-        guz2IndexRecyclerView.setAdapter(adapter);
+        binding.rvGuz2Index.setAdapter(adapter);
     }
 
     @Override
@@ -139,7 +126,7 @@ public class Guz2IndexFragment extends Fragment implements Guz2IndexAdapter.Inde
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        butterknifeUnbinder.unbind();
+        binding = null;
     }
 
     @Override

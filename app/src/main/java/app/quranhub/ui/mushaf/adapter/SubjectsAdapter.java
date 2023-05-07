@@ -4,8 +4,6 @@ import android.animation.ObjectAnimator;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
-import android.widget.TextView;
 
 import com.thoughtbot.expandablerecyclerview.ExpandableRecyclerViewAdapter;
 import com.thoughtbot.expandablerecyclerview.models.ExpandableGroup;
@@ -15,11 +13,11 @@ import com.thoughtbot.expandablerecyclerview.viewholders.GroupViewHolder;
 import java.util.List;
 
 import app.quranhub.R;
+import app.quranhub.databinding.ItemTopicBinding;
+import app.quranhub.databinding.ItemTopicCategoryBinding;
 import app.quranhub.ui.mushaf.listener.ItemSelectionListener;
 import app.quranhub.ui.mushaf.model.TopicCategory;
 import app.quranhub.ui.mushaf.model.TopicModel;
-import butterknife.BindView;
-import butterknife.ButterKnife;
 
 public class SubjectsAdapter extends
         ExpandableRecyclerViewAdapter<SubjectsAdapter.TopicViewHolder, SubjectsAdapter.CategoryViewHolder> {
@@ -51,7 +49,7 @@ public class SubjectsAdapter extends
     public void onBindChildViewHolder(CategoryViewHolder holder, int flatPosition
             , ExpandableGroup group, int childIndex) {
         TopicCategory category = ((TopicModel) group).getItems().get(childIndex);
-        holder.categoryTv.setText(category.getCategoryName());
+        holder.binding.categoryTv.setText(category.getCategoryName());
         holder.itemView.setOnClickListener(v -> listener.onSelectItem(category));
     }
 
@@ -59,32 +57,27 @@ public class SubjectsAdapter extends
     public void onBindGroupViewHolder(TopicViewHolder holder, int flatPosition
             , ExpandableGroup group) {
         TopicModel topicModel = ((TopicModel) group);
-        holder.topicTv.setText(topicModel.getTopicName());
+        holder.binding.topicTv.setText(topicModel.getTopicName());
 
     }
 
     public static class CategoryViewHolder extends ChildViewHolder {
 
-        @BindView(R.id.category_tv)
-        TextView categoryTv;
-        @BindView(R.id.separator)
-        View seperator;
+        ItemTopicBinding binding;
 
         public CategoryViewHolder(View itemView) {
             super(itemView);
-            ButterKnife.bind(this, itemView);
+            binding = ItemTopicBinding.bind(itemView);
         }
     }
 
     public static class TopicViewHolder extends GroupViewHolder {
-        @BindView(R.id.topic_tv)
-        TextView topicTv;
-        @BindView(R.id.arrow_iv)
-        ImageView arrowIv;
+
+        ItemTopicCategoryBinding binding;
 
         public TopicViewHolder(View itemView) {
             super(itemView);
-            ButterKnife.bind(this, itemView);
+            binding = ItemTopicCategoryBinding.bind(itemView);
         }
 
         @Override
@@ -106,7 +99,7 @@ public class SubjectsAdapter extends
         }
 
         private ObjectAnimator changeRotate(float from, float to) {
-            ObjectAnimator objectAnimator = ObjectAnimator.ofFloat(arrowIv, "rotation", from, to);
+            ObjectAnimator objectAnimator = ObjectAnimator.ofFloat(binding.arrowIv, "rotation", from, to);
             objectAnimator.setDuration(350);
             return objectAnimator;
         }

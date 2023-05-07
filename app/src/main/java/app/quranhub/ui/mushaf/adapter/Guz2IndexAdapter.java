@@ -7,22 +7,18 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Filter;
 import android.widget.Filterable;
-import android.widget.ImageView;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import app.quranhub.R;
+import app.quranhub.databinding.ItemGuz2IndexBinding;
 import app.quranhub.ui.mushaf.model.HizbQuarterDataModel;
 import app.quranhub.util.LocaleUtils;
-import butterknife.BindView;
-import butterknife.ButterKnife;
 
 public class Guz2IndexAdapter extends RecyclerView.Adapter<Guz2IndexAdapter.ViewHolder> implements Filterable {
 
@@ -75,37 +71,37 @@ public class Guz2IndexAdapter extends RecyclerView.Adapter<Guz2IndexAdapter.View
         HizbQuarterDataModel model = filteredHizbQuarterDataModels.get(position);
 
         if (model.getQuarter() == 1) {
-            holder.headerLayout.setVisibility(View.VISIBLE);
-            holder.headerGuz2TextView.setText(
+            holder.binding.header.setVisibility(View.VISIBLE);
+            holder.binding.tvHeaderGuz2.setText(
                     context.getResources().getStringArray(R.array.agza2_name)[model.getJuz() - 1]);
-            holder.headerHizbTextView.setText(
+            holder.binding.tvHeaderHizb.setText(
                     context.getResources().getStringArray(R.array.hezb_name)[model.getHizb() - 1]);
         } else {
-            holder.headerLayout.setVisibility(View.GONE);
+            holder.binding.header.setVisibility(View.GONE);
         }
 
         switch (model.getQuarter()) {
             case 1:
-                holder.quarterIndicatorImageView.setImageResource(R.drawable.juz2_0);
+                holder.binding.ivQuarterIndicator.setImageResource(R.drawable.juz2_0);
                 break;
             case 2:
-                holder.quarterIndicatorImageView.setImageResource(R.drawable.juz2_1_4);
+                holder.binding.ivQuarterIndicator.setImageResource(R.drawable.juz2_1_4);
                 break;
             case 3:
-                holder.quarterIndicatorImageView.setImageResource(R.drawable.juz2_1_2);
+                holder.binding.ivQuarterIndicator.setImageResource(R.drawable.juz2_1_2);
                 break;
             case 4:
-                holder.quarterIndicatorImageView.setImageResource(R.drawable.juz2_3_4);
+                holder.binding.ivQuarterIndicator.setImageResource(R.drawable.juz2_3_4);
                 break;
         }
 
-        holder.ayaContentTextView.setText(model.getAyaText());
-        holder.rub3NumTextView.setText(LocaleUtils.formatNumber(model.getQuarter()));
-        holder.suraNameTextView.setText(
+        holder.binding.tvAyaContent.setText(model.getAyaText());
+        holder.binding.tvRub3Num.setText(LocaleUtils.formatNumber(model.getQuarter()));
+        holder.binding.tvSuraName.setText(
                 context.getResources().getStringArray(R.array.sura_name)[model.getSuraNumber() - 1]);
-        holder.ayaNumTextView.setText(LocaleUtils.formatNumber(model.getAyaNumber()));
-        holder.startPageNumTextView.setText(LocaleUtils.formatNumber(model.getStartPage()));
-        holder.endPageNumTextView.setText(LocaleUtils.formatNumber(model.getEndPage()));
+        holder.binding.tvAyaNum.setText(LocaleUtils.formatNumber(model.getAyaNumber()));
+        holder.binding.tvPageNumStart.setText(LocaleUtils.formatNumber(model.getStartPage()));
+        holder.binding.tvPageNumEnd.setText(LocaleUtils.formatNumber(model.getEndPage()));
     }
 
     @Override
@@ -168,30 +164,11 @@ public class Guz2IndexAdapter extends RecyclerView.Adapter<Guz2IndexAdapter.View
 
     class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
 
-        @BindView(R.id.header)
-        ConstraintLayout headerLayout;
-        @BindView(R.id.tv_header_guz2)
-        TextView headerGuz2TextView;
-        @BindView(R.id.tv_header_hizb)
-        TextView headerHizbTextView;
-        @BindView(R.id.iv_quarter_indicator)
-        ImageView quarterIndicatorImageView;
-        @BindView(R.id.tv_aya_content)
-        TextView ayaContentTextView;
-        @BindView(R.id.tv_rub3_num)
-        TextView rub3NumTextView;
-        @BindView(R.id.tv_sura_name)
-        TextView suraNameTextView;
-        @BindView(R.id.tv_aya_num)
-        TextView ayaNumTextView;
-        @BindView(R.id.tv_page_num_start)
-        TextView startPageNumTextView;
-        @BindView(R.id.tv_page_num_end)
-        TextView endPageNumTextView;
+        ItemGuz2IndexBinding binding;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            ButterKnife.bind(this, itemView);
+            binding = ItemGuz2IndexBinding.bind(itemView);
             itemView.setOnClickListener(this);
         }
 

@@ -24,6 +24,7 @@
         app:layout_constraintTop_toTopOf="@+id/translation_rv" />
 
     <include
+        android:id="@+id/partial_load_failed_view"
         layout="@layout/load_failed_view"
         android:layout_width="match_parent"
         android:layout_height="0dp"

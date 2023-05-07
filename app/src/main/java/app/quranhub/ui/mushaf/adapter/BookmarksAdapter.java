@@ -9,9 +9,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Filter;
 import android.widget.Filterable;
-import android.widget.ImageButton;
-import android.widget.ImageView;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -22,12 +19,10 @@ import java.util.List;
 
 import app.quranhub.R;
 import app.quranhub.data.Constants;
+import app.quranhub.databinding.ItemBookmarkedFavoriteAyaBinding;
 import app.quranhub.ui.mushaf.listener.ItemSelectionListener;
 import app.quranhub.ui.mushaf.model.DisplayableBookmark;
 import app.quranhub.util.LocaleUtils;
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
 
 public class BookmarksAdapter extends RecyclerView.Adapter<BookmarksAdapter.ViewHolder>
         implements Filterable {
@@ -168,87 +163,72 @@ public class BookmarksAdapter extends RecyclerView.Adapter<BookmarksAdapter.View
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {
-        final View rootView;
 
-        @BindView(R.id.iv_bookmark_type)
-        ImageView bookmarkTypeImageView;
-        @BindView(R.id.tv_aya_content)
-        TextView ayaContentTextView;
-        @BindView(R.id.tv_aya_num)
-        TextView ayaNumTextView;
-        @BindView(R.id.ib_delete_bookmark)
-        ImageButton deleteBookmarkImageButton;
-        @BindView(R.id.tv_guz2_num)
-        TextView guz2NumTextView;
-        @BindView(R.id.tv_hizb_num)
-        TextView hizbNumTextView;
-        @BindView(R.id.tv_rub3_num)
-        TextView rub3NumTextView;
-        @BindView(R.id.tv_sura_name)
-        TextView suraNameTextView;
-        @BindView(R.id.tv_page_num)
-        TextView pageNumTextView;
+        ItemBookmarkedFavoriteAyaBinding binding;
 
         public ViewHolder(View view) {
             super(view);
-            this.rootView = view;
-            ButterKnife.bind(this, view);
+            binding = ItemBookmarkedFavoriteAyaBinding.bind(view);
+            attachListeners();
         }
 
         @SuppressLint("SetTextI18n")
         public void bind(DisplayableBookmark displayableBookmark) {
             if (displayableBookmark.getBookmarkType() == Constants.BookmarkType.NOTE) {
-                bookmarkTypeImageView.setColorFilter(null);
-                bookmarkTypeImageView.setImageResource(R.drawable.bookmark_green);
+                binding.ivBookmarkType.setColorFilter(null);
+                binding.ivBookmarkType.setImageResource(R.drawable.bookmark_green);
             } else if (displayableBookmark.getBookmarkType() == Constants.BookmarkType.MEMORIZE) {
-                bookmarkTypeImageView.setColorFilter(null);
-                bookmarkTypeImageView.setImageResource(R.drawable.bookmark_red);
+                binding.ivBookmarkType.setColorFilter(null);
+                binding.ivBookmarkType.setImageResource(R.drawable.bookmark_red);
             } else if (displayableBookmark.getBookmarkType() == Constants.BookmarkType.RECITING) {
-                bookmarkTypeImageView.setColorFilter(null);
-                bookmarkTypeImageView.setImageResource(R.drawable.bookmark_gold);
+                binding.ivBookmarkType.setColorFilter(null);
+                binding.ivBookmarkType.setImageResource(R.drawable.bookmark_gold);
             } else if (displayableBookmark.getBookmarkType() == Constants.BookmarkType.FAVORITE) {
-                bookmarkTypeImageView.setColorFilter(null);
-                bookmarkTypeImageView.setImageResource(R.drawable.fav_added__gold_ic);
+                binding.ivBookmarkType.setColorFilter(null);
+                binding.ivBookmarkType.setImageResource(R.drawable.fav_added__gold_ic);
             } else {
-                bookmarkTypeImageView.setImageResource(R.drawable.bookmark_gold);
-                bookmarkTypeImageView.setColorFilter(bookmarkColors[displayableBookmark.getColorIndex()]);
+                binding.ivBookmarkType.setImageResource(R.drawable.bookmark_gold);
+                binding.ivBookmarkType.setColorFilter(bookmarkColors[displayableBookmark.getColorIndex()]);
             }
 
-            ayaContentTextView.setText(displayableBookmark.getAyaContent());
-            ayaNumTextView.setText(LocaleUtils.formatNumber(displayableBookmark.getSuraAyaNumber()));
-            guz2NumTextView.setText(LocaleUtils.formatNumber(displayableBookmark.getGuz2Number()));
-            hizbNumTextView.setText(LocaleUtils.formatNumber(displayableBookmark.getHizbNumber()));
-            rub3NumTextView.setText(LocaleUtils.formatNumber(displayableBookmark.getRub3Number()));
-            suraNameTextView.setText(displayableBookmark.getSuraName());
-            suraNameTextView.setTypeface(Typeface.create(Typeface.createFromAsset(
+            binding.tvAyaContent.setText(displayableBookmark.getAyaContent());
+            binding.tvAyaNum.setText(LocaleUtils.formatNumber(displayableBookmark.getSuraAyaNumber()));
+            binding.tvGuz2Num.setText(LocaleUtils.formatNumber(displayableBookmark.getGuz2Number()));
+            binding.tvHizbNum.setText(LocaleUtils.formatNumber(displayableBookmark.getHizbNumber()));
+            binding.tvRub3Num.setText(LocaleUtils.formatNumber(displayableBookmark.getRub3Number()));
+            binding.tvSuraName.setText(displayableBookmark.getSuraName());
+            binding.tvSuraName.setTypeface(Typeface.create(Typeface.createFromAsset(
                     context.getAssets(), "fonts/diwany_thuluth.ttf"), Typeface.BOLD));
-            pageNumTextView.setText(LocaleUtils.formatNumber(displayableBookmark.getPageNumber()));
+            binding.tvPageNum.setText(LocaleUtils.formatNumber(displayableBookmark.getPageNumber()));
 
             if (isEditable) {
-                deleteBookmarkImageButton.setVisibility(View.VISIBLE);
+                binding.ibDeleteBookmark.setVisibility(View.VISIBLE);
             } else {
-                deleteBookmarkImageButton.setVisibility(View.GONE);
+                binding.ibDeleteBookmark.setVisibility(View.GONE);
             }
 
         }
 
-        @OnClick(R.id.item_view)
-        void gotoBookmarkAya() {
+        private void attachListeners() {
+            binding.itemView.setOnClickListener(v -> gotoBookmarkAya());
+            binding.ibDeleteBookmark.setOnClickListener(v -> deleteBookmark());
+            binding.ivBookmarkType.setOnClickListener(v -> displayBookmarkTypeDialog());
+        }
+
+        private void gotoBookmarkAya() {
             if (!isEditable) {
                 bookmarkActionListener.onSelectItem(filteredBookmarks.get(getAdapterPosition()));
             }
         }
 
-        @OnClick(R.id.ib_delete_bookmark)
-        void deleteBookmark() {
+        private void deleteBookmark() {
             if (isEditable) {
                 Log.d(TAG, "delete bookmark: " + getAdapterPosition());
                 bookmarkActionListener.deleteBookmark(filteredBookmarks.get(getAdapterPosition()));
             }
         }
 
-        @OnClick(R.id.iv_bookmark_type)
-        void displayBookmarkTypeDialog() {
+        private void displayBookmarkTypeDialog() {
             if (isEditable) {
                 bookmarkActionListener.updateBookmarkType(filteredBookmarks.get(getAdapterPosition()).getBookmarkId());
 

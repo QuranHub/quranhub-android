@@ -6,10 +6,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Filter;
 import android.widget.Filterable;
-import android.widget.ImageButton;
-import android.widget.ImageView;
-import android.widget.ProgressBar;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -21,12 +17,9 @@ import java.util.List;
 
 import app.quranhub.R;
 import app.quranhub.data.local.entity.TranslationBook;
+import app.quranhub.databinding.ItemTranslationBinding;
 import app.quranhub.ui.mushaf.model.DisplayableTranslation;
 import app.quranhub.util.NetworkUtil;
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
-
 
 public class TranslationsAdapter extends RecyclerView.Adapter<TranslationsAdapter.ViewHolder>
         implements Filterable {
@@ -66,36 +59,36 @@ public class TranslationsAdapter extends RecyclerView.Adapter<TranslationsAdapte
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         DisplayableTranslation t = filteredTranslations.get(position);
 
-        holder.bookNameTextView.setText(t.getName());
-        holder.authorNameTextView.setText(t.getAuthor());
+        holder.binding.tvBookName.setText(t.getName());
+        holder.binding.tvAuthorName.setText(t.getAuthor());
 
         if (t.getDownloadStatus() == NetworkUtil.STATUS_DOWNLOADED && t.getId().equals(selectedBookId)) {
-            holder.selectedImageView.setVisibility(View.VISIBLE);
+            holder.binding.ivSelected.setVisibility(View.VISIBLE);
         } else {
-            holder.selectedImageView.setVisibility(View.INVISIBLE);
+            holder.binding.ivSelected.setVisibility(View.INVISIBLE);
         }
 
         if (t.getDownloadStatus() == NetworkUtil.STATUS_DOWNLOADED) {
-            holder.actionImageButton.setVisibility(View.INVISIBLE);
-            holder.downloadProgressBar.setVisibility(View.INVISIBLE);
-            holder.downloadLevelProgressBar.setVisibility(View.INVISIBLE);
+            holder.binding.btnAction.setVisibility(View.INVISIBLE);
+            holder.binding.progressDownload.setVisibility(View.INVISIBLE);
+            holder.binding.progressDownloadLevel.setVisibility(View.INVISIBLE);
 
         } else if (t.getDownloadStatus() == NetworkUtil.STATUS_DOWNLOADING) {
-            holder.actionImageButton.setVisibility(View.VISIBLE);
-            holder.actionImageButton.setImageResource(R.drawable.ic_close);
-            holder.downloadProgressBar.setVisibility(View.VISIBLE);
-            holder.downloadLevelProgressBar.setVisibility(View.VISIBLE);
+            holder.binding.btnAction.setVisibility(View.VISIBLE);
+            holder.binding.btnAction.setImageResource(R.drawable.ic_close);
+            holder.binding.progressDownload.setVisibility(View.VISIBLE);
+            holder.binding.progressDownloadLevel.setVisibility(View.VISIBLE);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                holder.downloadLevelProgressBar.setProgress(t.getDownloadLevelPercentage(), true);
+                holder.binding.progressDownloadLevel.setProgress(t.getDownloadLevelPercentage(), true);
             } else {
-                holder.downloadLevelProgressBar.setProgress(t.getDownloadLevelPercentage());
+                holder.binding.progressDownloadLevel.setProgress(t.getDownloadLevelPercentage());
             }
         } else {
             // not downloaded
-            holder.actionImageButton.setVisibility(View.VISIBLE);
-            holder.actionImageButton.setImageResource(R.drawable.ic_download);
-            holder.downloadProgressBar.setVisibility(View.INVISIBLE);
-            holder.downloadLevelProgressBar.setVisibility(View.INVISIBLE);
+            holder.binding.btnAction.setVisibility(View.VISIBLE);
+            holder.binding.btnAction.setImageResource(R.drawable.ic_download);
+            holder.binding.progressDownload.setVisibility(View.INVISIBLE);
+            holder.binding.progressDownloadLevel.setVisibility(View.INVISIBLE);
         }
     }
 
@@ -143,24 +136,17 @@ public class TranslationsAdapter extends RecyclerView.Adapter<TranslationsAdapte
 
     public class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
 
-        @BindView(R.id.tv_book_name)
-        TextView bookNameTextView;
-        @BindView(R.id.tv_author_name)
-        TextView authorNameTextView;
-        @BindView(R.id.btn_action)
-        ImageButton actionImageButton;
-        @BindView(R.id.progress_download)
-        ProgressBar downloadProgressBar;
-        @BindView(R.id.progress_download_level)
-        ProgressBar downloadLevelProgressBar;
-        @BindView(R.id.iv_selected)
-        ImageView selectedImageView;
-
+        ItemTranslationBinding binding;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            ButterKnife.bind(this, itemView);
-            itemView.setOnClickListener(this);
+            binding = ItemTranslationBinding.bind(itemView);
+            attachListeners();
+        }
+
+        private void attachListeners() {
+            binding.getRoot().setOnClickListener(this);
+            binding.btnAction.setOnClickListener(v -> onActionButtonClicked());
         }
 
         @Override
@@ -172,8 +158,7 @@ public class TranslationsAdapter extends RecyclerView.Adapter<TranslationsAdapte
             }
         }
 
-        @OnClick(R.id.btn_action)
-        void onActionButtonClicked() {
+        private void onActionButtonClicked() {
             int position = getAdapterPosition();
             DisplayableTranslation t = filteredTranslations.get(position);
             if (t.getDownloadStatus() == NetworkUtil.STATUS_NOT_DOWNLOADED) {

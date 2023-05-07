@@ -5,8 +5,6 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ProgressBar;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -15,21 +13,17 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
 
-import app.quranhub.R;
 import app.quranhub.data.local.entity.BookmarkType;
+import app.quranhub.databinding.FragmentBookmarksListBinding;
 import app.quranhub.ui.mushaf.adapter.BookmarksAdapter;
 import app.quranhub.ui.mushaf.dialogs.BookmarkEditDialog;
 import app.quranhub.ui.mushaf.listener.BookmarksListListener;
 import app.quranhub.ui.mushaf.listener.QuranNavigationCallbacks;
 import app.quranhub.ui.mushaf.model.DisplayableBookmark;
 import app.quranhub.ui.mushaf.viewmodel.BookmarksListViewModel;
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.Unbinder;
 
 /**
  * A fragment representing a list of user saved bookmarked Quran ayas.
@@ -46,14 +40,8 @@ public class BookmarksListFragment extends Fragment
     private BookmarksListListener bookmarksListener;
     private List<BookmarkType> bookmarkTypes;
     private int editedBookmarkId = -1;
-    @BindView(R.id.bookmarks_rv)
-    RecyclerView bookmarksRecyclerView;
-    @BindView(R.id.loading_indicator)
-    ProgressBar progressBar;
-    @BindView(R.id.tv_empty_list_msg)
-    TextView emptyListMsgTextView;
 
-    private Unbinder butterknifeUnbinder;
+    private FragmentBookmarksListBinding binding;
 
     private BookmarksAdapter adapter;
     private int selectedFilterType = BookmarkEditDialog.ALL_BOOKMARK_FILTER;
@@ -64,7 +52,6 @@ public class BookmarksListFragment extends Fragment
     public BookmarksListFragment() {
         // Required empty public constructor
     }
-
 
     /**
      * Use this factory method to create a new instance of
@@ -78,7 +65,7 @@ public class BookmarksListFragment extends Fragment
     }
 
     @Override
-    public void onAttach(Context context) {
+    public void onAttach(@NonNull Context context) {
         super.onAttach(context);
 
         if (getParentFragment() instanceof QuranNavigationCallbacks
@@ -95,19 +82,15 @@ public class BookmarksListFragment extends Fragment
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-
-        View view = inflater.inflate(R.layout.fragment_bookmarks_list, container, false);
-        butterknifeUnbinder = ButterKnife.bind(this, view);
-
+        binding = FragmentBookmarksListBinding.inflate(inflater, container, false);
         setupBookmarksRecyclerView();
         bookmarkFilterDialog = new BookmarkEditDialog();
-
-        return view;
+        return binding.getRoot();
     }
 
     @Override
-    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
         bindViewModel();
     }
 
@@ -119,37 +102,37 @@ public class BookmarksListFragment extends Fragment
             bookmarksListener.onEditabilityChange(ayaBookmarks.size() > 0);
 
             bookMarksViewModel.bookmarksMapper(ayaBookmarks, displayableBookmarks -> {
-                if (progressBar.getVisibility() == View.VISIBLE) {
-                    progressBar.setVisibility(View.GONE);
+                if (binding.loadingIndicator.getVisibility() == View.VISIBLE) {
+                    binding.loadingIndicator.setVisibility(View.GONE);
                 }
                 adapter.setBookmarks(displayableBookmarks);
                 if (displayableBookmarks.size() > 0) {
-                    emptyListMsgTextView.setVisibility(View.GONE);
+                    binding.tvEmptyListMsg.setVisibility(View.GONE);
                 } else {
-                    emptyListMsgTextView.setVisibility(View.VISIBLE);
+                    binding.tvEmptyListMsg.setVisibility(View.VISIBLE);
                 }
             });
         });
 
         bookMarksViewModel.getBookmarksTypes().observe(getViewLifecycleOwner(), bookmarkTypes -> {
-            progressBar.setVisibility(View.GONE);
+            binding.loadingIndicator.setVisibility(View.GONE);
             this.bookmarkTypes = bookmarkTypes;
         });
     }
 
     private void setupBookmarksRecyclerView() {
-        bookmarksRecyclerView.addItemDecoration(
+        binding.bookmarksRv.addItemDecoration(
                 new DividerItemDecoration(getContext(), DividerItemDecoration.VERTICAL));
-        bookmarksRecyclerView.setHasFixedSize(true);
-        bookmarksRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        binding.bookmarksRv.setHasFixedSize(true);
+        binding.bookmarksRv.setLayoutManager(new LinearLayoutManager(getContext()));
         adapter = new BookmarksAdapter(getContext(), this);
-        bookmarksRecyclerView.setAdapter(adapter);
+        binding.bookmarksRv.setAdapter(adapter);
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        butterknifeUnbinder.unbind();
+        binding = null;
     }
 
     @Override
@@ -199,6 +182,5 @@ public class BookmarksListFragment extends Fragment
             editedBookmarkId = -1;
         }
     }
-
 
 }

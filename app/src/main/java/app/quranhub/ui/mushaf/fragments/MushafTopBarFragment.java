@@ -6,9 +6,6 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -17,11 +14,8 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.MutableLiveData;
 
 import app.quranhub.R;
+import app.quranhub.databinding.FragmentMushafTopBarBinding;
 import app.quranhub.ui.common.interfaces.ToolbarActionsListener;
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
-import butterknife.Unbinder;
 
 public class MushafTopBarFragment extends Fragment {
 
@@ -30,15 +24,7 @@ public class MushafTopBarFragment extends Fragment {
     public static final int PAGE_DIR_RIGHT = 0;
     public static final int PAGE_DIR_LEFT = 1;
 
-    @BindView(R.id.ll_root)
-    LinearLayout rootLinearLayout;
-    @BindView(R.id.btn_page_guz2)
-    Button pageGuz2Button;
-    @BindView(R.id.btn_page_sura)
-    Button pageSuraButton;
-    @BindView(R.id.iv_page_dir)
-    ImageView pageDirImageView;
-    private Unbinder butterknifeUnbinder;
+    private FragmentMushafTopBarBinding binding;
 
     private ToolbarActionsListener toolbarActionsListener;
 
@@ -62,10 +48,8 @@ public class MushafTopBarFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-
-        View view = inflater.inflate(R.layout.fragment_mushaf_top_bar, container, false);
-        butterknifeUnbinder = ButterKnife.bind(this, view);
-        return view;
+        binding = FragmentMushafTopBarBinding.inflate(inflater, container, false);
+        return binding.getRoot();
     }
 
     @Override
@@ -81,10 +65,10 @@ public class MushafTopBarFragment extends Fragment {
         pageDirLiveData.observe(getViewLifecycleOwner(), pageDir -> {
             switch (pageDir) {
                 case PAGE_DIR_RIGHT:
-                    pageDirImageView.setImageResource(R.drawable.ic_quran_page_right);
+                    binding.ivPageDir.setImageResource(R.drawable.ic_quran_page_right);
                     break;
                 case PAGE_DIR_LEFT:
-                    pageDirImageView.setImageResource(R.drawable.ic_quran_page_left);
+                    binding.ivPageDir.setImageResource(R.drawable.ic_quran_page_left);
                     break;
                 default:
                     throw new IllegalArgumentException("Invalid page dir");
@@ -95,39 +79,44 @@ public class MushafTopBarFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        butterknifeUnbinder.unbind();
+        binding = null;
     }
 
     @SuppressLint("ClickableViewAccessibility")
     private void initViews() {
-        TooltipCompat.setTooltipText(pageDirImageView, getText(R.string.tooltip_page_dir));
+        TooltipCompat.setTooltipText(binding.ivPageDir, getText(R.string.tooltip_page_dir));
 
-        rootLinearLayout.setOnTouchListener((v, event) -> {
+        binding.llRoot.setOnTouchListener((v, event) -> {
             return true; // To prevent event bubbling to the views below this one
         });
+
+        attachListeners();
     }
 
-    @OnClick(R.id.iv_menu)
-    public void onNavHamburgerClick() {
+    private void attachListeners() {
+        binding.ivMenu.setOnClickListener(v -> onNavHamburgerClick());
+        binding.btnPageGuz2.setOnClickListener(v -> onGuz2Click());
+        binding.btnPageSura.setOnClickListener(v -> onSuraClick());
+    }
+
+    private void onNavHamburgerClick() {
         toolbarActionsListener.onNavDrawerClick();
     }
 
-    @OnClick(R.id.btn_page_guz2)
-    void onGuz2Click() {
+    private void onGuz2Click() {
         toolbarActionsListener.onGuz2Click();
     }
 
-    @OnClick(R.id.btn_page_sura)
     void onSuraClick() {
         toolbarActionsListener.onSuraClick();
     }
 
     public void setSuraText(String suraName) {
-        pageSuraButton.setText(suraName);
+        binding.btnPageSura.setText(suraName);
     }
 
     public void setGuz2Text(String currentGuz2) {
-        pageGuz2Button.setText(currentGuz2);
+        binding.btnPageGuz2.setText(currentGuz2);
     }
 
     /**

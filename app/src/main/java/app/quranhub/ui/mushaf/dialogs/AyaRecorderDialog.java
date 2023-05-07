@@ -5,11 +5,8 @@ import android.content.Context;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.view.Gravity;
-import android.view.LayoutInflater;
-import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.Chronometer;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.DialogFragment;
@@ -17,23 +14,18 @@ import androidx.lifecycle.ViewModelProvider;
 
 import java.util.Objects;
 
-import app.quranhub.R;
+import app.quranhub.databinding.DialogAyaRecorderBinding;
 import app.quranhub.ui.mushaf.viewmodel.VoiceRecorderViewModel;
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
 
 public class AyaRecorderDialog extends DialogFragment {
 
-    private View dialogView;
     private Dialog dialog;
     private StopRecordingListener listener;
     private int ayaId;
     private VoiceRecorderViewModel voiceRecorderViewModel;
     private static final String ARG_AYA_ID = "ARG_AYA_ID";
 
-    @BindView(R.id.recorder_chronometer)
-    Chronometer chronometer;
+    private DialogAyaRecorderBinding binding;
 
     public static AyaRecorderDialog getInstance(int ayaId) {
         Bundle bundle = new Bundle();
@@ -50,11 +42,10 @@ public class AyaRecorderDialog extends DialogFragment {
     }
 
 
+    @NonNull
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
-        LayoutInflater inflater = getActivity().getLayoutInflater();
-        dialogView = inflater.inflate(R.layout.dialog_aya_recorder, null);
-        ButterKnife.bind(this, dialogView);
+        binding = DialogAyaRecorderBinding.inflate(getLayoutInflater());
         getArgs();
         initializeDialog();
         initReorder(savedInstanceState == null);
@@ -73,7 +64,7 @@ public class AyaRecorderDialog extends DialogFragment {
     @Override
     public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putLong("chronometer_time", chronometer.getBase() - SystemClock.elapsedRealtime());
+        outState.putLong("chronometer_time", binding.recorderChronometer.getBase() - SystemClock.elapsedRealtime());
     }
 
     private void initReorder(boolean startRecord) {
@@ -96,32 +87,36 @@ public class AyaRecorderDialog extends DialogFragment {
         dialog.setCanceledOnTouchOutside(false);
         WindowManager.LayoutParams layoutParams = dialog.getWindow().getAttributes();
         layoutParams.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
-        dialog.setContentView(dialogView);
+        dialog.setContentView(binding.getRoot());
         Objects.requireNonNull(dialog.getWindow()).setBackgroundDrawableResource(android.R.color.transparent);
+        attachListeners();
     }
 
 
     private void startTimer(long base) {
-        chronometer.setBase(base);
-        chronometer.start();
+        binding.recorderChronometer.setBase(base);
+        binding.recorderChronometer.start();
     }
 
-    @OnClick(R.id.stop_recording_view)
-    public void onStopRecording() {
+    private void attachListeners() {
+        binding.stopRecordingView.setOnClickListener(v -> onStopRecording());
+    }
+
+    private void onStopRecording() {
         voiceRecorderViewModel.releaseRecorder();
-        chronometer.stop();
+        binding.recorderChronometer.stop();
         listener.onStopRecording(voiceRecorderViewModel.getOutputRecorderPath());
         dismiss();
     }
 
-
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        chronometer.stop();
+        binding.recorderChronometer.stop();
         if (!getActivity().isChangingConfigurations()) {
             voiceRecorderViewModel.releaseRecorder();
         }
+        binding = null;
     }
 
     public interface StopRecordingListener {

@@ -7,8 +7,6 @@ import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.EditText;
-import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -17,10 +15,8 @@ import androidx.fragment.app.Fragment;
 import com.google.android.material.tabs.TabLayout;
 
 import app.quranhub.R;
+import app.quranhub.databinding.FragmentBooksLibraryBinding;
 import app.quranhub.ui.common.interfaces.ToolbarActionsListener;
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
 
 public class BooksLibraryFragment extends Fragment {
 
@@ -40,12 +36,7 @@ public class BooksLibraryFragment extends Fragment {
     private ToolbarActionsListener navDrawerListener;
     private boolean isEditable = false;
 
-    @BindView(R.id.tabLayout)
-    TabLayout tabLayout;
-    @BindView(R.id.et_search)
-    EditText searchEt;
-    @BindView(R.id.edit_btn)
-    ImageView editBtn;
+    private FragmentBooksLibraryBinding binding;
 
     @Override
     public void onAttach(@NonNull Context context) {
@@ -56,22 +47,28 @@ public class BooksLibraryFragment extends Fragment {
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_books_library, container, false);
-        ButterKnife.bind(this, view);
-        return view;
+        binding = FragmentBooksLibraryBinding.inflate(inflater, container, false);
+        return binding.getRoot();
     }
 
     @Override
-    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
         restoreSavedInstanceState(savedInstanceState);
         addFragment(selectedTab);
-        listenOnSelectedTab();
-        observeOnInputSearch();
+
+        attachListeners();
     }
 
+    private void attachListeners() {
+        listenOnSelectedTab();
+        observeOnInputSearch();
+
+        binding.hamburgerIv.setOnClickListener(v -> onNavHamburgerClick());
+        binding.editBtn.setOnClickListener(v -> onEditClick());
+    }
 
     private void restoreSavedInstanceState(Bundle savedInstanceState) {
         if (savedInstanceState != null) {
@@ -79,7 +76,7 @@ public class BooksLibraryFragment extends Fragment {
             inputSearch = savedInstanceState.getString(STATE_INPUT_SEARCH);
             isEditable = savedInstanceState.getBoolean(STATE_EDITABLE);
             if (isEditable) {
-                editBtn.setImageResource(R.drawable.check_gold_ic);
+                binding.editBtn.setImageResource(R.drawable.check_gold_ic);
             }
         }
     }
@@ -93,34 +90,32 @@ public class BooksLibraryFragment extends Fragment {
     }
 
     private void observeOnInputSearch() {
-        searchEt.addTextChangedListener(new TextWatcher() {
+        binding.etSearch.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-
             }
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 inputSearch = s.toString();
-                if (tabLayout.getSelectedTabPosition() == LIBRARY_TAB && libraryFragment != null) {
+                if (binding.tabLayout.getSelectedTabPosition() == LIBRARY_TAB && libraryFragment != null) {
                     libraryFragment.search(inputSearch);
-                } else if (tabLayout.getSelectedTabPosition() == BOOKS_TAB && bookDataFragment != null) {
+                } else if (binding.tabLayout.getSelectedTabPosition() == BOOKS_TAB && bookDataFragment != null) {
                     bookDataFragment.search(inputSearch);
                 }
             }
 
             @Override
             public void afterTextChanged(Editable s) {
-
             }
         });
     }
 
     private void listenOnSelectedTab() {
-        tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+        binding.tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
-                addFragment(tabLayout.getSelectedTabPosition());
+                addFragment(binding.tabLayout.getSelectedTabPosition());
             }
 
             @Override
@@ -135,11 +130,11 @@ public class BooksLibraryFragment extends Fragment {
 
     private void addFragment(int tab) {
         selectedTab = tab;
-        tabLayout.getTabAt(selectedTab).select();
-        searchEt.getText().clear();
+        binding.tabLayout.getTabAt(selectedTab).select();
+        binding.etSearch.getText().clear();
         inputSearch = "";
         if (tab == LIBRARY_TAB) {
-            editBtn.setVisibility(View.INVISIBLE);
+            binding.editBtn.setVisibility(View.INVISIBLE);
             libraryFragment = (LibraryFragment) getChildFragmentManager().findFragmentByTag(FRAGMENT_LIBRARY);
             if (libraryFragment == null) {
                 libraryFragment = new LibraryFragment();
@@ -148,7 +143,7 @@ public class BooksLibraryFragment extends Fragment {
                         .commit();
             }
         } else if (tab == BOOKS_TAB) {
-            editBtn.setVisibility(View.VISIBLE);
+            binding.editBtn.setVisibility(View.VISIBLE);
             bookDataFragment = (BookDataFragment) getChildFragmentManager().findFragmentByTag(FRAGMENT_BOOKS);
             if (bookDataFragment == null) {
                 bookDataFragment = BookDataFragment.getInstance(true);
@@ -159,22 +154,24 @@ public class BooksLibraryFragment extends Fragment {
         }
     }
 
-    @OnClick(R.id.hamburger_iv)
-    public void onNavHamburgerClick() {
+    private void onNavHamburgerClick() {
         navDrawerListener.onNavDrawerClick();
     }
 
-    @OnClick(R.id.edit_btn)
-    public void onEditClick() {
+    private void onEditClick() {
         if (isEditable) {
-            editBtn.setImageResource(R.drawable.edit_gold_ic);
+            binding.editBtn.setImageResource(R.drawable.edit_gold_ic);
             bookDataFragment.toggleNormalMode();
         } else {
-            editBtn.setImageResource(R.drawable.check_gold_ic);
+            binding.editBtn.setImageResource(R.drawable.check_gold_ic);
             bookDataFragment.toggleEditAction();
         }
         isEditable = !isEditable;
     }
 
-
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        binding = null;
+    }
 }

@@ -9,7 +9,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -22,11 +21,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.ArrayList;
 import java.util.List;
 
-import app.quranhub.R;
+import app.quranhub.databinding.DialogOptionsListBinding;
 import app.quranhub.util.DialogUtils;
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.Unbinder;
 
 /**
  * Display options as a list (single selection)
@@ -45,12 +41,8 @@ public class OptionsListDialogFragment extends DialogFragment implements Options
     private int[] optionsThumbnailsDrawableIds;
     private int selectedOptionIndex;
 
-    @BindView(R.id.tv_title)
-    TextView dialogTitleTextView;
-    @BindView(R.id.rv_options)
-    RecyclerView optionsRecyclerView;
+    private DialogOptionsListBinding binding;
 
-    private Unbinder butterknifeUnbinder;
     private ItemSelectionListener itemSelectionListener;
 
     public OptionsListDialogFragment() {
@@ -147,23 +139,24 @@ public class OptionsListDialogFragment extends DialogFragment implements Options
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container
             , @Nullable Bundle savedInstanceState) {
-        View dialogView = inflater.inflate(R.layout.dialog_options_list, container);
-        butterknifeUnbinder = ButterKnife.bind(this, dialogView);
+        binding = DialogOptionsListBinding.inflate(inflater, container, false);
+
         initDialogView();
-        return dialogView;
+
+        return binding.getRoot();
     }
 
     private void initDialogView() {
-        dialogTitleTextView.setText(dialogTitle);
+        binding.tvTitle.setText(dialogTitle);
 
-        optionsRecyclerView.setHasFixedSize(true);
-        optionsRecyclerView.setLayoutManager(new LinearLayoutManager(
+        binding.rvOptions.setHasFixedSize(true);
+        binding.rvOptions.setLayoutManager(new LinearLayoutManager(
                 getContext(), RecyclerView.VERTICAL, false));
-        optionsRecyclerView.addItemDecoration(new DividerItemDecoration(
+        binding.rvOptions.addItemDecoration(new DividerItemDecoration(
                 getContext(), DividerItemDecoration.VERTICAL));
         OptionsListAdapter adapter = new OptionsListAdapter(options, optionsThumbnailsDrawableIds
                 , selectedOptionIndex, this);
-        optionsRecyclerView.setAdapter(adapter);
+        binding.rvOptions.setAdapter(adapter);
     }
 
     @Override
@@ -176,7 +169,7 @@ public class OptionsListDialogFragment extends DialogFragment implements Options
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        butterknifeUnbinder.unbind();
+        binding = null;
     }
 
     @Override

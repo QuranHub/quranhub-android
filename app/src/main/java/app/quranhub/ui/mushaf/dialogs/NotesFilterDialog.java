@@ -3,36 +3,30 @@ package app.quranhub.ui.mushaf.dialogs;
 import android.app.Dialog;
 import android.content.Context;
 import android.os.Bundle;
-import android.view.LayoutInflater;
-import android.view.View;
 import android.view.Window;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.DialogFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.Arrays;
 import java.util.Objects;
 
 import app.quranhub.R;
+import app.quranhub.databinding.DialogNoteFilterBinding;
 import app.quranhub.ui.mushaf.adapter.FilterAdapter;
 import app.quranhub.ui.mushaf.listener.ItemSelectionListener;
-import butterknife.BindView;
-import butterknife.ButterKnife;
 
 public class NotesFilterDialog extends DialogFragment implements FilterAdapter.OptionClickListener {
 
     private static final String NOTE_TYPE_ARGS = "NOTE_TYPE_ARGS";
-    private View dialogView;
     private Dialog dialog;
     private ItemSelectionListener<Integer> listener;
     private int selectedOption;
     private FilterAdapter adapter;
     private String[] options;
 
-    @BindView(R.id.note_filter_rv)
-    RecyclerView filterRv;
+    private DialogNoteFilterBinding binding;
 
     public static NotesFilterDialog getInstance(int type) {
         Bundle bundle = new Bundle();
@@ -51,9 +45,7 @@ public class NotesFilterDialog extends DialogFragment implements FilterAdapter.O
 
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
-        LayoutInflater inflater = getActivity().getLayoutInflater();
-        dialogView = inflater.inflate(R.layout.dialog_note_filter, null);
-        ButterKnife.bind(this, dialogView);
+        binding = DialogNoteFilterBinding.inflate(getLayoutInflater());
         initializeDialog();
         setFilterOptions();
         initViews();
@@ -70,18 +62,16 @@ public class NotesFilterDialog extends DialogFragment implements FilterAdapter.O
     }
 
     private void initViews() {
-
-        filterRv.setLayoutManager(new LinearLayoutManager(getActivity()));
+        binding.noteFilterRv.setLayoutManager(new LinearLayoutManager(getActivity()));
         adapter = new FilterAdapter(Arrays.asList(options), options[selectedOption], this, 0);
-        filterRv.setAdapter(adapter);
-
+        binding.noteFilterRv.setAdapter(adapter);
     }
 
 
     public void initializeDialog() {
         dialog = new Dialog(requireActivity());
         dialog.getWindow().requestFeature(Window.FEATURE_NO_TITLE);
-        dialog.setContentView(dialogView);
+        dialog.setContentView(binding.getRoot());
         Objects.requireNonNull(dialog.getWindow()).setBackgroundDrawableResource(android.R.color.transparent);
         if (getArguments() != null) {
             selectedOption = getArguments().getInt(NOTE_TYPE_ARGS);
@@ -104,5 +94,11 @@ public class NotesFilterDialog extends DialogFragment implements FilterAdapter.O
         //selectedOption = optionIndex;
         listener.onSelectItem(optionIndex);
         dismiss();
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        binding = null;
     }
 }

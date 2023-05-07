@@ -4,20 +4,16 @@ import static android.content.Context.LAYOUT_INFLATER_SERVICE;
 import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 
 import android.content.Context;
-import android.os.Build;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.ImageView;
 import android.widget.PopupWindow;
 
 import androidx.annotation.NonNull;
 
 import app.quranhub.R;
+import app.quranhub.databinding.AyaAudioViewBinding;
 import app.quranhub.util.LocaleUtils;
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
 
 public class AyaAudioPopup {
 
@@ -25,14 +21,7 @@ public class AyaAudioPopup {
     private Context context;
     private AyaAudioListener listener;
 
-    @BindView(R.id.play_iv)
-    ImageView playIv;
-    @BindView(R.id.record_iv)
-    ImageView recordIv;
-    @BindView(R.id.next_aya_iv)
-    ImageView nextAyaIv;
-    @BindView(R.id.prev_aya_iv)
-    ImageView prevAyaIv;
+    private AyaAudioViewBinding binding;
 
     public AyaAudioPopup(@NonNull Context context, AyaAudioListener callback) {
         this.context = context;
@@ -42,22 +31,18 @@ public class AyaAudioPopup {
 
     private void setWindowView() {
         LayoutInflater inflater = (LayoutInflater) context.getSystemService(LAYOUT_INFLATER_SERVICE);
-        View contentView = inflater.inflate(R.layout.aya_audio_view
-                , null, false);
-        ButterKnife.bind(this, contentView);
-        popupWindow = new PopupWindow(contentView
-                , WRAP_CONTENT, WRAP_CONTENT, false);
+        binding = AyaAudioViewBinding.inflate(inflater);
+        popupWindow = new PopupWindow(binding.getRoot(), WRAP_CONTENT, WRAP_CONTENT, false);
         popupWindow.setOutsideTouchable(false);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            popupWindow.setElevation(24f);
-        }
+        popupWindow.setElevation(24f);
         setViewDirections();
+        attachListeners();
     }
 
     private void setViewDirections() {
         if (LocaleUtils.getAppLanguage().equals("ar")) {
-            prevAyaIv.setImageResource(R.drawable.player_fast_forward_white_ic);
-            nextAyaIv.setImageResource(R.drawable.player_fast_rewind_white_ic);
+            binding.prevAyaIv.setImageResource(R.drawable.player_fast_forward_white_ic);
+            binding.nextAyaIv.setImageResource(R.drawable.player_fast_rewind_white_ic);
         }
     }
 
@@ -67,39 +52,50 @@ public class AyaAudioPopup {
         }
     }
 
-    @OnClick(R.id.play_iv)
-    public void onPlayAudio() {
+    private void attachListeners() {
+
+        binding.playIv.setOnClickListener(v -> onPlayAudio());
+
+        binding.recordIv.setOnClickListener(v -> onClickRecord());
+
+        binding.nextAyaIv.setOnClickListener(v -> playNextAya());
+
+        binding.prevAyaIv.setOnClickListener(v -> playPrevAya());
+
+        binding.repeatIv.setOnClickListener(v -> onClickRepeat());
+
+        binding.reciterIv.setOnClickListener(v -> onClickReciter());
+
+        binding.stopIv.setOnClickListener(v -> onClickStop());
+
+    }
+
+    private void onPlayAudio() {
         listener.checkPlayPauseState();
     }
 
 
-    @OnClick(R.id.record_iv)
-    public void onClickRecord() {
+    private void onClickRecord() {
         listener.onPressRecord();
     }
 
-    @OnClick(R.id.next_aya_iv)
-    public void playNextAya() {
+    private void playNextAya() {
         listener.onPlayNextAya();
     }
 
-    @OnClick(R.id.prev_aya_iv)
-    public void playPrevAya() {
+    private void playPrevAya() {
         listener.onPlayPrevAya();
     }
 
-    @OnClick(R.id.repeat_iv)
-    public void onClickRepeat() {
+    private void onClickRepeat() {
         listener.onClickRepeat();
     }
 
-    @OnClick(R.id.reciter_iv)
-    public void onClickReciter() {
+    private void onClickReciter() {
         listener.onClickReciter();
     }
 
-    @OnClick(R.id.stop_iv)
-    public void onClickStop() {
+    private void onClickStop() {
         listener.onClickStop();
     }
 
@@ -111,18 +107,18 @@ public class AyaAudioPopup {
 
     public void setRecordState(boolean hasRecorder) {
         if (hasRecorder) {
-            recordIv.setImageResource(R.drawable.play_record);
+            binding.recordIv.setImageResource(R.drawable.play_record);
         } else {
-            recordIv.setImageResource(R.drawable.player_record_white_ic);
+            binding.recordIv.setImageResource(R.drawable.player_record_white_ic);
         }
     }
 
     public void setPlayState() {
-        playIv.setImageResource(R.drawable.ic_pause);
+        binding.playIv.setImageResource(R.drawable.ic_pause);
     }
 
     public void setPauseState() {
-        playIv.setImageResource(R.drawable.player_play_white_ic);
+        binding.playIv.setImageResource(R.drawable.player_play_white_ic);
     }
 
     public interface AyaAudioListener {

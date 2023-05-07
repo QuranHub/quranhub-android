@@ -8,28 +8,23 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ProgressBar;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
-import com.github.barteksc.pdfviewer.PDFView;
 import com.github.barteksc.pdfviewer.listener.OnLoadCompleteListener;
 import com.github.barteksc.pdfviewer.listener.OnPageChangeListener;
 
 import java.io.File;
 
-import app.quranhub.R;
 import app.quranhub.data.Constants;
-import butterknife.BindView;
-import butterknife.ButterKnife;
+import app.quranhub.databinding.FragmentPdfViewerBinding;
 
 
 public class PdfViewerFragment extends Fragment {
 
-    @BindView(R.id.pdfView)
-    PDFView pdfView;
-    @BindView(R.id.progress_bar)
-    ProgressBar progressBar;
+    private FragmentPdfViewerBinding binding;
 
     private String fileName;
     private Uri uri;
@@ -37,14 +32,18 @@ public class PdfViewerFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_pdf_viewer, container, false);
-        ButterKnife.bind(this, view);
+        binding = FragmentPdfViewerBinding.inflate(inflater, container, false);
+        return binding.getRoot();
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
         setPdfView();
-        return view;
     }
 
     private void setPdfView() {
-        OnLoadCompleteListener completeListener = nbPages -> progressBar.setVisibility(View.GONE);
+        OnLoadCompleteListener completeListener = nbPages -> binding.progressBar.setVisibility(View.GONE);
         OnPageChangeListener pageChangeListener = new OnPageChangeListener() {
             @Override
             public void onPageChanged(int page, int pageCount) {
@@ -55,7 +54,7 @@ public class PdfViewerFragment extends Fragment {
         File file = new File(Environment.getExternalStorageDirectory() + File.separator
                 + Constants.Directory.LIBRARY_PUBLIC, fileName);
 
-        pdfView.fromFile(file)
+        binding.pdfView.fromFile(file)
                 .enableDoubletap(true)
                 .enableSwipe(true)
                 .onLoad(completeListener)

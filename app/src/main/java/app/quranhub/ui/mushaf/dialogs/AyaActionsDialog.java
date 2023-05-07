@@ -5,11 +5,8 @@ import android.content.Context;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
-import android.view.LayoutInflater;
-import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -19,10 +16,8 @@ import java.util.Objects;
 
 import app.quranhub.R;
 import app.quranhub.data.Constants;
+import app.quranhub.databinding.DialogAyaPropertiesBinding;
 import app.quranhub.ui.mushaf.model.BookmarkModel;
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
 
 public class AyaActionsDialog extends DialogFragment {
 
@@ -32,13 +27,10 @@ public class AyaActionsDialog extends DialogFragment {
 
     private int yLocation;
 
-    private View dialogView;
     private Dialog dialog;
     private AyaPropertiesListener ayaPropertiesListener;
-    @BindView(R.id.bookmark_iv)
-    ImageView bookmarkIv;
-    @BindView(R.id.note_iv)
-    ImageView noteIv;
+
+    private DialogAyaPropertiesBinding binding;
 
     @Override
     public void onAttach(@NonNull Context context) {
@@ -62,11 +54,10 @@ public class AyaActionsDialog extends DialogFragment {
         }
     }
 
+    @NonNull
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
-        LayoutInflater inflater = getActivity().getLayoutInflater();
-        dialogView = inflater.inflate(R.layout.dialog_aya_properties, null);
-        ButterKnife.bind(this, dialogView);
+        binding = DialogAyaPropertiesBinding.inflate(getLayoutInflater());
         initializeDialog();
         return dialog;
     }
@@ -78,65 +69,76 @@ public class AyaActionsDialog extends DialogFragment {
         WindowManager.LayoutParams layoutParams = dialog.getWindow().getAttributes();
         layoutParams.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
         layoutParams.y = yLocation;
-        dialog.setContentView(dialogView);
+        dialog.setContentView(binding.getRoot());
         Objects.requireNonNull(dialog.getWindow()).setBackgroundDrawableResource(android.R.color.transparent);
+        attachListeners();
     }
 
     public void setBookmarkTypeIcon(BookmarkModel bookmarkModel) {
         // handle if set image after orientation change
-        if (bookmarkIv == null)
-            return;
 
         if (bookmarkModel.getBookmarkTypeId() == Constants.BookmarkType.NOTE) {
-            bookmarkIv.setImageResource(R.drawable.bookmark_green_selected);
+            binding.bookmarkIv.setImageResource(R.drawable.bookmark_green_selected);
         } else if (bookmarkModel.getBookmarkTypeId() == Constants.BookmarkType.MEMORIZE) {
-            bookmarkIv.setImageResource(R.drawable.bookmark_red_selected);
+            binding.bookmarkIv.setImageResource(R.drawable.bookmark_red_selected);
         } else if (bookmarkModel.getBookmarkTypeId() == Constants.BookmarkType.RECITING) {
-            bookmarkIv.setImageResource(R.drawable.bookmark_gold_selected);
+            binding.bookmarkIv.setImageResource(R.drawable.bookmark_gold_selected);
         } else if (bookmarkModel.getBookmarkTypeId() == Constants.BookmarkType.FAVORITE) {
-            bookmarkIv.setImageResource(R.drawable.fav_added__gold_ic);
+            binding.bookmarkIv.setImageResource(R.drawable.fav_added__gold_ic);
         } else {    // CUSTOM BOOKMARK
-            bookmarkIv.setImageResource(R.drawable.bookmark_green_selected);
-            bookmarkIv.setColorFilter(getActivity().getResources().getIntArray(R.array.bookmark_colors)[bookmarkModel.getColorIndex()]);
+            binding.bookmarkIv.setImageResource(R.drawable.bookmark_green_selected);
+            binding.bookmarkIv.setColorFilter(getActivity().getResources().getIntArray(R.array.bookmark_colors)[bookmarkModel.getColorIndex()]);
         }
     }
 
-    @OnClick(R.id.share_container)
-    public void onShareClick() {
+    private void attachListeners() {
+        binding.shareContainer.setOnClickListener(v -> onShareClick());
+
+        binding.faselContainer.setOnClickListener(v -> onFasilClick());
+
+        binding.listenContainer.setOnClickListener(v -> onListenClick());
+
+        binding.tafseerContainer.setOnClickListener(v -> onTafserClick());
+
+        binding.notesContainer.setOnClickListener(v -> onNotesClick());
+    }
+
+    private void onShareClick() {
         dialog.dismiss();
         ayaPropertiesListener.onShareClick();
     }
 
-    @OnClick(R.id.fasel_container)
-    public void onFasilClick() {
+    private void onFasilClick() {
         dialog.dismiss();
         ayaPropertiesListener.onFasilClick();
     }
 
-    @OnClick(R.id.listen_container)
-    public void onListenClick() {
+    private void onListenClick() {
         dialog.dismiss();
         ayaPropertiesListener.onListenClick();
     }
 
-    @OnClick(R.id.tafseer_container)
     public void onTafserClick() {
         dialog.dismiss();
         ayaPropertiesListener.onTafserClick();
     }
 
-    @OnClick(R.id.notes_container)
-    public void onNotesClick() {
+    private void onNotesClick() {
         dialog.dismiss();
         ayaPropertiesListener.onNoteClick();
     }
 
     public void setAyaHasNote() {
-        if (noteIv == null)
+        if (binding.noteIv == null)
             return;
-        noteIv.setImageResource(R.drawable.notes_gold_sidemenu_ic);
+        binding.noteIv.setImageResource(R.drawable.notes_gold_sidemenu_ic);
     }
 
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        binding = null;
+    }
 
     public interface AyaPropertiesListener {
 

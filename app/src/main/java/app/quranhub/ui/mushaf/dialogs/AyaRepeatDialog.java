@@ -5,14 +5,10 @@ import android.content.Context;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -24,20 +20,20 @@ import java.util.Objects;
 
 import app.quranhub.R;
 import app.quranhub.data.local.entity.Aya;
+import app.quranhub.databinding.DialogAyaRepeatBinding;
 import app.quranhub.ui.mushaf.model.RepeatModel;
 import app.quranhub.ui.mushaf.model.SuraVersesNumber;
 import app.quranhub.util.DialogUtils;
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
 
 public class AyaRepeatDialog extends DialogFragment {
 
-    private View dialogView;
-    private Dialog dialog;
-    private AyaRepeateListener listener;
     private static final String ARG_SURA_VERSES_NUMBER = "ARG_SURA_VERSES_NUMBER";
     private static final String ARG_SELECTED_SURA = "ARG_SELECTED_SURA";
+
+    private Dialog dialog;
+
+    private AyaRepeatListener listener;
+
     private ArrayList<SuraVersesNumber> suraVersesNumberArrayList;
     private Aya selectedAya;
     private int lastAyaInPage;
@@ -45,23 +41,7 @@ public class AyaRepeatDialog extends DialogFragment {
     private int fromSuraNumber, toSuraNumber;
     private boolean fromUser = false;
 
-    @BindView(R.id.from_aya_sp)
-    Spinner fromAyaSpinner;
-    @BindView(R.id.to_aya_sp)
-    Spinner toAyaSpinner;
-    @BindView(R.id.from_et)
-    EditText fromAyaEt;
-    @BindView(R.id.to_et)
-    EditText toAyaEt;
-    @BindView(R.id.aya_group_number_et)
-    EditText ayaGroupNumEt;
-    @BindView(R.id.aya_repeat_number_et)
-    EditText ayaRepeatNumEt;
-    @BindView(R.id.delay_et)
-    EditText delayEt;
-    @BindView(R.id.repeat_btn)
-    Button repeatBtn;
-
+    private DialogAyaRepeatBinding binding;
 
     public static AyaRepeatDialog getInstance(ArrayList<SuraVersesNumber> suraVersesNumberArrayList, Aya selectedAya) {
         Bundle bundle = new Bundle();
@@ -76,15 +56,13 @@ public class AyaRepeatDialog extends DialogFragment {
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
-        listener = (AyaRepeateListener) getParentFragment();
+        listener = (AyaRepeatListener) getParentFragment();
     }
 
 
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
-        LayoutInflater inflater = getActivity().getLayoutInflater();
-        dialogView = inflater.inflate(R.layout.dialog_aya_repeat, null);
-        ButterKnife.bind(this, dialogView);
+        binding = DialogAyaRepeatBinding.inflate(getLayoutInflater());
         initializeDialog();
         getArgs();
         setFromToViews();
@@ -95,7 +73,7 @@ public class AyaRepeatDialog extends DialogFragment {
 
     private void observeOnInputEditText() {
 
-        fromAyaEt.addTextChangedListener(new TextWatcher() {
+        binding.fromEt.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
 
@@ -106,9 +84,9 @@ public class AyaRepeatDialog extends DialogFragment {
                 if (s.toString().isEmpty())
                     return;
                 if (Integer.parseInt(s.toString()) > maxFromAyaNumber) {
-                    fromAyaEt.setError(getString(R.string.enter_valid_aya));
+                    binding.fromEt.setError(getString(R.string.enter_valid_aya));
                 } else {
-                    fromAyaEt.setError(null);
+                    binding.fromEt.setError(null);
                 }
             }
 
@@ -118,10 +96,9 @@ public class AyaRepeatDialog extends DialogFragment {
             }
         });
 
-        toAyaEt.addTextChangedListener(new TextWatcher() {
+        binding.toEt.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-
             }
 
             @Override
@@ -129,15 +106,14 @@ public class AyaRepeatDialog extends DialogFragment {
                 if (s.toString().isEmpty())
                     return;
                 if (Integer.parseInt(s.toString()) > maxToAyaNumber) {
-                    toAyaEt.setError(getString(R.string.enter_valid_aya));
+                    binding.toEt.setError(getString(R.string.enter_valid_aya));
                 } else {
-                    toAyaEt.setError(null);
+                    binding.toEt.setError(null);
                 }
             }
 
             @Override
             public void afterTextChanged(Editable s) {
-
             }
         });
     }
@@ -145,14 +121,14 @@ public class AyaRepeatDialog extends DialogFragment {
     private void observeSpinnerSelection() {
 
 
-        fromAyaSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+        binding.fromAyaSp.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 if (parent != null && parent.getChildAt(0) != null)
                     ((TextView) parent.getChildAt(0)).setTextColor(requireActivity().getResources().getColor(R.color.white_color));
                 maxFromAyaNumber = suraVersesNumberArrayList.get(position).getAyas();
                 if (fromUser) {
-                    fromAyaEt.setText("1");
+                    binding.fromEt.setText("1");
 
                     fromSuraNumber = position;
                 }
@@ -163,14 +139,14 @@ public class AyaRepeatDialog extends DialogFragment {
             }
         });
 
-        toAyaSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+        binding.toAyaSp.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 if (parent != null && parent.getChildAt(0) != null)
                     ((TextView) parent.getChildAt(0)).setTextColor(requireActivity().getResources().getColor(R.color.white_color));
                 maxToAyaNumber = suraVersesNumberArrayList.get(position).getAyas();
                 if (fromUser) {
-                    toAyaEt.setText(String.valueOf(maxToAyaNumber));
+                    binding.toEt.setText(String.valueOf(maxToAyaNumber));
                     toSuraNumber = position;
                 } else {
                     fromUser = true;
@@ -190,28 +166,27 @@ public class AyaRepeatDialog extends DialogFragment {
         ArrayAdapter<String> dataAdapter = new ArrayAdapter<>(getActivity(),
                 android.R.layout.simple_spinner_item, surahs);
         dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        fromAyaSpinner.setAdapter(dataAdapter);
-        toAyaSpinner.setAdapter(dataAdapter);
+        binding.fromAyaSp.setAdapter(dataAdapter);
+        binding.toAyaSp.setAdapter(dataAdapter);
         if (selectedAya != null) {
             lastAyaInPage = suraVersesNumberArrayList.get(selectedAya.getSura() - 1).getAyas();
-            fromAyaEt.setText(String.valueOf(selectedAya.getSuraAya()));
-            toAyaEt.setText(String.valueOf(lastAyaInPage));
-            fromAyaSpinner.setSelection(selectedAya.getSura() - 1);
-            toAyaSpinner.setSelection(selectedAya.getSura() - 1);
+            binding.fromEt.setText(String.valueOf(selectedAya.getSuraAya()));
+            binding.toEt.setText(String.valueOf(lastAyaInPage));
+            binding.fromAyaSp.setSelection(selectedAya.getSura() - 1);
+            binding.toAyaSp.setSelection(selectedAya.getSura() - 1);
             maxFromAyaNumber = suraVersesNumberArrayList.get(selectedAya.getSura() - 1).getAyas();
             maxToAyaNumber = maxFromAyaNumber;
             toSuraNumber = fromSuraNumber = selectedAya.getSura() - 1;
         } else {
-            fromAyaEt.setText("1");
-            toAyaEt.setText("1");
-            fromAyaSpinner.setSelection(0);
-            toAyaSpinner.setSelection(0);
+            binding.fromEt.setText("1");
+            binding.toEt.setText("1");
+            binding.fromAyaSp.setSelection(0);
+            binding.toAyaSp.setSelection(0);
             maxFromAyaNumber = suraVersesNumberArrayList.get(0).getAyas();
             maxToAyaNumber = maxFromAyaNumber;
             toSuraNumber = fromSuraNumber = 0;
         }
     }
-
 
     @Override
     public void onResume() {
@@ -220,15 +195,15 @@ public class AyaRepeatDialog extends DialogFragment {
         DialogUtils.adjustDialogSize(this, 0.8f,
                 0.8f, 0.7f,
                 0.9f);
-
     }
 
     public void initializeDialog() {
         dialog = new Dialog(requireActivity());
         dialog.getWindow().requestFeature(Window.FEATURE_NO_TITLE);
-        dialog.setContentView(dialogView);
+        dialog.setContentView(binding.getRoot());
         Objects.requireNonNull(dialog.getWindow()).setBackgroundDrawableResource(android.R.color.transparent);
         dialog.setCanceledOnTouchOutside(false);
+        attachListeners();
     }
 
     private void getArgs() {
@@ -238,33 +213,37 @@ public class AyaRepeatDialog extends DialogFragment {
         }
     }
 
-    @OnClick(R.id.repeat_btn)
-    public void onClickRepeat() {
-        if (fromAyaEt.getError() != null || toAyaEt.getError() != null) {
+    private void attachListeners() {
+        binding.repeatBtn.setOnClickListener(v -> onClickRepeat());
+        binding.btnBack.setOnClickListener(v -> onClickBack());
+    }
+
+    private void onClickRepeat() {
+        if (binding.fromEt.getError() != null || binding.toEt.getError() != null) {
             Toast.makeText(getActivity(), getString(R.string.enter_valid_aya), Toast.LENGTH_LONG).show();
-        } else if (fromAyaEt.getText().toString().isEmpty() || toAyaEt.getText().toString().isEmpty()) {
+        } else if (binding.fromEt.getText().toString().isEmpty() || binding.toEt.getText().toString().isEmpty()) {
             Toast.makeText(getActivity(), getString(R.string.enter_repeat_interval), Toast.LENGTH_LONG).show();
         } else if (fromSuraNumber > toSuraNumber) {
             Toast.makeText(getActivity(), getString(R.string.invalid_repeat_interval), Toast.LENGTH_LONG).show();
-        } else if (fromSuraNumber == toSuraNumber && Integer.parseInt(fromAyaEt.getText().toString()) > Integer.parseInt(toAyaEt.getText().toString())) {
+        } else if (fromSuraNumber == toSuraNumber && Integer.parseInt(binding.fromEt.getText().toString()) > Integer.parseInt(binding.toEt.getText().toString())) {
             Toast.makeText(getActivity(), getString(R.string.enter_valid_aya), Toast.LENGTH_LONG).show();
         } else {
             RepeatModel repeatModel = new RepeatModel();
             repeatModel.setFromSura(fromSuraNumber + 1);
-            repeatModel.setFromAyaId(getFromAyaId(Integer.parseInt(fromAyaEt.getText().toString()), fromSuraNumber + 1));
-            repeatModel.setFromAya(Integer.parseInt(fromAyaEt.getText().toString()));
+            repeatModel.setFromAyaId(getFromAyaId(Integer.parseInt(binding.fromEt.getText().toString()), fromSuraNumber + 1));
+            repeatModel.setFromAya(Integer.parseInt(binding.fromEt.getText().toString()));
             repeatModel.setToSura(toSuraNumber + 1);
-            repeatModel.setToAyaId(getToAyaId(Integer.parseInt(toAyaEt.getText().toString()), toSuraNumber + 1));
-            repeatModel.setToAya(Integer.parseInt(toAyaEt.getText().toString()));
-            repeatModel.setGroupRepeatNum(ayaGroupNumEt.getText().toString().trim().isEmpty() || Integer.parseInt(ayaGroupNumEt.getText().toString()) == 0
-                    ? 1 : Integer.parseInt(ayaGroupNumEt.getText().toString().trim()));
+            repeatModel.setToAyaId(getToAyaId(Integer.parseInt(binding.toEt.getText().toString()), toSuraNumber + 1));
+            repeatModel.setToAya(Integer.parseInt(binding.toEt.getText().toString()));
+            repeatModel.setGroupRepeatNum(binding.ayaGroupNumberEt.getText().toString().trim().isEmpty() || Integer.parseInt(binding.ayaGroupNumberEt.getText().toString()) == 0
+                    ? 1 : Integer.parseInt(binding.ayaGroupNumberEt.getText().toString().trim()));
 
-            repeatModel.setAyaRepeatNum(ayaRepeatNumEt.getText().toString().trim().isEmpty() || Integer.parseInt(ayaRepeatNumEt.getText().toString()) == 0
-                    ? 1 : Integer.parseInt(ayaRepeatNumEt.getText().toString().trim()));
+            repeatModel.setAyaRepeatNum(binding.ayaGroupNumberEt.getText().toString().trim().isEmpty() || Integer.parseInt(binding.ayaGroupNumberEt.getText().toString()) == 0
+                    ? 1 : Integer.parseInt(binding.ayaGroupNumberEt.getText().toString().trim()));
 
-            repeatModel.setDelayTime(delayEt.getText().toString().trim().isEmpty()
-                    ? 1 : Integer.parseInt(delayEt.getText().toString().trim()));
-            listener.onAyasRepeate(repeatModel);
+            repeatModel.setDelayTime(binding.delayEt.getText().toString().trim().isEmpty()
+                    ? 1 : Integer.parseInt(binding.delayEt.getText().toString().trim()));
+            listener.onAyasRepeat(repeatModel);
             dismiss();
         }
     }
@@ -285,13 +264,17 @@ public class AyaRepeatDialog extends DialogFragment {
         return toAyaId;
     }
 
-
-    @OnClick(R.id.btn_back)
-    public void onClickBack() {
+    private void onClickBack() {
         dismiss();
     }
 
-    public interface AyaRepeateListener {
-        void onAyasRepeate(RepeatModel repeatModel);
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        binding = null;
+    }
+
+    public interface AyaRepeatListener {
+        void onAyasRepeat(RepeatModel repeatModel);
     }
 }

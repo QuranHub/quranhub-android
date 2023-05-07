@@ -9,18 +9,13 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.DialogFragment;
 
-import app.quranhub.R;
+import app.quranhub.databinding.DialogConfirmationBinding;
 import app.quranhub.util.DialogUtils;
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
-import butterknife.Unbinder;
 
 /**
  * A {@code DialogFragment} to confirm deletion action.
@@ -39,12 +34,7 @@ public class DeleteConfirmationDialogFragment extends DialogFragment {
     private String description;
     private int deletePosition;
 
-    private Unbinder butterknifeUnbinder;
-
-    @BindView(R.id.tv_title)
-    TextView titleTextView;
-    @BindView(R.id.tv_description)
-    TextView descriptionTextView;
+    private DialogConfirmationBinding binding;
 
     private DeleteConfirmationCallbacks callbacks;
 
@@ -107,15 +97,25 @@ public class DeleteConfirmationDialogFragment extends DialogFragment {
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        View dialogView = inflater.inflate(R.layout.dialog_confirmation, container, false);
-        butterknifeUnbinder = ButterKnife.bind(this, dialogView);
+        binding = DialogConfirmationBinding.inflate(inflater, container, false);
         initDialogView();
-        return dialogView;
+        return binding.getRoot();
     }
 
     private void initDialogView() {
-        titleTextView.setText(title);
-        descriptionTextView.setText(description);
+        binding.tvTitle.setText(title);
+        binding.tvDescription.setText(description);
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        attachListeners();
+    }
+
+    private void attachListeners() {
+        binding.btnCancel.setOnClickListener(v -> onCancelBtnClick());
+        binding.btnConfirm.setOnClickListener(v -> onConfirmBtnClick());
     }
 
     @Override
@@ -128,16 +128,14 @@ public class DeleteConfirmationDialogFragment extends DialogFragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        butterknifeUnbinder.unbind();
+        binding = null;
     }
 
-    @OnClick(R.id.btn_cancel)
-    void onCancelBtnClick() {
+    private void onCancelBtnClick() {
         dismiss();
     }
 
-    @OnClick(R.id.btn_confirm)
-    void onConfirmBtnClick() {
+    private void onConfirmBtnClick() {
         callbacks.onConfirmDelete(deletePosition);
         dismiss();
     }

@@ -3,8 +3,6 @@ package app.quranhub.ui.mushaf.adapter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -13,9 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import app.quranhub.R;
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
+import app.quranhub.databinding.ItemOptionBinding;
 
 public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder> {
 
@@ -48,14 +44,13 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
     @Override
     public void onBindViewHolder(@NonNull FilterAdapter.ViewHolder holder, int position) {
         String option = filteredOptionsList.get(position);
-        holder.optionNameTextView.setText(option);
+        holder.binding.tvOptionName.setText(option);
         if (option.equals(selectedOption)) {
-            holder.checkBoxImageView.setVisibility(View.VISIBLE);
+            holder.binding.ivCheckBox.setVisibility(View.VISIBLE);
         } else {
-            holder.checkBoxImageView.setVisibility(View.INVISIBLE);
+            holder.binding.ivCheckBox.setVisibility(View.INVISIBLE);
         }
     }
-
 
     @Override
     public int getItemCount() {
@@ -80,21 +75,22 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
 
     class ViewHolder extends RecyclerView.ViewHolder {
 
-        @BindView(R.id.iv_check_box)
-        ImageView checkBoxImageView;
-        @BindView(R.id.tv_option_name)
-        TextView optionNameTextView;
+        ItemOptionBinding binding;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            ButterKnife.bind(this, itemView);
+            binding = ItemOptionBinding.bind(itemView);
+            attachListeners();
         }
 
-        @OnClick(R.id.tv_option_name)
-        void onClickSura() {
-            selectedOption = optionNameTextView.getText().toString();
+        private void attachListeners() {
+            binding.tvOptionName.setOnClickListener(v -> onClickSura());
+        }
+
+        private void onClickSura() {
+            selectedOption = binding.tvOptionName.getText().toString();
             notifyDataSetChanged();
-            getSelectedOptionIndex(optionNameTextView.getText().toString());
+            getSelectedOptionIndex(binding.tvOptionName.getText().toString());
         }
 
     }

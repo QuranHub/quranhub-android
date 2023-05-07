@@ -13,8 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 
 import app.quranhub.R;
-import butterknife.BindView;
-import butterknife.ButterKnife;
+import app.quranhub.databinding.ItemOptionBinding;
 
 // TODO remove this & use the one in first_wizard package, refactor if necessary
 public class OptionsListAdapter extends RecyclerView.Adapter<OptionsListAdapter.ViewHolder> {
@@ -106,16 +105,17 @@ public class OptionsListAdapter extends RecyclerView.Adapter<OptionsListAdapter.
 
     class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
 
-        @BindView(R.id.iv_option_thumbnail)
         ImageView optionThumbnailImageView;
-        @BindView(R.id.tv_option_name)
         TextView optionNameTextView;
-        @BindView(R.id.iv_check_box)
         ImageView checkBoxImageView;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            ButterKnife.bind(this, itemView);
+
+            ItemOptionBinding binding = ItemOptionBinding.bind(itemView);
+            optionThumbnailImageView = binding.ivOptionThumbnail;
+            optionNameTextView = binding.tvOptionName;
+            checkBoxImageView = binding.ivCheckBox;
 
             itemView.setOnClickListener(this);
         }

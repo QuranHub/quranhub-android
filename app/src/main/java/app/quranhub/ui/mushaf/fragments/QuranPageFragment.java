@@ -14,16 +14,11 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
-import android.widget.FrameLayout;
-import android.widget.ImageView;
-import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
-import android.widget.ScrollView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.fragment.app.Fragment;
 
 import com.bumptech.glide.load.DataSource;
@@ -43,6 +38,7 @@ import app.quranhub.data.local.entity.BookmarkType;
 import app.quranhub.data.local.entity.Note;
 import app.quranhub.data.local.prefs.AppPreferencesManager;
 import app.quranhub.data.model.ReciterModel;
+import app.quranhub.databinding.FragmentQuranPageBinding;
 import app.quranhub.ui.downloads_manager.dialogs.AudioDownloadAmountDialogFragment;
 import app.quranhub.ui.downloads_manager.dialogs.QuranRecitersDialogFragment;
 import app.quranhub.ui.mushaf.dialogs.AddBookmarkDialog;
@@ -57,10 +53,6 @@ import app.quranhub.util.GlideApp;
 import app.quranhub.util.ImageUtil;
 import app.quranhub.util.IntentUtils;
 import app.quranhub.util.ScreenUtils;
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
-import butterknife.Unbinder;
 
 public class QuranPageFragment extends Fragment
         implements AyaActionsDialog.AyaPropertiesListener, AddNoteDialog.AddNoteListener,
@@ -74,21 +66,8 @@ public class QuranPageFragment extends Fragment
     private static final String ARG_INIT_SELECTED_AYA_ID = "ARG_INIT_SELECTED_AYA_ID";
     private static final String ARG_NIGHT_MODE = "ARG_NIGHT_MODE";
 
+    private FragmentQuranPageBinding binding;
 
-    @BindView(R.id.root)
-    FrameLayout rootFrameLayout;
-    @BindView(R.id.page_iv)
-    ImageView quranPageIv;
-    @BindView(R.id.container_sv)
-    ScrollView containerScrollView;
-    @BindView(R.id.progrees_bar)
-    ProgressBar progressBar;
-    @BindView(R.id.quran_page_container)
-    RelativeLayout quranPageContainer;
-    @BindView(R.id.load_failed_container)
-    ConstraintLayout failedContainer;
-
-    private Unbinder butterknifeUnbinder;
     private MushafFragment mushafFragment;
     private String quranImageUrl;
     private int quranPageNum;
@@ -151,37 +130,34 @@ public class QuranPageFragment extends Fragment
         }
     }
 
-
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_quran_page, container, false);
-        butterknifeUnbinder = ButterKnife.bind(this, view);
-        if (nightMode) {
-            rootFrameLayout.setBackgroundColor(Color.BLACK);
-        }
-
-        return view;
+        binding = FragmentQuranPageBinding.inflate(inflater, container, false);
+        return binding.getRoot();
     }
 
     @Override
-    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
+        if (nightMode) {
+            binding.root.setBackgroundColor(Color.BLACK);
+        }
+
         setParentFragment();
         recitationId = AppPreferencesManager.getRecitationSetting(requireContext());
         getCurrentPageAyas();
-        containerScrollView.getViewTreeObserver().addOnGlobalLayoutListener(
+        binding.containerSv.getViewTreeObserver().addOnGlobalLayoutListener(
                 new ViewTreeObserver.OnGlobalLayoutListener() {
                     @Override
                     public void onGlobalLayout() {
-                        if (containerScrollView == null)
-                            return;
-                        if (containerScrollView.getViewTreeObserver() != null)
-                            containerScrollView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                        if (binding.containerSv.getViewTreeObserver() != null)
+                            binding.containerSv.getViewTreeObserver().removeOnGlobalLayoutListener(this);
 
                         // get quran iv container width and lineHeight
-                        quranImageContainerWidth = containerScrollView.getWidth();
-                        quranImageContainerHeight = containerScrollView.getHeight();
+                        quranImageContainerWidth = binding.containerSv.getWidth();
+                        quranImageContainerHeight = binding.containerSv.getHeight();
                         Log.d(TAG, "quran image container: " + quranImageContainerWidth + " , " + quranImageContainerHeight);
                         scaleQuranImage();
                         calculateImageMetrics();
@@ -197,6 +173,7 @@ public class QuranPageFragment extends Fragment
                     }
                 });
 
+        binding.pageIv.setOnClickListener(v -> onQuranPageClick());
     }
 
     private void setParentFragment() {
@@ -242,14 +219,11 @@ public class QuranPageFragment extends Fragment
                 }
 
                 // scroll to selected aya after landscape orientation
-                containerScrollView.post(() -> {
-                    if (containerScrollView != null)
-                        containerScrollView.scrollTo(0
-                                , (int) (currentAyaY * imageScaleFactor));
+                binding.containerSv.post(() -> {
+                    binding.containerSv.scrollTo(0, (int) (currentAyaY * imageScaleFactor));
                 });
 
             }
-
 
             noteDialogOpen = savedInstanceState.getBoolean("open_dialog");
             if (noteDialogOpen) {
@@ -322,13 +296,13 @@ public class QuranPageFragment extends Fragment
     @SuppressLint("ClickableViewAccessibility")
     private void initOnLongClickQuranPage() {
 
-        quranPageIv.setOnTouchListener((v, event) -> {
+        binding.pageIv.setOnTouchListener((v, event) -> {
             longClickXlocation = (int) event.getX();
             longClickYlocation = (int) event.getY();
             return false;
         });
 
-        quranPageIv.setOnLongClickListener(v -> {
+        binding.pageIv.setOnLongClickListener(v -> {
             if (!isPageShown)
                 return false;
             isAyaBookmark = false;
@@ -350,7 +324,7 @@ public class QuranPageFragment extends Fragment
         /* the dialog coordinates itself to the window origin,
            instead we want it to coordinate to the quran image origin */
 
-        int yLocation = ScreenUtils.getStatusBarHeight(requireContext(), quranPageIv); // base yLocation
+        int yLocation = ScreenUtils.getStatusBarHeight(requireContext(), binding.pageIv); // base yLocation
         int y;
         switch (recitationId) {
             case Constants.Recitation.HAFS_ID:
@@ -374,7 +348,7 @@ public class QuranPageFragment extends Fragment
 
     private void removePrevAyaShadows() {
         for (View view : ayaShadowsViews) {
-            quranPageContainer.removeView(view);
+            binding.quranPageContainer.removeView(view);
         }
         ayaShadowsViews.clear();
     }
@@ -431,7 +405,7 @@ public class QuranPageFragment extends Fragment
 
 
     private void scaleQuranImage() {
-        RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) quranPageIv.getLayoutParams();
+        RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) binding.pageIv.getLayoutParams();
         int quranPageOriginalWidth, quranPageOriginalHeight;
         switch (recitationId) {
             case Constants.Recitation.HAFS_ID:
@@ -451,7 +425,7 @@ public class QuranPageFragment extends Fragment
             imageScaleFactor = (float) quranImageContainerWidth / quranPageOriginalWidth;
             params.width = quranImageContainerWidth;
             params.height = (int) (quranPageOriginalHeight * imageScaleFactor);
-            quranPageIv.setLayoutParams(params);
+            binding.pageIv.setLayoutParams(params);
         }
 
         // handle if lineHeight will be bigger than container lineHeight when above "if" is true
@@ -461,7 +435,7 @@ public class QuranPageFragment extends Fragment
             imageScaleFactor *= ratioEdit; // the total scale done on the image
             params.height = quranImageContainerHeight;
             params.width *= ratioEdit;
-            quranPageIv.setLayoutParams(params);
+            binding.pageIv.setLayoutParams(params);
         }
         Log.d(TAG, "final ImageScaleFactor: " + imageScaleFactor);
     }
@@ -470,7 +444,7 @@ public class QuranPageFragment extends Fragment
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        butterknifeUnbinder.unbind();
+        binding = null;
         presenter.onDetach();
     }
 
@@ -478,7 +452,7 @@ public class QuranPageFragment extends Fragment
     @Override
     public void onShareClick() {
         if (currentAya != null) {
-            startActivity(IntentUtils.getShareIntent(currentAya.getText(), getActivity()));
+            startActivity(IntentUtils.getShareIntent(currentAya.getText(), requireActivity()));
         }
     }
 
@@ -658,7 +632,7 @@ public class QuranPageFragment extends Fragment
 
             shadowView = new View(getActivity());
             ayaShadowsViews.add(shadowView);
-            quranPageContainer.addView(shadowView);
+            binding.quranPageContainer.addView(shadowView);
             params = (RelativeLayout.LayoutParams) shadowView.getLayoutParams();
             if (nightMode) {
                 shadowView.setBackgroundColor(getResources().getColor(R.color.aya_shadow_color_night_mode));
@@ -690,17 +664,15 @@ public class QuranPageFragment extends Fragment
 
     @Override
     public void showLoading() {
-        progressBar.setVisibility(View.VISIBLE);
+        binding.progreesBar.setVisibility(View.VISIBLE);
     }
 
     @Override
     public void hideLoading() {
-        progressBar.setVisibility(GONE);
+        binding.progreesBar.setVisibility(GONE);
     }
 
-
-    @OnClick(R.id.page_iv)
-    void onQuranPageClick() {
+    private void onQuranPageClick() {
         presenter.handleQuranPageClick();
     }
 
@@ -736,7 +708,7 @@ public class QuranPageFragment extends Fragment
 
     private void showQuranPage() {
 
-        GlideApp.with(getActivity())
+        GlideApp.with(requireActivity())
                 .load(quranImageUrl)
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
                 .listener(new RequestListener<Drawable>() {
@@ -746,8 +718,8 @@ public class QuranPageFragment extends Fragment
 
                         Log.d(TAG, "onLoadFailed: GlideApp");
                         if (FragmentUtils.isSafeFragment(QuranPageFragment.this)) {
-                            progressBar.setVisibility(GONE);
-                            failedContainer.setVisibility(View.VISIBLE);
+                            binding.progreesBar.setVisibility(GONE);
+                            binding.loadFailedContainer.getRoot().setVisibility(View.VISIBLE);
                         }
                         return false;
                     }
@@ -757,8 +729,8 @@ public class QuranPageFragment extends Fragment
                             , Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
 
                         if (FragmentUtils.isSafeFragment(QuranPageFragment.this)) {
-                            progressBar.setVisibility(GONE);
-                            failedContainer.setVisibility(GONE);
+                            binding.progreesBar.setVisibility(GONE);
+                            binding.loadFailedContainer.getRoot().setVisibility(GONE);
                             isPageShown = true;
 
 
@@ -787,7 +759,7 @@ public class QuranPageFragment extends Fragment
                         return false;
                     }
                 })
-                .into(quranPageIv);
+                .into(binding.pageIv);
     }
 
     public boolean isAyaAudioDownloaded() {

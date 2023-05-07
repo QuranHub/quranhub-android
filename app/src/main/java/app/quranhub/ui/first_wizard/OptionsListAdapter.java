@@ -6,8 +6,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Filter;
 import android.widget.Filterable;
-import android.widget.ImageView;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -17,8 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import app.quranhub.R;
-import butterknife.BindView;
-import butterknife.ButterKnife;
+import app.quranhub.databinding.ItemOptionBinding;
 
 public class OptionsListAdapter extends RecyclerView.Adapter<OptionsListAdapter.ViewHolder> implements Filterable {
 
@@ -104,17 +101,17 @@ public class OptionsListAdapter extends RecyclerView.Adapter<OptionsListAdapter.
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         if (filteredOptionsThumbnailsDrawableIds != null) {
             int drawableResId = filteredOptionsThumbnailsDrawableIds[position];
-            holder.optionThumbnailImageView.setVisibility(View.VISIBLE);
-            holder.optionThumbnailImageView.setImageResource(drawableResId);
+            holder.binding.ivOptionThumbnail.setVisibility(View.VISIBLE);
+            holder.binding.ivOptionThumbnail.setImageResource(drawableResId);
         } else {
-            holder.optionThumbnailImageView.setVisibility(View.GONE);
+            holder.binding.ivOptionThumbnail.setVisibility(View.GONE);
         }
         String option = filteredOptionsList.get(position);
-        holder.optionNameTextView.setText(option);
+        holder.binding.tvOptionName.setText(option);
         if (position == selectedOptionIndex) {
-            holder.checkBoxImageView.setVisibility(View.VISIBLE);
+            holder.binding.ivCheckBox.setVisibility(View.VISIBLE);
         } else {
-            holder.checkBoxImageView.setVisibility(View.INVISIBLE);
+            holder.binding.ivCheckBox.setVisibility(View.INVISIBLE);
         }
     }
 
@@ -181,16 +178,11 @@ public class OptionsListAdapter extends RecyclerView.Adapter<OptionsListAdapter.
 
     class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
 
-        @BindView(R.id.iv_option_thumbnail)
-        ImageView optionThumbnailImageView;
-        @BindView(R.id.tv_option_name)
-        TextView optionNameTextView;
-        @BindView(R.id.iv_check_box)
-        ImageView checkBoxImageView;
+        ItemOptionBinding binding;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            ButterKnife.bind(this, itemView);
+            binding = ItemOptionBinding.bind(itemView);
 
             itemView.setOnClickListener(this);
         }

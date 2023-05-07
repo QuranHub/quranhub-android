@@ -24,7 +24,7 @@ public class VoiceRecorderViewModel extends AndroidViewModel {
         audioRecorder = new MediaRecorder();
         audioRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
         audioRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-        audioRecorder.setAudioEncoder(MediaRecorder.OutputFormat.AMR_NB);
+        audioRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);
     }
 
 

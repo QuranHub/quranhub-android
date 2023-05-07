@@ -7,9 +7,6 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageButton;
-import android.widget.LinearLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -20,14 +17,10 @@ import androidx.lifecycle.MutableLiveData;
 
 import app.quranhub.R;
 import app.quranhub.data.local.prefs.AppPreferencesManager;
+import app.quranhub.databinding.FragmentMushafBottomBarBinding;
 import app.quranhub.ui.mushaf.presenter.QuranFooterPresenter;
 import app.quranhub.ui.mushaf.presenter.QuranFooterPresenterImp;
 import app.quranhub.ui.mushaf.view.QuranFooterView;
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
-import butterknife.Unbinder;
-
 
 public class MushafBottomBarFragment extends Fragment implements QuranFooterView {
 
@@ -37,15 +30,7 @@ public class MushafBottomBarFragment extends Fragment implements QuranFooterView
 
     private boolean nightMode;
 
-    @BindView(R.id.ll_root)
-    LinearLayout rootLinearLayout;
-    @BindView(R.id.quran_page_tv)
-    TextView quranPageTv;
-    @BindView(R.id.quran_night_mode_ib)
-    ImageButton nightModeImageButton;
-    @BindView(R.id.quran_search_ib)
-    ImageButton searchImageButton;
-    private Unbinder butterknifeUnbinder;
+    private FragmentMushafBottomBarBinding binding;
 
     private QuranFooterCallbacks footerCallbacks;
 
@@ -73,19 +58,21 @@ public class MushafBottomBarFragment extends Fragment implements QuranFooterView
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-
-        View view = inflater.inflate(R.layout.fragment_mushaf_bottom_bar, container, false);
-        butterknifeUnbinder = ButterKnife.bind(this, view);
-        return view;
+        binding = FragmentMushafBottomBarBinding.inflate(inflater, container, false);
+        return binding.getRoot();
     }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         initViews();
+
+        presenter.onAttach(this);
+
+        pageNumTextLiveData.observe(getViewLifecycleOwner(), pageNumText ->
+                binding.quranPageTv.setText(pageNumText));
     }
 
-    @SuppressLint("ClickableViewAccessibility")
     private void initViews() {
         setupButtonsTooltips();
 
@@ -94,46 +81,41 @@ public class MushafBottomBarFragment extends Fragment implements QuranFooterView
         nightMode = AppPreferencesManager.getNightModeSetting(requireActivity());
         setupNightModeButton();
 
-        rootLinearLayout.setOnTouchListener((v, event) -> {
+        attachListeners();
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    private void attachListeners() {
+        binding.llRoot.setOnTouchListener((v, event) -> {
             return true; // To prevent event bubbling to the views below this one
         });
+
+        binding.quranSearchIb.setOnClickListener(v -> onQuranSearchClick());
+        binding.quranNightModeIb.setOnClickListener(v -> onQuranNightModeClick());
     }
 
     private void setupButtonsTooltips() {
-        TooltipCompat.setTooltipText(nightModeImageButton, getString(R.string.tooltip_quran_night_mode));
-        TooltipCompat.setTooltipText(searchImageButton, getString(R.string.tooltip_quran_search));
-    }
-
-    @Override
-    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
-
-        presenter.onAttach(this);
-
-        pageNumTextLiveData.observe(getViewLifecycleOwner(), pageNumText -> {
-            quranPageTv.setText(pageNumText);
-        });
+        TooltipCompat.setTooltipText(binding.quranNightModeIb, getString(R.string.tooltip_quran_night_mode));
+        TooltipCompat.setTooltipText(binding.quranSearchIb, getString(R.string.tooltip_quran_search));
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        butterknifeUnbinder.unbind();
+        binding = null;
         presenter.onDetach();
     }
 
-    @OnClick(R.id.quran_search_ib)
-    void onQuranSearchClick() {
+    private void onQuranSearchClick() {
         presenter.displaySearchDialog();
     }
 
-    @OnClick(R.id.quran_night_mode_ib)
-    void onQuranNightModeClick() {
+    private void onQuranNightModeClick() {
         presenter.toggleNightMode();
     }
 
     private void setupNightModeButton() {
-        nightModeImageButton.setImageResource(
+        binding.quranNightModeIb.setImageResource(
                 nightMode ? R.drawable.ic_nightmode_on : R.drawable.ic_nightmode_off);
     }
 

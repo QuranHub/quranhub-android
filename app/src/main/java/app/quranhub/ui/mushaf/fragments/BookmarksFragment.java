@@ -8,8 +8,6 @@ import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.EditText;
-import android.widget.ImageButton;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -19,6 +17,7 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 
 import app.quranhub.R;
+import app.quranhub.databinding.FragmentBookmarksBinding;
 import app.quranhub.ui.common.interfaces.ToolbarActionsListener;
 import app.quranhub.ui.mushaf.listener.BookmarksListListener;
 import app.quranhub.ui.mushaf.listener.QuranNavigationCallbacks;
@@ -26,11 +25,6 @@ import app.quranhub.ui.mushaf.presenter.BookmarksPresenter;
 import app.quranhub.ui.mushaf.presenter.BookmarksPresenterImp;
 import app.quranhub.ui.mushaf.view.BookmarksView;
 import app.quranhub.util.ScreenUtils;
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
-import butterknife.Unbinder;
-
 
 public class BookmarksFragment extends Fragment
         implements BookmarksView
@@ -44,16 +38,7 @@ public class BookmarksFragment extends Fragment
     private QuranNavigationCallbacks quranNavigationCallbacks;
     private boolean isListEditable = true;
 
-    @BindView(R.id.et_search)
-    EditText searchEditText;
-    @BindView(R.id.ib_finish_edit)
-    ImageButton finishEditImageButton;
-    @BindView(R.id.edit_btn)
-    ImageButton editButton;
-    @BindView(R.id.filter_btn)
-    ImageButton filterButton;
-
-    private Unbinder butterknifeUnbinder;
+    private FragmentBookmarksBinding binding;
 
     private BookmarksListFragment bookmarksListFragment;
 
@@ -91,12 +76,11 @@ public class BookmarksFragment extends Fragment
                              Bundle savedInstanceState) {
 
         // Inflate the layout for this fragment
-        View view = inflater.inflate(R.layout.fragment_bookmarks, container, false);
-        butterknifeUnbinder = ButterKnife.bind(this, view);
+        binding = FragmentBookmarksBinding.inflate(inflater, container, false);
 
         presenter = new BookmarksPresenterImp();
 
-        searchEditText.addTextChangedListener(new TextWatcher() {
+        binding.etSearch.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
             }
@@ -111,35 +95,42 @@ public class BookmarksFragment extends Fragment
             }
         });
 
-        return view;
+        return binding.getRoot();
     }
 
     @Override
-    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
-
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
         bookmarksListFragment = BookmarksListFragment.newInstance();
         FragmentTransaction transaction = getChildFragmentManager().beginTransaction();
         transaction.replace(R.id.list_container, bookmarksListFragment);
         transaction.commit();
 
         presenter.onAttach(this);
+
+        attachListeners();
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
         presenter.onDetach();
-        butterknifeUnbinder.unbind();
+        binding = null;
     }
 
-    @OnClick(R.id.hamburger_iv)
-    void onNavHamburgerClick() {
+    private void attachListeners() {
+        binding.hamburgerIv.setOnClickListener(v -> onNavHamburgerClick());
+        binding.editBtn.setOnClickListener(v -> edit());
+        binding.filterBtn.setOnClickListener(v -> filter());
+        binding.ibFinishEdit.setOnClickListener(v -> finishEdit());
+
+    }
+
+    private void onNavHamburgerClick() {
         navDrawerListener.onNavDrawerClick();
     }
 
-    @OnClick(R.id.edit_btn)
-    void edit() {
+    private void edit() {
         if (isListEditable) {
             presenter.enableEditList();
         } else {
@@ -147,13 +138,11 @@ public class BookmarksFragment extends Fragment
         }
     }
 
-    @OnClick(R.id.filter_btn)
-    void filter() {
+    private void filter() {
         presenter.filterList();
     }
 
-    @OnClick(R.id.ib_finish_edit)
-    void finishEdit() {
+    private void finishEdit() {
         presenter.finishEditList();
     }
 
@@ -170,17 +159,17 @@ public class BookmarksFragment extends Fragment
 
     @Override
     public void enableEditList() {
-        editButton.setVisibility(View.INVISIBLE);
-        finishEditImageButton.setVisibility(View.VISIBLE);
-        filterButton.setVisibility(View.INVISIBLE);
+        binding.editBtn.setVisibility(View.INVISIBLE);
+        binding.ibFinishEdit.setVisibility(View.VISIBLE);
+        binding.filterBtn.setVisibility(View.INVISIBLE);
         bookmarksListFragment.setEditBookmarks(true);
     }
 
     @Override
     public void finishEditList() {
-        editButton.setVisibility(View.VISIBLE);
-        finishEditImageButton.setVisibility(View.INVISIBLE);
-        filterButton.setVisibility(View.VISIBLE);
+        binding.editBtn.setVisibility(View.VISIBLE);
+        binding.ibFinishEdit.setVisibility(View.INVISIBLE);
+        binding.filterBtn.setVisibility(View.VISIBLE);
         bookmarksListFragment.setEditBookmarks(false);
     }
 
@@ -201,9 +190,9 @@ public class BookmarksFragment extends Fragment
 
         // disable/enable the edit image button
         if (isEditable) {
-            editButton.setImageResource(R.drawable.edit_gold_ic);
+            binding.editBtn.setImageResource(R.drawable.edit_gold_ic);
         } else {
-            editButton.setColorFilter(ContextCompat.getColor(requireContext(), R.color.dark_grey));
+            binding.editBtn.setColorFilter(ContextCompat.getColor(requireContext(), R.color.dark_grey));
         }
 
     }
@@ -215,7 +204,7 @@ public class BookmarksFragment extends Fragment
 
     @Override
     public void gotoQuranPageAya(int pageNumber, int ayaId, boolean addToBackStack) {
-        ScreenUtils.dismissKeyboard(requireActivity(), searchEditText);
+        ScreenUtils.dismissKeyboard(requireActivity(), binding.etSearch);
         quranNavigationCallbacks.gotoQuranPageAya(pageNumber, ayaId, false);
     }
 

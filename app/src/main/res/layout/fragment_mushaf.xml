@@ -80,6 +80,8 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <include layout="@layout/bottomsheet_translation" />
+    <include
+        android:id="@+id/translation_bottom_sheet"
+        layout="@layout/bottomsheet_translation" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

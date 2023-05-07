@@ -9,9 +9,6 @@ import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.EditText;
-import android.widget.ProgressBar;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -20,7 +17,6 @@ import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,6 +26,7 @@ import app.quranhub.R;
 import app.quranhub.data.Constants;
 import app.quranhub.data.local.entity.TranslationBook;
 import app.quranhub.data.local.prefs.AppPreferencesManager;
+import app.quranhub.databinding.FragmentTafseerBinding;
 import app.quranhub.ui.common.dialogs.OptionsListDialogFragment;
 import app.quranhub.ui.common.interfaces.ToolbarActionsListener;
 import app.quranhub.ui.mushaf.adapter.TafseerAdapter;
@@ -37,27 +34,12 @@ import app.quranhub.ui.mushaf.dialogs.OptionDialog;
 import app.quranhub.ui.mushaf.dialogs.TranslationsDialogFragment;
 import app.quranhub.ui.mushaf.model.TafseerModel;
 import app.quranhub.ui.mushaf.viewmodel.TafseerViewModel;
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
-
 
 public class TafseerFragment extends Fragment implements OptionDialog.ItemClickListener
         , TranslationsDataFragment.TranslationSelectionListener
         , OptionsListDialogFragment.ItemSelectionListener {
 
-    @BindView(R.id.tafseer_rv)
-    RecyclerView tafseerRv;
-    @BindView(R.id.progrees_bar)
-    ProgressBar progressBar;
-    @BindView(R.id.et_search)
-    EditText searchEt;
-    @BindView(R.id.sura_tv)
-    TextView suraTv;
-    @BindView(R.id.book_tv)
-    TextView bookTv;
-    @BindView(R.id.lang_tv)
-    TextView langTv;
+    private FragmentTafseerBinding binding;
 
     private static final int RC_TRANS_LANG_SETTING = 2;
     private String inputSearch = "";
@@ -97,17 +79,16 @@ public class TafseerFragment extends Fragment implements OptionDialog.ItemClickL
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_tafseer, container, false);
-        ButterKnife.bind(this, view);
-
-        return view;
+        binding = FragmentTafseerBinding.inflate(inflater, container, false);
+        return binding.getRoot();
     }
 
     @Override
-    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
         getArgumentsData();
 
         if (savedInstanceState != null) {
@@ -115,14 +96,24 @@ public class TafseerFragment extends Fragment implements OptionDialog.ItemClickL
         }
         initRecycler();
         bindViewModel();
+
+        attachListeners();
+    }
+
+    private void attachListeners() {
         observeOnInputSearch();
+
+        binding.filterSuraBtn.setOnClickListener(v -> onOpenSuraFilter());
+        binding.filterBookBtn.setOnClickListener(v -> onOpenBooksFilter());
+        binding.filterLangBtn.setOnClickListener(v -> onOpenLangFilter());
+        binding.hamburgerIv.setOnClickListener(v -> onNavHamburgerClick());
     }
 
     private void getPrevState(Bundle savedInstanceState) {
         inputSearch = savedInstanceState.getString("input_search");
         suraName = savedInstanceState.getString("sura_name");
         suraNumber = savedInstanceState.getInt("sura_number");
-        suraTv.setText(suraName);
+        binding.suraTv.setText(suraName);
     }
 
     @Override
@@ -135,9 +126,9 @@ public class TafseerFragment extends Fragment implements OptionDialog.ItemClickL
 
     private void initRecycler() {
         adapter = new TafseerAdapter(getActivity());
-        tafseerRv.setLayoutManager(new LinearLayoutManager(getActivity()));
-        tafseerRv.setHasFixedSize(true);
-        tafseerRv.setAdapter(adapter);
+        binding.tafseerRv.setLayoutManager(new LinearLayoutManager(getActivity()));
+        binding.tafseerRv.setHasFixedSize(true);
+        binding.tafseerRv.setAdapter(adapter);
     }
 
     private void bindViewModel() {
@@ -146,20 +137,20 @@ public class TafseerFragment extends Fragment implements OptionDialog.ItemClickL
         if (currentTafsserId != null || currentTafseerLang.equals("ar")) {
             getTafseers();
         } else {
-            progressBar.setVisibility(View.GONE);
-            bookTv.setText(getString(R.string.choose_book));
+            binding.progreesBar.setVisibility(View.GONE);
+            binding.bookTv.setText(getString(R.string.choose_book));
             Toast.makeText(getActivity(), getString(R.string.no_downloaded_books), Toast.LENGTH_LONG).show();
         }
 
         viewModel.getTafseers().observe(getViewLifecycleOwner(), tafseerModels -> {
 
-            progressBar.setVisibility(View.GONE);
+            binding.progreesBar.setVisibility(View.GONE);
             if (tafseerModels != null && tafseerModels.size() > 0) {
                 adapter.setTafseerModelList(tafseerModels);
                 if (ayaNumber <= tafseerModels.size()) {
-                    tafseerRv.scrollToPosition(ayaNumber - 1);
+                    binding.tafseerRv.scrollToPosition(ayaNumber - 1);
                 } else {
-                    tafseerRv.scrollToPosition(0);
+                    binding.tafseerRv.scrollToPosition(0);
                 }
                 if (inputSearch != null && !TextUtils.isEmpty(inputSearch.trim())) {
                     adapter.filter(inputSearch);
@@ -175,14 +166,14 @@ public class TafseerFragment extends Fragment implements OptionDialog.ItemClickL
         });
 
         viewModel.getBookTafseers().observe(getViewLifecycleOwner(), translations -> {
-            progressBar.setVisibility(View.GONE);
+            binding.progreesBar.setVisibility(View.GONE);
             if (translations != null && ayasTafseer != null && translations.size() > 0) {
                 List<TafseerModel> tafseerModels = TafseerModel.map(translations, ayasTafseer);
                 adapter.setTafseerModelList(tafseerModels);
                 if (ayaNumber <= tafseerModels.size()) {
-                    tafseerRv.scrollToPosition(ayaNumber - 1);
+                    binding.tafseerRv.scrollToPosition(ayaNumber - 1);
                 } else {
-                    tafseerRv.scrollToPosition(0);
+                    binding.tafseerRv.scrollToPosition(0);
                 }
                 if (inputSearch != null && !TextUtils.isEmpty(inputSearch.trim())) {
                     adapter.filter(inputSearch);
@@ -203,7 +194,7 @@ public class TafseerFragment extends Fragment implements OptionDialog.ItemClickL
     }
 
     private void observeOnInputSearch() {
-        searchEt.addTextChangedListener(new TextWatcher() {
+        binding.etSearch.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
             }
@@ -216,7 +207,6 @@ public class TafseerFragment extends Fragment implements OptionDialog.ItemClickL
 
             @Override
             public void afterTextChanged(Editable s) {
-
             }
         });
     }
@@ -230,17 +220,16 @@ public class TafseerFragment extends Fragment implements OptionDialog.ItemClickL
             bookDbName = getArguments().getString(ARG_BOOK_DB_NAME);
             bookName = getArguments().getString(ARG_BOOK_NAME);
             ayaNumber = getArguments().getInt("ARG_AYA_NUMBER");
-            bookTv.setText(bookName);
-            suraTv.setText(suraName);
+            binding.bookTv.setText(bookName);
+            binding.suraTv.setText(suraName);
         }
         int currentTranslationLanguageIndex = Constants.Language.CODES.indexOf(
                 AppPreferencesManager.getQuranTranslationLanguage(requireContext()));
-        langTv.setText(
+        binding.langTv.setText(
                 getString(Constants.Language.NAMES_STR_IDS[currentTranslationLanguageIndex]));
     }
 
-    @OnClick(R.id.filter_sura_btn)
-    public void onOpenSuraFilter() {
+    private void onOpenSuraFilter() {
         String[] optionsArr = getResources().getStringArray(R.array.sura_name);
         ArrayList<String> options = new ArrayList<>();
         options.addAll(Arrays.asList(optionsArr));
@@ -249,16 +238,14 @@ public class TafseerFragment extends Fragment implements OptionDialog.ItemClickL
         fragment.show(getChildFragmentManager(), "trans_sura_dialog");
     }
 
-    @OnClick(R.id.filter_book_btn)
-    public void onOpenBooksFilter() {
+    private void onOpenBooksFilter() {
         String transLang = AppPreferencesManager.getQuranTranslationLanguage(requireContext());
         TranslationsDialogFragment translationsDialog = TranslationsDialogFragment.newInstance(
                 transLang, this);
         translationsDialog.show(getParentFragmentManager(), "trans_book_dialog");
     }
 
-    @OnClick(R.id.filter_lang_btn)
-    public void onOpenLangFilter() {
+    private void onOpenLangFilter() {
         int currentTranslationLanguageIndex = Constants.Language.CODES.indexOf(
                 AppPreferencesManager.getQuranTranslationLanguage(requireContext()));
         OptionsListDialogFragment translationLangDialog = OptionsListDialogFragment.getInstance(
@@ -268,8 +255,7 @@ public class TafseerFragment extends Fragment implements OptionDialog.ItemClickL
         translationLangDialog.show(getParentFragmentManager(), "trans_lang_dialog");
     }
 
-    @OnClick(R.id.hamburger_iv)
-    public void onNavHamburgerClick() {
+    private void onNavHamburgerClick() {
         navDrawerListener.onNavDrawerClick();
     }
 
@@ -279,7 +265,7 @@ public class TafseerFragment extends Fragment implements OptionDialog.ItemClickL
         getTafseers();
         //viewModel.getSuraTafseers(translationBook.getDatabaseName(), suraNumber);
         currentTafsserId = translationBook.getId();
-        bookTv.setText(translationBook.getName());
+        binding.bookTv.setText(translationBook.getName());
     }
 
     @Override
@@ -287,16 +273,17 @@ public class TafseerFragment extends Fragment implements OptionDialog.ItemClickL
         String langCode = Constants.Language.CODES.get(itemIndex);
         AppPreferencesManager.persistQuranTranslationLanguage(requireContext(), langCode);
         currentTafseerLang = langCode;
-        langTv.setText(getString(Constants.Language.NAMES_STR_IDS[itemIndex]));
+        binding.langTv.setText(getString(Constants.Language.NAMES_STR_IDS[itemIndex]));
     }
 
     @Override
     public void onItemClick(String optionName, int optionIndex, int requestCode) {
-        searchEt.getText().clear();
+        binding.etSearch.getText().clear();
         this.suraName = optionName;
         this.suraNumber = optionIndex + 1;
         this.ayaNumber = 1;
         getTafseers();
-        suraTv.setText(suraName);
+        binding.suraTv.setText(suraName);
     }
+
 }

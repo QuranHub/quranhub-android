@@ -94,7 +94,7 @@
                 android:layout_marginBottom="4dp"
                 android:background="@color/transparent_color"
                 android:src="@drawable/clear_search_delete_gray_small_ic"
-                android:tint="@color/dark_grey"
+                app:tint="@color/dark_grey"
                 android:visibility="invisible"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"

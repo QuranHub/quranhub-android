@@ -8,19 +8,19 @@ import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.EditText;
-import android.widget.ProgressBar;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import app.quranhub.R;
+import app.quranhub.databinding.FragmentQuranTopicsBinding;
 import app.quranhub.ui.common.interfaces.ToolbarActionsListener;
 import app.quranhub.ui.main.MainActivity;
 import app.quranhub.ui.mushaf.adapter.SubjectsAdapter;
@@ -28,18 +28,10 @@ import app.quranhub.ui.mushaf.listener.ItemSelectionListener;
 import app.quranhub.ui.mushaf.model.TopicCategory;
 import app.quranhub.ui.mushaf.model.TopicModel;
 import app.quranhub.ui.mushaf.viewmodel.SubjectsViewModel;
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
 
 public class QuranTopicsFragment extends Fragment implements ItemSelectionListener<TopicCategory> {
 
-    @BindView(R.id.et_search)
-    EditText searchEt;
-    @BindView(R.id.topics_rv)
-    RecyclerView topicsRv;
-    @BindView(R.id.progrees_bar)
-    ProgressBar progressBar;
+    private FragmentQuranTopicsBinding binding;
 
     private SubjectsAdapter adapter;
     private SubjectsViewModel viewModel;
@@ -47,7 +39,7 @@ public class QuranTopicsFragment extends Fragment implements ItemSelectionListen
     private List<TopicModel> topicModels;
 
     @Override
-    public void onAttach(Context context) {
+    public void onAttach(@NonNull Context context) {
         super.onAttach(context);
         if (context instanceof ToolbarActionsListener) {
             navDrawerListener = (ToolbarActionsListener) context;
@@ -56,21 +48,29 @@ public class QuranTopicsFragment extends Fragment implements ItemSelectionListen
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_quran_topics, container, false);
-        ButterKnife.bind(this, view);
+        binding = FragmentQuranTopicsBinding.inflate(inflater, container, false);
+        return binding.getRoot();
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
         intiRecycler();
         bindViewModel();
+        attachListeners();
+    }
+
+    private void attachListeners() {
         observeOnInputSearch();
-        return view;
+        binding.hamburgerIv.setOnClickListener(v -> onNavHamburgerClick());
     }
 
     private void observeOnInputSearch() {
-        searchEt.addTextChangedListener(new TextWatcher() {
+        binding.etSearch.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-
             }
 
             @Override
@@ -80,7 +80,6 @@ public class QuranTopicsFragment extends Fragment implements ItemSelectionListen
 
             @Override
             public void afterTextChanged(Editable s) {
-
             }
         });
     }
@@ -88,7 +87,7 @@ public class QuranTopicsFragment extends Fragment implements ItemSelectionListen
     private void filter(String inputQuery) {
         if (inputQuery.isEmpty()) {
             adapter = new SubjectsAdapter(topicModels, this);
-            topicsRv.setAdapter(adapter);
+            binding.topicsRv.setAdapter(adapter);
         } else {
             List<TopicModel> filteredList = new ArrayList<>();
             for (TopicModel row : topicModels) {
@@ -97,7 +96,7 @@ public class QuranTopicsFragment extends Fragment implements ItemSelectionListen
                 }
             }
             adapter = new SubjectsAdapter(filteredList, this);
-            topicsRv.setAdapter(adapter);
+            binding.topicsRv.setAdapter(adapter);
         }
     }
 
@@ -107,16 +106,16 @@ public class QuranTopicsFragment extends Fragment implements ItemSelectionListen
         viewModel = new ViewModelProvider(this).get(SubjectsViewModel.class);
         viewModel.getSubjects(subjects, subjectsCategory);
         viewModel.getSubjectsLiveData().observe(getViewLifecycleOwner(), topicModels -> {
-            progressBar.setVisibility(View.GONE);
+            binding.progreesBar.setVisibility(View.GONE);
             this.topicModels = topicModels;
             adapter = new SubjectsAdapter(topicModels, this);
-            topicsRv.setAdapter(adapter);
+            binding.topicsRv.setAdapter(adapter);
         });
     }
 
     private void intiRecycler() {
         topicModels = new ArrayList<>();
-        topicsRv.setLayoutManager(new LinearLayoutManager(getActivity()));
+        binding.topicsRv.setLayoutManager(new LinearLayoutManager(getActivity()));
     }
 
     @Override
@@ -127,8 +126,7 @@ public class QuranTopicsFragment extends Fragment implements ItemSelectionListen
         }
     }
 
-    @OnClick(R.id.hamburger_iv)
-    public void onNavHamburgerClick() {
+    private void onNavHamburgerClick() {
         navDrawerListener.onNavDrawerClick();
     }
 }

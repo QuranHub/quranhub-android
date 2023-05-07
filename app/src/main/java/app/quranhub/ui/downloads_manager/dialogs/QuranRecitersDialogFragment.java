@@ -12,9 +12,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
-import android.widget.Button;
-import android.widget.ProgressBar;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -35,13 +32,10 @@ import app.quranhub.data.local.entity.Reciter;
 import app.quranhub.data.local.prefs.AppPreferencesManager;
 import app.quranhub.data.model.ReciterModel;
 import app.quranhub.data.repository.RecitationsRepository;
+import app.quranhub.databinding.DialogQuranRecitersBinding;
 import app.quranhub.ui.common.dialogs.OptionsListAdapter;
 import app.quranhub.util.DialogUtils;
 import app.quranhub.util.FragmentUtils;
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
-import butterknife.Unbinder;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
@@ -69,18 +63,7 @@ public class QuranRecitersDialogFragment extends DialogFragment
 
     private int selectedReciterIndex = -1;
 
-    @BindView(R.id.tv_msg_downloaded_reciters_only)
-    TextView downloadedRecitersOnlyMsgTextView;
-    @BindView(R.id.rv_reciters)
-    RecyclerView recitersRecyclerView;
-    @BindView(R.id.tv_msg_internet_connection_failed)
-    TextView internetConnectionFailedMsgTextView;
-    @BindView(R.id.progress_bar)
-    ProgressBar progressBar;
-    @BindView(R.id.btn_select)
-    Button selectButton;
-
-    private Unbinder butterknifeUnbinder;
+    private DialogQuranRecitersBinding binding;
 
     private OptionsListAdapter adapter;
 
@@ -159,17 +142,22 @@ public class QuranRecitersDialogFragment extends DialogFragment
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View dialogView = inflater.inflate(R.layout.dialog_quran_reciters, container);
-        butterknifeUnbinder = ButterKnife.bind(this, dialogView);
+        binding = DialogQuranRecitersBinding.inflate(inflater, container, false);
         initDialogView();
-        return dialogView;
+        return binding.getRoot();
     }
 
     private void initDialogView() {
-        downloadedRecitersOnlyMsgTextView.setVisibility(View.GONE);
-        internetConnectionFailedMsgTextView.setVisibility(View.GONE);
-        progressBar.setVisibility(View.VISIBLE);
-        selectButton.setEnabled(false);
+        binding.tvMsgDownloadedRecitersOnly.setVisibility(View.GONE);
+        binding.tvMsgInternetConnectionFailed.setVisibility(View.GONE);
+        binding.progressBar.setVisibility(View.VISIBLE);
+        binding.btnSelect.setEnabled(false);
+        attachListeners();
+    }
+
+    private void attachListeners() {
+        binding.btnSelect.setOnClickListener(v -> onSelectClick());
+        binding.btnBack.setOnClickListener(v -> onBackClick());
     }
 
     private void setupRecitersRecyclerView() {
@@ -180,17 +168,17 @@ public class QuranRecitersDialogFragment extends DialogFragment
                 recitersNames.add(r.getLocalizedName(requireContext()));
                 if (r.getId().equals(selectedReciterId)) {
                     selectedReciterIndex = i;
-                    selectButton.setEnabled(true);
+                    binding.btnSelect.setEnabled(true);
                 }
             }
 
-            recitersRecyclerView.setHasFixedSize(true);
-            recitersRecyclerView.setLayoutManager(new LinearLayoutManager(
+            binding.rvReciters.setHasFixedSize(true);
+            binding.rvReciters.setLayoutManager(new LinearLayoutManager(
                     getContext(), RecyclerView.VERTICAL, false));
-            recitersRecyclerView.addItemDecoration(new DividerItemDecoration(
+            binding.rvReciters.addItemDecoration(new DividerItemDecoration(
                     getContext(), DividerItemDecoration.VERTICAL));
             adapter = new OptionsListAdapter(recitersNames, selectedReciterIndex, this);
-            recitersRecyclerView.setAdapter(adapter);
+            binding.rvReciters.setAdapter(adapter);
         }
     }
 
@@ -229,7 +217,7 @@ public class QuranRecitersDialogFragment extends DialogFragment
                                         Toast.LENGTH_SHORT).show();
                             }
 
-                            progressBar.setVisibility(View.GONE);
+                            binding.progressBar.setVisibility(View.GONE);
                         }
                     }
 
@@ -280,14 +268,14 @@ public class QuranRecitersDialogFragment extends DialogFragment
                         FragmentUtils.isSafeFragment(QuranRecitersDialogFragment.this)) {
                     reciterModels = recitersList;
                     if (reciterModels.size() > 0) {
-                        downloadedRecitersOnlyMsgTextView.setVisibility(View.VISIBLE);
+                        binding.tvMsgDownloadedRecitersOnly.setVisibility(View.VISIBLE);
                         setupRecitersRecyclerView();
                     } else {
                         // User hasn't downloaded any Quran audio before
-                        internetConnectionFailedMsgTextView.setVisibility(View.VISIBLE);
+                        binding.tvMsgInternetConnectionFailed.setVisibility(View.VISIBLE);
                     }
 
-                    progressBar.setVisibility(View.GONE);
+                    binding.progressBar.setVisibility(View.GONE);
                 }
             }
         }.execute();
@@ -296,24 +284,22 @@ public class QuranRecitersDialogFragment extends DialogFragment
     @Override
     public void onItemClick(int clickedItemIndex) {
         selectedReciterIndex = clickedItemIndex;
-        if (!selectButton.isEnabled()) selectButton.setEnabled(true);
+        if (!binding.btnSelect.isEnabled()) binding.btnSelect.setEnabled(true);
     }
 
-    @OnClick(R.id.btn_back)
-    void onBackClick() {
+    private void onBackClick() {
         dismiss();
     }
 
     @SuppressLint("StaticFieldLeak")
-    @OnClick(R.id.btn_select)
-    void onSelectClick() {
+    private void onSelectClick() {
         ReciterModel selectedReciterModel = reciterModels.get(selectedReciterIndex);
 
         new AsyncTask<Void, Void, Void>() {
 
             @Override
             protected void onPreExecute() {
-                selectButton.setEnabled(false);
+                binding.btnSelect.setEnabled(false);
             }
 
             @Override
@@ -357,7 +343,7 @@ public class QuranRecitersDialogFragment extends DialogFragment
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        butterknifeUnbinder.unbind();
+        binding = null;
     }
 
     @Override

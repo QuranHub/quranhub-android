@@ -3,8 +3,6 @@ package app.quranhub.ui.downloads_manager.adapters;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageButton;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -12,10 +10,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 
 import app.quranhub.R;
+import app.quranhub.databinding.ItemDownloadBinding;
 import app.quranhub.ui.downloads_manager.model.DisplayableDownload;
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
 
 public class DownloadsAdapter extends RecyclerView.Adapter<DownloadsAdapter.ViewHolder> {
 
@@ -81,48 +77,55 @@ public class DownloadsAdapter extends RecyclerView.Adapter<DownloadsAdapter.View
 
     public class ViewHolder extends RecyclerView.ViewHolder {
 
-        @BindView(R.id.tv_name)
-        TextView nameTextView;
-        @BindView(R.id.tv_downloaded_amount)
-        TextView downloadedAmountTextView;
-        @BindView(R.id.ib_action)
-        ImageButton actionImageButton;
+        ItemDownloadBinding binding;
 
         public ViewHolder(View itemView) {
             super(itemView);
-            ButterKnife.bind(this, itemView);
+            binding = ItemDownloadBinding.bind(itemView);
+
+            attachClickListeners();
         }
 
         public void bind(@NonNull DisplayableDownload displayableDownload) {
-            nameTextView.setText(displayableDownload.getName());
+            binding.tvName.setText(displayableDownload.getName());
             if (displayableDownload.getDownloadedAmount() != null) {
-                downloadedAmountTextView.setText(displayableDownload.getDownloadedAmount());
+                binding.tvDownloadedAmount.setText(displayableDownload.getDownloadedAmount());
             }
             if (edit) {  // edit mode
                 if (displayableDownload.isDeletable()) {
-                    actionImageButton.setImageResource(R.drawable.ic_delete);
-                    actionImageButton.setVisibility(View.VISIBLE);
+                    binding.ibAction.setImageResource(R.drawable.ic_delete);
+                    binding.ibAction.setVisibility(View.VISIBLE);
                 } else {
-                    actionImageButton.setVisibility(View.INVISIBLE);
+                    binding.ibAction.setVisibility(View.INVISIBLE);
                 }
             } else {  // download mode
                 if (displayableDownload.isDownloadable()) {
-                    actionImageButton.setImageResource(R.drawable.ic_download);
-                    actionImageButton.setVisibility(View.VISIBLE);
+                    binding.ibAction.setImageResource(R.drawable.ic_download);
+                    binding.ibAction.setVisibility(View.VISIBLE);
                 } else {
-                    actionImageButton.setVisibility(View.INVISIBLE);
+                    binding.ibAction.setVisibility(View.INVISIBLE);
                 }
             }
         }
 
-        @OnClick(R.id.ll_content)
-        void onContentClick() {
+        private void attachClickListeners() {
+
+            binding.llContent.setOnClickListener(v -> {
+                onContentClick();
+            });
+
+            binding.ibAction.setOnClickListener(v -> {
+                onActionButtonClick();
+            });
+
+        }
+
+        private void onContentClick() {
             DisplayableDownload clickedDisplayableDownload = displayableDownloads.get(getAdapterPosition());
             clickListener.onClickItem(clickedDisplayableDownload, getAdapterPosition());
         }
 
-        @OnClick(R.id.ib_action)
-        void onActionButtonClick() {
+        private void onActionButtonClick() {
             DisplayableDownload clickedDisplayableDownload = displayableDownloads.get(getAdapterPosition());
             if (edit) {
                 clickListener.onDeleteItem(clickedDisplayableDownload, getAdapterPosition());

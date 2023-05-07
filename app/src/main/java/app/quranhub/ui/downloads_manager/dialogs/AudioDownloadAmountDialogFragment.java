@@ -17,8 +17,6 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.ImageView;
-import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -31,12 +29,9 @@ import app.quranhub.data.Constants;
 import app.quranhub.data.local.db.UserDatabase;
 import app.quranhub.data.local.entity.ReciterRecitation;
 import app.quranhub.data.service.QuranAudioDownloaderService;
+import app.quranhub.databinding.DialogAudioDownloadAmountBinding;
 import app.quranhub.util.DialogUtils;
 import app.quranhub.util.NetworkUtil;
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
-import butterknife.Unbinder;
 
 /**
  * A {@code DialogFragment} that allows the user to choose the Quran audio amount he wants to download.
@@ -59,14 +54,7 @@ public class AudioDownloadAmountDialogFragment extends DialogFragment {
     private int suraId;  // [optional, defaults to 1]
     private int selectedOption;
 
-    @BindView(R.id.spinner_suras)
-    Spinner surasSpinner;
-    @BindView(R.id.iv_check_option_sura_download)
-    ImageView suraDownloadOptionCheckImageView;
-    @BindView(R.id.iv_check_option_download_all)
-    ImageView downloadAlOptionCheckImageView;
-
-    private Unbinder butterknifeUnbinder;
+    private DialogAudioDownloadAmountBinding binding;
 
     private AudioDownloadListener listener;
 
@@ -107,7 +95,7 @@ public class AudioDownloadAmountDialogFragment extends DialogFragment {
     }
 
     @Override
-    public void onAttach(Context context) {
+    public void onAttach(@NonNull Context context) {
         super.onAttach(context);
         if (context instanceof AudioDownloadListener) {
             listener = (AudioDownloadListener) context;
@@ -142,10 +130,9 @@ public class AudioDownloadAmountDialogFragment extends DialogFragment {
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        View dialogView = inflater.inflate(R.layout.dialog_audio_download_amount, container, false);
-        butterknifeUnbinder = ButterKnife.bind(this, dialogView);
+        binding = DialogAudioDownloadAmountBinding.inflate(inflater, container, false);
         initDialogView();
-        return dialogView;
+        return binding.getRoot();
     }
 
     private void initDialogView() {
@@ -156,9 +143,9 @@ public class AudioDownloadAmountDialogFragment extends DialogFragment {
         ArrayAdapter<String> dataAdapter = new ArrayAdapter<>(requireContext(),
                 android.R.layout.simple_spinner_item, suras);
         dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        surasSpinner.setAdapter(dataAdapter);
-        surasSpinner.setSelection(suraId - 1);
-        surasSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+        binding.spinnerSuras.setAdapter(dataAdapter);
+        binding.spinnerSuras.setSelection(suraId - 1);
+        binding.spinnerSuras.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 if (parent != null && parent.getChildAt(0) != null) {
@@ -173,16 +160,18 @@ public class AudioDownloadAmountDialogFragment extends DialogFragment {
             public void onNothingSelected(AdapterView<?> parent) {
             }
         });
+
+        attachListeners();
     }
 
     private void setSelectedOption(int option) {
         selectedOption = option;
         if (selectedOption == OPTION_DOWNLOAD_SURA) {
-            suraDownloadOptionCheckImageView.setVisibility(View.VISIBLE);
-            downloadAlOptionCheckImageView.setVisibility(View.INVISIBLE);
+            binding.ivCheckOptionSuraDownload.setVisibility(View.VISIBLE);
+            binding.ivCheckOptionDownloadAll.setVisibility(View.INVISIBLE);
         } else if (selectedOption == OPTION_DOWNLOAD_ALL) {
-            suraDownloadOptionCheckImageView.setVisibility(View.INVISIBLE);
-            downloadAlOptionCheckImageView.setVisibility(View.VISIBLE);
+            binding.ivCheckOptionSuraDownload.setVisibility(View.INVISIBLE);
+            binding.ivCheckOptionDownloadAll.setVisibility(View.VISIBLE);
         }
     }
 
@@ -197,27 +186,35 @@ public class AudioDownloadAmountDialogFragment extends DialogFragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        butterknifeUnbinder.unbind();
+        binding = null;
     }
 
-    @OnClick(R.id.cl_option_sura_download)
-    void onSuraDownloadOptionClick() {
+    private void attachListeners() {
+
+        binding.clOptionSuraDownload.setOnClickListener(v -> onSuraDownloadOptionClick());
+
+        binding.clOptionDownloadAll.setOnClickListener(v -> onDownloadAllOptionClick());
+
+        binding.btnCancel.setOnClickListener(v -> onCancelButtonClick());
+
+        binding.btnDownload.setOnClickListener(v -> onDownloadButtonClick());
+
+    }
+
+    private void onSuraDownloadOptionClick() {
         setSelectedOption(OPTION_DOWNLOAD_SURA);
     }
 
-    @OnClick(R.id.cl_option_download_all)
-    void onDownloadAllOptionClick() {
+    private void onDownloadAllOptionClick() {
         setSelectedOption(OPTION_DOWNLOAD_ALL);
     }
 
-    @OnClick(R.id.btn_cancel)
-    void onCancelButtonClick() {
+    private void onCancelButtonClick() {
         dismiss();
     }
 
     @SuppressLint("StaticFieldLeak")
-    @OnClick(R.id.btn_download)
-    void onDownloadButtonClick() {
+    private void onDownloadButtonClick() {
         if (!NetworkUtil.isNetworkAvailable(requireContext())) {
             Toast.makeText(getActivity(), getString(R.string.no_internet), Toast.LENGTH_LONG).show();
             return;

@@ -6,26 +6,22 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewPropertyAnimator;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
 
-import app.quranhub.R;
+import app.quranhub.databinding.FragmentSuraIndexBinding;
 import app.quranhub.ui.mushaf.adapter.SuraIndexAdapter;
 import app.quranhub.ui.mushaf.listener.ItemSelectionListener;
 import app.quranhub.ui.mushaf.model.SuraIndexModelMapper;
-import butterknife.BindView;
-import butterknife.ButterKnife;
 
 
 public class SuraIndexFragment extends Fragment implements ItemSelectionListener<Integer> {
 
-
-    @BindView(R.id.sura_index_rv)
-    RecyclerView suraIndexRv;
+    private FragmentSuraIndexBinding binding;
 
     private SuraIndexAdapter adapter;
 
@@ -33,23 +29,22 @@ public class SuraIndexFragment extends Fragment implements ItemSelectionListener
 
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_sura_index, container, false);
-        ButterKnife.bind(this, view);
-        return view;
+        binding = FragmentSuraIndexBinding.inflate(inflater, container, false);
+        return binding.getRoot();
     }
 
     @Override
-    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
         initRecycler();
     }
 
     private void initRecycler() {
-        suraIndexRv.setLayoutManager(new LinearLayoutManager(getActivity()));
+        binding.suraIndexRv.setLayoutManager(new LinearLayoutManager(getActivity()));
         adapter = new SuraIndexAdapter(getActivity(), this);
-        suraIndexRv.setAdapter(adapter);
+        binding.suraIndexRv.setAdapter(adapter);
     }
 
     public void onSearchSura(String inputQuery) {
@@ -66,8 +61,7 @@ public class SuraIndexFragment extends Fragment implements ItemSelectionListener
 
     public void setAdapterData(List<SuraIndexModelMapper> indexList) {
         adapter.setSuraIndexModelList(indexList);
-        suraIndexRv.getRecycledViewPool().clear();
+        binding.suraIndexRv.getRecycledViewPool().clear();
     }
-
 
 }

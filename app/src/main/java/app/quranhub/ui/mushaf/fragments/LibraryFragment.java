@@ -13,36 +13,32 @@ import androidx.fragment.app.Fragment;
 import app.quranhub.R;
 import app.quranhub.data.local.entity.TranslationBook;
 import app.quranhub.data.local.prefs.AppPreferencesManager;
+import app.quranhub.databinding.FragmentLibraryBinding;
 import app.quranhub.ui.main.MainActivity;
-import butterknife.ButterKnife;
-import butterknife.Unbinder;
-
 
 // TODO completely refactor LibraryFragment
 public class LibraryFragment extends Fragment implements TranslationsDataFragment.TranslationSelectionListener {
 
     private static final String TAG = LibraryFragment.class.getSimpleName();
 
-
-    Unbinder butterknifeUnbinder;
+    private FragmentLibraryBinding binding;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_library, container, false);
-        butterknifeUnbinder = ButterKnife.bind(this, view);
-        return view;
+        binding = FragmentLibraryBinding.inflate(inflater, container, false);
+        return binding.getRoot();
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        butterknifeUnbinder.unbind();
+        binding = null;
     }
 
     @Override
-    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
 
         if (savedInstanceState == null) {
             TranslationsDataFragment translationsDataFragment = TranslationsDataFragment.newInstance(
@@ -60,7 +56,6 @@ public class LibraryFragment extends Fragment implements TranslationsDataFragmen
             translationsDataFragment.search(input);
         }
     }
-
 
     @Override
     public void onTranslationSelected(TranslationBook translationBook) {

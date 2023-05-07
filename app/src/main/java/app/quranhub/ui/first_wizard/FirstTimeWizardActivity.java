@@ -8,15 +8,9 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
-import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ImageView;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentStatePagerAdapter;
@@ -27,13 +21,11 @@ import app.quranhub.data.Constants;
 import app.quranhub.data.local.db.MushafDatabase;
 import app.quranhub.data.local.db.RoomAsset;
 import app.quranhub.data.local.prefs.AppPreferencesManager;
+import app.quranhub.databinding.ActivityFirstTimeWizardBinding;
 import app.quranhub.ui.base.BaseActivity;
 import app.quranhub.ui.common.interfaces.Searchable;
 import app.quranhub.ui.main.MainActivity;
 import app.quranhub.util.LocaleUtils;
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
 
 public class FirstTimeWizardActivity extends BaseActivity implements OptionsListFragment.OnOptionClickListener {
 
@@ -53,27 +45,7 @@ public class FirstTimeWizardActivity extends BaseActivity implements OptionsList
 
     private int currentStepPosition = appLanguagesStepPosition;
 
-    @BindView(R.id.et_search)
-    EditText searchEditText;
-    @BindView(R.id.tv_step_hint)
-    TextView stepHintTextView;
-    @BindView(R.id.pager_steps)
-    ViewPager stepsViewPager;
-
-    @BindView(R.id.iv_progress_page1)
-    ImageView firstPageProgressImageView;
-    @BindView(R.id.iv_progress_page2)
-    ImageView secondPageProgressImageView;
-    @BindView(R.id.iv_progress_page3)
-    ImageView thirdPageProgressImageView;
-    @BindView(R.id.separator_pages_1_2)
-    View firstToSecondSeparatorProgressView;
-    @BindView(R.id.separator_pages_2_3)
-    View secondToThirdSeparatorProgressView;
-    @BindView(R.id.btn_next)
-    Button nextButton;
-    @BindView(R.id.btn_back)
-    Button backButton;
+    private ActivityFirstTimeWizardBinding binding;
 
     private WizardStepPagerAdapter wizardStepPagerAdapter;
 
@@ -85,10 +57,9 @@ public class FirstTimeWizardActivity extends BaseActivity implements OptionsList
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_first_time_wizard);
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-        ButterKnife.bind(this);
+        binding = ActivityFirstTimeWizardBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
+        setSupportActionBar(binding.toolbar);
 
         layoutDir = getResources().getConfiguration().getLayoutDirection();
         if (layoutDir == LAYOUT_DIRECTION_RTL) {
@@ -100,11 +71,19 @@ public class FirstTimeWizardActivity extends BaseActivity implements OptionsList
         }
 
         wizardStepPagerAdapter = new WizardStepPagerAdapter(getSupportFragmentManager());
-        stepsViewPager.setAdapter(wizardStepPagerAdapter);
-        stepsViewPager.setCurrentItem(appLanguagesStepPosition);
+        binding.pagerSteps.setAdapter(wizardStepPagerAdapter);
+        binding.pagerSteps.setCurrentItem(appLanguagesStepPosition);
         updateViews(appLanguagesStepPosition);
 
-        stepsViewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+        // Initialize Mus'haf metadata DB
+        RoomAsset.initializeDatabase(this, MushafDatabase.DATABASE_NAME
+                , MushafDatabase.ASSET_DB_VERSION);
+
+        attachListeners();
+    }
+
+    private void attachListeners() {
+        binding.pagerSteps.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
             @Override
             public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
             }
@@ -126,7 +105,7 @@ public class FirstTimeWizardActivity extends BaseActivity implements OptionsList
             }
         });
 
-        searchEditText.addTextChangedListener(new TextWatcher() {
+        binding.etSearch.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
             }
@@ -142,10 +121,9 @@ public class FirstTimeWizardActivity extends BaseActivity implements OptionsList
             }
         });
 
+        binding.btnBack.setOnClickListener(v -> backButtonClicked());
 
-        // Initialize Mus'haf metadata DB
-        RoomAsset.initializeDatabase(this, MushafDatabase.DATABASE_NAME
-                , MushafDatabase.ASSET_DB_VERSION);
+        binding.btnNext.setOnClickListener(v -> nextButtonClicked());
     }
 
     @Override
@@ -177,7 +155,7 @@ public class FirstTimeWizardActivity extends BaseActivity implements OptionsList
 
     @Override
     public void onBackPressed() {
-        if (stepsViewPager.getCurrentItem() == appLanguagesStepPosition) {
+        if (binding.pagerSteps.getCurrentItem() == appLanguagesStepPosition) {
             // If the user is currently looking at the first step, allow the system to handle the
             // Back button. This calls finish() on this activity and pops the back stack.
             super.onBackPressed();
@@ -187,39 +165,37 @@ public class FirstTimeWizardActivity extends BaseActivity implements OptionsList
         }
     }
 
-    @OnClick(R.id.btn_back)
-    void backButtonClicked() {
+    private void backButtonClicked() {
         // TODO apply MVP or MVVM
         openPreviousStepPage();
     }
 
-    @OnClick(R.id.btn_next)
-    void nextButtonClicked() {
+    private void nextButtonClicked() {
         // TODO ally MVP or MVVM
         openNextStepPage();
     }
 
     private void openNextStepPage() {
-        int currentPageIndex = stepsViewPager.getCurrentItem();
+        int currentPageIndex = binding.pagerSteps.getCurrentItem();
         if (layoutDir == LAYOUT_DIRECTION_LTR && currentPageIndex < NUM_PAGES - 1) {
             // navigate to the next page
-            stepsViewPager.setCurrentItem(++currentPageIndex);
+            binding.pagerSteps.setCurrentItem(++currentPageIndex);
         } else if (layoutDir == LAYOUT_DIRECTION_RTL && currentPageIndex > 0) {
             // navigate to the next page
-            stepsViewPager.setCurrentItem(--currentPageIndex);
+            binding.pagerSteps.setCurrentItem(--currentPageIndex);
         } else {
             finishWizard();
         }
     }
 
     private void openPreviousStepPage() {
-        int currentPageIndex = stepsViewPager.getCurrentItem();
+        int currentPageIndex = binding.pagerSteps.getCurrentItem();
         if (layoutDir == LAYOUT_DIRECTION_LTR && currentPageIndex > 0) {
             // navigate to the previous page
-            stepsViewPager.setCurrentItem(--currentPageIndex);
+            binding.pagerSteps.setCurrentItem(--currentPageIndex);
         } else if (layoutDir == LAYOUT_DIRECTION_RTL && currentPageIndex < NUM_PAGES - 1) {
             // navigate to the previous page
-            stepsViewPager.setCurrentItem(++currentPageIndex);
+            binding.pagerSteps.setCurrentItem(++currentPageIndex);
         }
     }
 
@@ -227,7 +203,7 @@ public class FirstTimeWizardActivity extends BaseActivity implements OptionsList
      * Navigate to main activity and mark wizard as done
      */
     private void finishWizard() {
-        nextButton.setEnabled(false);
+        binding.btnNext.setEnabled(false);
         AppPreferencesManager.markFirstTimeWizardDone(this);
         startActivity(new Intent(this, MainActivity.class));
         finish();
@@ -238,13 +214,13 @@ public class FirstTimeWizardActivity extends BaseActivity implements OptionsList
         // update the step hint
         if (currentStepPageIndex == appLanguagesStepPosition) {
             setTitle(getString(R.string.first_wizard_title_app_language_step));
-            stepHintTextView.setText(R.string.first_wizard_hint_app_langauge);
+            binding.tvStepHint.setText(R.string.first_wizard_hint_app_langauge);
         } else if (currentStepPageIndex == translationLanguagesStepPosition) {
             setTitle(getString(R.string.first_wizard_title_translation_languages_step));
-            stepHintTextView.setText(getString(R.string.first_wizard_hint_translation_languages));
+            binding.tvStepHint.setText(getString(R.string.first_wizard_hint_translation_languages));
         } else if (currentStepPageIndex == recitationsStepPosition) {
             setTitle(getString(R.string.first_wizard_title_recitations_step));
-            stepHintTextView.setText(getString(R.string.first_wizard_hint_recitations));
+            binding.tvStepHint.setText(getString(R.string.first_wizard_hint_recitations));
         }
 
         // update progress
@@ -253,68 +229,68 @@ public class FirstTimeWizardActivity extends BaseActivity implements OptionsList
         // update buttons
         if (currentStepPageIndex == recitationsStepPosition) {
             // on last page
-            nextButton.setText(R.string.finish);
-            backButton.setEnabled(true);
+            binding.btnNext.setText(R.string.finish);
+            binding.btnBack.setEnabled(true);
         } else if (currentStepPageIndex == appLanguagesStepPosition) {
             // on first page
-            nextButton.setText(R.string.next);
-            backButton.setEnabled(false);
+            binding.btnNext.setText(R.string.next);
+            binding.btnBack.setEnabled(false);
         } else {
             // default
-            nextButton.setText(R.string.next);
-            backButton.setEnabled(true);
+            binding.btnNext.setText(R.string.next);
+            binding.btnBack.setEnabled(true);
         }
     }
 
     private void resetSearch() {
-        searchEditText.getText().clear();
-        searchEditText.clearFocus();
+        binding.etSearch.getText().clear();
+        binding.etSearch.clearFocus();
         searchOptions("");
     }
 
     private void showStepProgress(int currentStepPageIndex) {
         if (currentStepPageIndex == appLanguagesStepPosition) {
             // first step
-            firstPageProgressImageView.setImageResource(R.drawable.check_gold_ic);
-            firstPageProgressImageView.setBackgroundResource(R.drawable.progress_circle_checked);
+            binding.ivProgressPage1.setImageResource(R.drawable.check_gold_ic);
+            binding.ivProgressPage1.setBackgroundResource(R.drawable.progress_circle_checked);
 
-            firstToSecondSeparatorProgressView.setBackgroundResource(R.color.color_control_highlight);
+            binding.separatorPages12.setBackgroundResource(R.color.color_control_highlight);
 
-            secondPageProgressImageView.setImageDrawable(null);
-            secondPageProgressImageView.setBackgroundResource(R.drawable.progress_circle_unchecked);
+            binding.ivProgressPage2.setImageDrawable(null);
+            binding.ivProgressPage2.setBackgroundResource(R.drawable.progress_circle_unchecked);
 
-            secondToThirdSeparatorProgressView.setBackgroundResource(R.color.color_control_highlight);
+            binding.separatorPages23.setBackgroundResource(R.color.color_control_highlight);
 
-            thirdPageProgressImageView.setImageDrawable(null);
-            thirdPageProgressImageView.setBackgroundResource(R.drawable.progress_circle_unchecked);
+            binding.ivProgressPage3.setImageDrawable(null);
+            binding.ivProgressPage3.setBackgroundResource(R.drawable.progress_circle_unchecked);
         } else if (currentStepPageIndex == translationLanguagesStepPosition) {
             // second step
-            firstPageProgressImageView.setImageResource(R.drawable.check_gold_ic);
-            firstPageProgressImageView.setBackgroundResource(R.drawable.progress_circle_checked);
+            binding.ivProgressPage1.setImageResource(R.drawable.check_gold_ic);
+            binding.ivProgressPage1.setBackgroundResource(R.drawable.progress_circle_checked);
 
-            firstToSecondSeparatorProgressView.setBackgroundResource(R.color.color_primary);
+            binding.separatorPages12.setBackgroundResource(R.color.color_primary);
 
-            secondPageProgressImageView.setImageResource(R.drawable.check_gold_ic);
-            secondPageProgressImageView.setBackgroundResource(R.drawable.progress_circle_checked);
+            binding.ivProgressPage2.setImageResource(R.drawable.check_gold_ic);
+            binding.ivProgressPage2.setBackgroundResource(R.drawable.progress_circle_checked);
 
-            secondToThirdSeparatorProgressView.setBackgroundResource(R.color.color_control_highlight);
+            binding.separatorPages23.setBackgroundResource(R.color.color_control_highlight);
 
-            thirdPageProgressImageView.setImageDrawable(null);
-            thirdPageProgressImageView.setBackgroundResource(R.drawable.progress_circle_unchecked);
+            binding.ivProgressPage3.setImageDrawable(null);
+            binding.ivProgressPage3.setBackgroundResource(R.drawable.progress_circle_unchecked);
         } else if (currentStepPageIndex == recitationsStepPosition) {
             // last (third) step
-            firstPageProgressImageView.setImageResource(R.drawable.check_gold_ic);
-            firstPageProgressImageView.setBackgroundResource(R.drawable.progress_circle_checked);
+            binding.ivProgressPage1.setImageResource(R.drawable.check_gold_ic);
+            binding.ivProgressPage1.setBackgroundResource(R.drawable.progress_circle_checked);
 
-            firstToSecondSeparatorProgressView.setBackgroundResource(R.color.color_primary);
+            binding.separatorPages12.setBackgroundResource(R.color.color_primary);
 
-            secondPageProgressImageView.setImageResource(R.drawable.check_gold_ic);
-            secondPageProgressImageView.setBackgroundResource(R.drawable.progress_circle_checked);
+            binding.ivProgressPage2.setImageResource(R.drawable.check_gold_ic);
+            binding.ivProgressPage2.setBackgroundResource(R.drawable.progress_circle_checked);
 
-            secondToThirdSeparatorProgressView.setBackgroundResource(R.color.color_primary);
+            binding.separatorPages23.setBackgroundResource(R.color.color_primary);
 
-            thirdPageProgressImageView.setImageResource(R.drawable.check_gold_ic);
-            thirdPageProgressImageView.setBackgroundResource(R.drawable.progress_circle_checked);
+            binding.ivProgressPage3.setImageResource(R.drawable.check_gold_ic);
+            binding.ivProgressPage3.setBackgroundResource(R.drawable.progress_circle_checked);
         }
     }
 

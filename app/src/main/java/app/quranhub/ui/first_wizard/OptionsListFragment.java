@@ -16,11 +16,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.ArrayList;
 import java.util.List;
 
-import app.quranhub.R;
+import app.quranhub.databinding.FragmentOptionsListBinding;
 import app.quranhub.ui.common.interfaces.Searchable;
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.Unbinder;
 
 /**
  * Activities that contain this fragment must implement the
@@ -49,14 +46,11 @@ public class OptionsListFragment extends Fragment implements OptionsListAdapter.
 
     private OnOptionClickListener listener;
 
-    @BindView(R.id.rv_options)
-    RecyclerView optionsRecyclerView;
-
     OptionsListAdapter optionsListAdapter;
 
     private String searchText = "";
 
-    private Unbinder butterknifeUnbiner;
+    private FragmentOptionsListBinding binding;
 
     public OptionsListFragment() {
         // Required empty public constructor
@@ -119,10 +113,9 @@ public class OptionsListFragment extends Fragment implements OptionsListAdapter.
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        View view = inflater.inflate(R.layout.fragment_options_list, container, false);
-        butterknifeUnbiner = ButterKnife.bind(this, view);
+        binding = FragmentOptionsListBinding.inflate(inflater, container, false);
         initOptionsRecyclerView();
-        return view;
+        return binding.getRoot();
     }
 
     @Override
@@ -149,15 +142,15 @@ public class OptionsListFragment extends Fragment implements OptionsListAdapter.
     }
 
     private void initOptionsRecyclerView() {
-        optionsRecyclerView.setHasFixedSize(true);
-        optionsRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()
+        binding.rvOptions.setHasFixedSize(true);
+        binding.rvOptions.setLayoutManager(new LinearLayoutManager(getContext()
                 , RecyclerView.VERTICAL, false));
         DividerItemDecoration dividerItemDecoration = new DividerItemDecoration(getContext(),
                 DividerItemDecoration.VERTICAL);
-        optionsRecyclerView.addItemDecoration(dividerItemDecoration);
+        binding.rvOptions.addItemDecoration(dividerItemDecoration);
         optionsListAdapter = new OptionsListAdapter(options, optionsThumbnailsDrawableIds
                 , selectedOptionPosition, this);
-        optionsRecyclerView.setAdapter(optionsListAdapter);
+        binding.rvOptions.setAdapter(optionsListAdapter);
     }
 
     @Override
@@ -174,7 +167,7 @@ public class OptionsListFragment extends Fragment implements OptionsListAdapter.
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        butterknifeUnbiner.unbind();
+        binding = null;
     }
 
     @Override

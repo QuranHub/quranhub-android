@@ -8,7 +8,6 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -17,7 +16,6 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.LiveData;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,13 +28,11 @@ import app.quranhub.data.remote.ApiClient;
 import app.quranhub.data.remote.TranslationDownloader;
 import app.quranhub.data.remote.api.TranslationsApi;
 import app.quranhub.data.remote.model.TranslationsResponse;
+import app.quranhub.databinding.FragmentTranslationsDataBinding;
 import app.quranhub.ui.common.interfaces.Searchable;
 import app.quranhub.ui.mushaf.adapter.TranslationsAdapter;
 import app.quranhub.ui.mushaf.model.DisplayableTranslation;
 import app.quranhub.util.FragmentUtils;
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.Unbinder;
 import pub.devrel.easypermissions.EasyPermissions;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -64,12 +60,7 @@ public class TranslationsDataFragment extends Fragment implements Searchable, Tr
 
     private TranslationSelectionListener listener;
 
-    @BindView(R.id.rv_translations)
-    RecyclerView translationsRecyclerView;
-    @BindView(R.id.progress_translation)
-    ProgressBar progressBar;
-
-    private Unbinder butterknifeUnbinder;
+    private FragmentTranslationsDataBinding binding;
 
     private List<DisplayableTranslation> displayableTranslations;
     private TranslationsAdapter adapter;
@@ -118,31 +109,29 @@ public class TranslationsDataFragment extends Fragment implements Searchable, Tr
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-
-        View fragmentView = inflater.inflate(R.layout.fragment_translations_data, container, false);
-        butterknifeUnbinder = ButterKnife.bind(this, fragmentView);
+        binding = FragmentTranslationsDataBinding.inflate(inflater, container, false);
         initView();
-        return fragmentView;
+        return binding.getRoot();
     }
 
     private void initView() {
         // setup translationsRecyclerView
-        translationsRecyclerView.setHasFixedSize(true);
+        binding.rvTranslations.setHasFixedSize(true);
         LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
-        translationsRecyclerView.setLayoutManager(layoutManager);
-        DividerItemDecoration dividerItemDecoration = new DividerItemDecoration(getContext(),
+        binding.rvTranslations.setLayoutManager(layoutManager);
+        DividerItemDecoration dividerItemDecoration = new DividerItemDecoration(requireContext(),
                 layoutManager.getOrientation());
-        translationsRecyclerView.addItemDecoration(dividerItemDecoration);
+        binding.rvTranslations.addItemDecoration(dividerItemDecoration);
         displayableTranslations = new ArrayList<>();
-        adapter = new TranslationsAdapter(displayableTranslations, AppPreferencesManager.getQuranTranslationBook(getContext()), this);
-        translationsRecyclerView.setAdapter(adapter);
+        adapter = new TranslationsAdapter(displayableTranslations, AppPreferencesManager.getQuranTranslationBook(requireContext()), this);
+        binding.rvTranslations.setAdapter(adapter);
     }
 
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        translationBooksLiveData = UserDatabase.getInstance(getContext())
+        translationBooksLiveData = UserDatabase.getInstance(requireContext())
                 .getTranslationBookDao()
                 .getByLanguage(languageCode);
         setupTranslationBooksLiveDataObserver();
@@ -180,7 +169,7 @@ public class TranslationsDataFragment extends Fragment implements Searchable, Tr
                                 }
                             }
 
-                            progressBar.setVisibility(View.GONE);
+                            binding.progressTranslation.setVisibility(View.GONE);
                             adapter.setTranslations(displayableTranslations);
                         }
                     }
@@ -248,7 +237,7 @@ public class TranslationsDataFragment extends Fragment implements Searchable, Tr
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        butterknifeUnbinder.unbind();
+        binding = null;
     }
 
     @Override

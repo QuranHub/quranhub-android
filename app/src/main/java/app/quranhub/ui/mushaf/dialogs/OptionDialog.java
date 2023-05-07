@@ -6,27 +6,21 @@ import android.content.Context;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Window;
-import android.widget.EditText;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.DialogFragment;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import app.quranhub.R;
+import app.quranhub.databinding.DialogSuraListBinding;
 import app.quranhub.ui.mushaf.adapter.FilterAdapter;
 import app.quranhub.util.DialogUtils;
-import butterknife.BindView;
-import butterknife.ButterKnife;
 
 public class OptionDialog extends DialogFragment implements FilterAdapter.OptionClickListener {
 
@@ -43,12 +37,7 @@ public class OptionDialog extends DialogFragment implements FilterAdapter.Option
     private ArrayList<String> options;
     private int requestCode;
 
-    @BindView(R.id.sura_rv)
-    RecyclerView suraRv;
-    @BindView(R.id.et_search)
-    EditText searchEt;
-    @BindView(R.id.tv_title)
-    TextView headerTv;
+    private DialogSuraListBinding binding;
 
     public static DialogFragment getInstance(List<String> options, String suraName, int requestCode, String headerText) {
         DialogFragment fragment = new OptionDialog();
@@ -80,9 +69,7 @@ public class OptionDialog extends DialogFragment implements FilterAdapter.Option
     @NonNull
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
-        LayoutInflater inflater = getActivity().getLayoutInflater();
-        dialogView = inflater.inflate(R.layout.dialog_sura_list, null);
-        ButterKnife.bind(this, dialogView);
+        binding = DialogSuraListBinding.inflate(getLayoutInflater());
         initializeDialog();
         setRecyclerList();
         observeOnInputSearch();
@@ -99,7 +86,7 @@ public class OptionDialog extends DialogFragment implements FilterAdapter.Option
     }
 
     private void observeOnInputSearch() {
-        searchEt.addTextChangedListener(new TextWatcher() {
+        binding.etSearch.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
             }
@@ -117,9 +104,9 @@ public class OptionDialog extends DialogFragment implements FilterAdapter.Option
 
     private void setRecyclerList() {
         adapter = new FilterAdapter(options, suraName, this, requestCode);
-        suraRv.setLayoutManager(new LinearLayoutManager(getActivity()));
-        suraRv.addItemDecoration(new DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL));
-        suraRv.setAdapter(adapter);
+        binding.suraRv.setLayoutManager(new LinearLayoutManager(getActivity()));
+        binding.suraRv.addItemDecoration(new DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL));
+        binding.suraRv.setAdapter(adapter);
     }
 
     private void initializeDialog() {
@@ -131,7 +118,7 @@ public class OptionDialog extends DialogFragment implements FilterAdapter.Option
             suraName = getArguments().getString(SURA_NAME_ARGS);
             options = getArguments().getStringArrayList(ALL_ITEMS_ARGS);
             requestCode = getArguments().getInt(CODE_ARGS, 1);
-            headerTv.setText(getArguments().getString(HEADER_ARGS));
+            binding.tvTitle.setText(getArguments().getString(HEADER_ARGS));
         }
     }
 
@@ -139,6 +126,12 @@ public class OptionDialog extends DialogFragment implements FilterAdapter.Option
     public void onOptionClick(String suraName, int suraIndex) {
         listener.onItemClick(suraName, suraIndex, requestCode);
         dialog.dismiss();
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        binding = null;
     }
 
     public interface ItemClickListener {

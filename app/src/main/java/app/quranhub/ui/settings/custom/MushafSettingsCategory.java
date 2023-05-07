@@ -47,7 +47,7 @@ public class MushafSettingsCategory extends LinearLayout {
         // initialize the View
         setOrientation(LinearLayout.VERTICAL);
         setDividerDrawable(new ColorDrawable(ContextCompat.getColor(context, R.color.dark_grey)));
-        setDividerPadding((int) context.getResources().getDimension(R.dimen._10sdp));
+        setDividerPadding((int) context.getResources().getDimension(com.intuit.sdp.R.dimen._10sdp));
         setShowDividers(SHOW_DIVIDER_MIDDLE);
 
         LayoutInflater inflater = (LayoutInflater) context

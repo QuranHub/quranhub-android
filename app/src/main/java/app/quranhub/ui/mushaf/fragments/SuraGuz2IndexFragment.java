@@ -9,9 +9,6 @@ import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.EditText;
-import android.widget.ImageView;
-import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -25,6 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import app.quranhub.R;
+import app.quranhub.databinding.FragmentSuraGuz2IndexBinding;
 import app.quranhub.ui.common.dialogs.OptionsListDialogFragment;
 import app.quranhub.ui.common.interfaces.ToolbarActionsListener;
 import app.quranhub.ui.mushaf.adapter.Guz2IndexAdapter;
@@ -34,16 +32,10 @@ import app.quranhub.ui.mushaf.presenter.SuraGuz2IndexPresenter;
 import app.quranhub.ui.mushaf.presenter.SuraGuz2IndexPresenterImp;
 import app.quranhub.ui.mushaf.view.SuraGuz2IndexView;
 import app.quranhub.util.ScreenUtils;
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
-import butterknife.Unbinder;
-
 
 public class SuraGuz2IndexFragment extends Fragment implements SuraGuz2IndexView, OptionsListDialogFragment.ItemSelectionListener {
 
     private static final String TAG = SuraGuz2IndexFragment.class.getSimpleName();
-
 
     private static final String ARG_SELECTED_TAB = "ARG_SELECTED_TAB";
 
@@ -68,18 +60,7 @@ public class SuraGuz2IndexFragment extends Fragment implements SuraGuz2IndexView
     private String inputSearch = "";
     private int selectedGUZ2Filter = Guz2IndexAdapter.FILTER_GUZ2_ALL;
 
-
-    @BindView(R.id.tabLayout)
-    TabLayout tabLayout;
-    @BindView(R.id.filter_btn)
-    ImageView filterBtn;
-    @BindView(R.id.et_search)
-    EditText searchEt;
-    @BindView(R.id.progrees_bar)
-    ProgressBar progressBar;
-
-    private Unbinder butterknifeUnbinder;
-
+    private FragmentSuraGuz2IndexBinding binding;
 
     public static SuraGuz2IndexFragment newInstance(int selectedTab) {
         SuraGuz2IndexFragment fragment = new SuraGuz2IndexFragment();
@@ -90,7 +71,7 @@ public class SuraGuz2IndexFragment extends Fragment implements SuraGuz2IndexView
     }
 
     @Override
-    public void onAttach(Context context) {
+    public void onAttach(@NonNull Context context) {
         super.onAttach(context);
         if (context instanceof ToolbarActionsListener && context instanceof QuranNavigationCallbacks) {
             toolbarActionsListener = (ToolbarActionsListener) context;
@@ -112,25 +93,31 @@ public class SuraGuz2IndexFragment extends Fragment implements SuraGuz2IndexView
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_sura_guz2_index, container, false);
-        butterknifeUnbinder = ButterKnife.bind(this, view);
-        return view;
+        binding = FragmentSuraGuz2IndexBinding.inflate(inflater, container, false);
+        return binding.getRoot();
     }
 
     @Override
-    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
         restoreSavedInstanceState(savedInstanceState);
         initPresenter();
         addIndexFragment(selectedTab);
+
+        attachListeners();
+    }
+
+    private void attachListeners() {
         listenOnSelectedTab();
         observeOnInputSearch();
+        binding.hamburgerIv.setOnClickListener(v -> onNavHamburgerClick());
+        binding.filterBtn.setOnClickListener(v -> onFilterButtonClick());
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        butterknifeUnbinder.unbind();
+        binding = null;
     }
 
     @Override
@@ -162,7 +149,7 @@ public class SuraGuz2IndexFragment extends Fragment implements SuraGuz2IndexView
     }
 
     private void observeOnInputSearch() {
-        searchEt.addTextChangedListener(new TextWatcher() {
+        binding.etSearch.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
 
@@ -170,7 +157,7 @@ public class SuraGuz2IndexFragment extends Fragment implements SuraGuz2IndexView
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                if (tabLayout.getSelectedTabPosition() == SURA_INDEX_TAB && suraIndexFragment != null) {
+                if (binding.tabLayout.getSelectedTabPosition() == SURA_INDEX_TAB && suraIndexFragment != null) {
                     inputSearch = s.toString();
                     suraIndexFragment.onSearchSura(inputSearch);
                 }
@@ -184,10 +171,10 @@ public class SuraGuz2IndexFragment extends Fragment implements SuraGuz2IndexView
     }
 
     private void listenOnSelectedTab() {
-        tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+        binding.tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
-                addIndexFragment(tabLayout.getSelectedTabPosition());
+                addIndexFragment(binding.tabLayout.getSelectedTabPosition());
             }
 
             @Override
@@ -202,7 +189,7 @@ public class SuraGuz2IndexFragment extends Fragment implements SuraGuz2IndexView
 
     private void addIndexFragment(int tab) {
         selectedTab = tab;
-        tabLayout.getTabAt(selectedTab).select();
+        binding.tabLayout.getTabAt(selectedTab).select();
         if (tab == SURA_INDEX_TAB) {
             suraIndexFragment = (SuraIndexFragment) getChildFragmentManager().findFragmentByTag(FRAGMENT_SURA_INDEX);
             if (suraIndexFragment == null) {
@@ -211,8 +198,8 @@ public class SuraGuz2IndexFragment extends Fragment implements SuraGuz2IndexView
                         .replace(R.id.index_container, suraIndexFragment, FRAGMENT_SURA_INDEX)
                         .commit();
             }
-            filterBtn.setVisibility(View.INVISIBLE);
-            searchEt.setVisibility(View.VISIBLE);
+            binding.filterBtn.setVisibility(View.INVISIBLE);
+            binding.etSearch.setVisibility(View.VISIBLE);
             presenter.getSuraIndex();
         } else if (tab == GUZ2_INDEX_TAB) {
             guz2IndexFragment = (Guz2IndexFragment) getChildFragmentManager().findFragmentByTag(FRAGMENT_GUZ2_INDEX);
@@ -222,22 +209,19 @@ public class SuraGuz2IndexFragment extends Fragment implements SuraGuz2IndexView
                         .replace(R.id.index_container, guz2IndexFragment, FRAGMENT_GUZ2_INDEX)
                         .commit();
             }
-            filterBtn.setVisibility(View.VISIBLE);
-            searchEt.getText().clear();
+            binding.filterBtn.setVisibility(View.VISIBLE);
+            binding.etSearch.getText().clear();
             inputSearch = "";
-            searchEt.setVisibility(View.GONE);
+            binding.etSearch.setVisibility(View.GONE);
         }
     }
 
-
-    @OnClick(R.id.hamburger_iv)
-    public void onNavHamburgerClick() {
+    private void onNavHamburgerClick() {
         toolbarActionsListener.onNavDrawerClick();
     }
 
-    @OnClick(R.id.filter_btn)
-    public void onFilterButtonClick() {
-        if (tabLayout.getSelectedTabPosition() == GUZ2_INDEX_TAB && guz2IndexFragment != null) {
+    private void onFilterButtonClick() {
+        if (binding.tabLayout.getSelectedTabPosition() == GUZ2_INDEX_TAB && guz2IndexFragment != null) {
             List<String> guz2Options = new ArrayList<>();
             guz2Options.add(getString(R.string.all_guz2));
             guz2Options.addAll(Arrays.asList(getResources().getStringArray(R.array.agza2_name)));
@@ -249,7 +233,7 @@ public class SuraGuz2IndexFragment extends Fragment implements SuraGuz2IndexView
     }
 
     public void navigateToSelectedSura(int suraPage) {
-        ScreenUtils.dismissKeyboard(getActivity(), searchEt);
+        ScreenUtils.dismissKeyboard(getActivity(), binding.etSearch);
         quranNavigationCallbacks.gotoQuranPage(suraPage);
     }
 
@@ -268,12 +252,12 @@ public class SuraGuz2IndexFragment extends Fragment implements SuraGuz2IndexView
 
     @Override
     public void showLoading() {
-        progressBar.setVisibility(View.VISIBLE);
+        binding.progreesBar.setVisibility(View.VISIBLE);
     }
 
     @Override
     public void hideLoading() {
-        progressBar.setVisibility(View.GONE);
+        binding.progreesBar.setVisibility(View.GONE);
     }
 
     @Override

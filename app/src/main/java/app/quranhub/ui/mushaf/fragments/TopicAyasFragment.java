@@ -9,19 +9,16 @@ import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.EditText;
-import android.widget.ProgressBar;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.Objects;
 
-import app.quranhub.R;
+import app.quranhub.databinding.FragmentTopicAyasBinding;
 import app.quranhub.ui.common.interfaces.ToolbarActionsListener;
 import app.quranhub.ui.mushaf.adapter.SearchAdapter;
 import app.quranhub.ui.mushaf.listener.ItemSelectionListener;
@@ -30,20 +27,10 @@ import app.quranhub.ui.mushaf.model.SearchModel;
 import app.quranhub.ui.mushaf.model.TopicCategory;
 import app.quranhub.ui.mushaf.viewmodel.TopicViewModel;
 import app.quranhub.util.ScreenUtils;
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
 
 public class TopicAyasFragment extends Fragment implements ItemSelectionListener<SearchModel> {
 
-    @BindView(R.id.topics_rv)
-    RecyclerView topicsRv;
-    @BindView(R.id.topic_tv)
-    TextView topicTv;
-    @BindView(R.id.et_search)
-    EditText searchEt;
-    @BindView(R.id.progrees_bar)
-    ProgressBar progressBar;
+    private FragmentTopicAyasBinding binding;
 
     private String inputSearch = "";
     private QuranNavigationCallbacks quranNavigationCallbacks;
@@ -62,7 +49,7 @@ public class TopicAyasFragment extends Fragment implements ItemSelectionListener
     }
 
     @Override
-    public void onAttach(Context context) {
+    public void onAttach(@NonNull Context context) {
         super.onAttach(context);
         if (context instanceof ToolbarActionsListener) {
             navDrawerListener = (ToolbarActionsListener) context;
@@ -74,16 +61,26 @@ public class TopicAyasFragment extends Fragment implements ItemSelectionListener
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_topic_ayas, container, false);
-        ButterKnife.bind(this, view);
+        binding = FragmentTopicAyasBinding.inflate(inflater, container, false);
+        return binding.getRoot();
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
         setViews();
         getPrevState(savedInstanceState);
         intiRecycler();
         bindViewModel();
+
+        attachListeners();
+    }
+
+    private void attachListeners() {
         observeOnInputSearch();
-        return view;
+        binding.hamburgerIv.setOnClickListener(v -> onNavHamburgerClick());
     }
 
     private void getPrevState(Bundle savedInstanceState) {
@@ -100,14 +97,13 @@ public class TopicAyasFragment extends Fragment implements ItemSelectionListener
 
     private void setViews() {
         category = getArguments().getParcelable(CATEGORY_ARGS);
-        topicTv.setText(Objects.requireNonNull(category).getCategoryName());
+        binding.topicTv.setText(Objects.requireNonNull(category).getCategoryName());
     }
 
     private void observeOnInputSearch() {
-        searchEt.addTextChangedListener(new TextWatcher() {
+        binding.etSearch.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-
             }
 
             @Override
@@ -118,7 +114,6 @@ public class TopicAyasFragment extends Fragment implements ItemSelectionListener
 
             @Override
             public void afterTextChanged(Editable s) {
-
             }
         });
     }
@@ -127,7 +122,7 @@ public class TopicAyasFragment extends Fragment implements ItemSelectionListener
         viewModel = new ViewModelProvider(this).get(TopicViewModel.class);
         viewModel.getAyas(category.getCategoryId());
         viewModel.getAyahs().observe(getViewLifecycleOwner(), searchModels -> {
-            progressBar.setVisibility(View.GONE);
+            binding.progreesBar.setVisibility(View.GONE);
             adapter.setSearchModels(searchModels);
             if (inputSearch != null && !TextUtils.isEmpty(inputSearch.trim())) {
                 adapter.filter(inputSearch);
@@ -136,18 +131,17 @@ public class TopicAyasFragment extends Fragment implements ItemSelectionListener
     }
 
     private void intiRecycler() {
-        topicsRv.setLayoutManager(new LinearLayoutManager(getActivity()));
+        binding.topicsRv.setLayoutManager(new LinearLayoutManager(getActivity()));
         adapter = new SearchAdapter(getActivity(), this);
-        topicsRv.setAdapter(adapter);
+        binding.topicsRv.setAdapter(adapter);
     }
 
     @Override
     public void onSelectItem(SearchModel item) {
-        ScreenUtils.dismissKeyboard(requireContext(), searchEt);
+        ScreenUtils.dismissKeyboard(requireContext(), binding.etSearch);
         quranNavigationCallbacks.gotoQuranPageAya(item.getPage(), item.getId(), false);
     }
 
-    @OnClick(R.id.hamburger_iv)
     public void onNavHamburgerClick() {
         navDrawerListener.onNavDrawerClick();
     }

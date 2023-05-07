@@ -4,8 +4,6 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -14,10 +12,8 @@ import java.util.List;
 
 import app.quranhub.R;
 import app.quranhub.data.local.entity.BookmarkType;
+import app.quranhub.databinding.BookmarkTypeItemBinding;
 import app.quranhub.ui.mushaf.listener.ItemSelectionListener;
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
 
 public class BookmarkTypeAdapter extends RecyclerView.Adapter<BookmarkTypeAdapter.ViewHolder> {
 
@@ -50,36 +46,36 @@ public class BookmarkTypeAdapter extends RecyclerView.Adapter<BookmarkTypeAdapte
         BookmarkType type = bookmarkTypes.get(position);
 
         if (position == 0) {
-            holder.typeIv.setColorFilter(null);
-            holder.typeIv.setImageResource(R.drawable.fav_gold_sidemenu_ic);
-            holder.typeTv.setText(context.getString(R.string.fasil_favorite));
-            holder.seperator.setVisibility(View.VISIBLE);
+            holder.binding.typeIv.setColorFilter(null);
+            holder.binding.typeIv.setImageResource(R.drawable.fav_gold_sidemenu_ic);
+            holder.binding.typeTv.setText(context.getString(R.string.fasil_favorite));
+            holder.binding.seperator1.setVisibility(View.VISIBLE);
 
         } else if (position == 1) {
-            holder.typeIv.setColorFilter(null);
-            holder.typeIv.setImageResource(R.drawable.bookmark_gold);
-            holder.typeTv.setText(context.getString(R.string.fasil_read));
+            holder.binding.typeIv.setColorFilter(null);
+            holder.binding.typeIv.setImageResource(R.drawable.bookmark_gold);
+            holder.binding.typeTv.setText(context.getString(R.string.fasil_read));
         } else if (position == 2) {
-            holder.typeIv.setColorFilter(null);
-            holder.typeIv.setImageResource(R.drawable.bookmark_green);
-            holder.typeTv.setText(context.getString(R.string.fasil_note));
+            holder.binding.typeIv.setColorFilter(null);
+            holder.binding.typeIv.setImageResource(R.drawable.bookmark_green);
+            holder.binding.typeTv.setText(context.getString(R.string.fasil_note));
         } else if (position == 3) {
-            holder.typeIv.setColorFilter(null);
-            holder.typeIv.setImageResource(R.drawable.bookmark_red);
-            holder.typeTv.setText(context.getString(R.string.fasil_memorize));
+            holder.binding.typeIv.setColorFilter(null);
+            holder.binding.typeIv.setImageResource(R.drawable.bookmark_red);
+            holder.binding.typeTv.setText(context.getString(R.string.fasil_memorize));
         } else {  // CUSTOM BOOKMARK
-            holder.typeIv.setColorFilter(bookmarkColors[type.getColorIndex()]);
-            holder.typeTv.setText(type.getBookmarkTypeName());
+            holder.binding.typeIv.setColorFilter(bookmarkColors[type.getColorIndex()]);
+            holder.binding.typeTv.setText(type.getBookmarkTypeName());
         }
 
         if (position > 0) {
-            holder.seperator.setVisibility(View.INVISIBLE);
+            holder.binding.seperator1.setVisibility(View.INVISIBLE);
         }
 
         if (position == selectedType) {
-            holder.checkIv.setVisibility(View.VISIBLE);
+            holder.binding.checkIv.setVisibility(View.VISIBLE);
         } else {
-            holder.checkIv.setVisibility(View.GONE);
+            holder.binding.checkIv.setVisibility(View.GONE);
         }
 
     }
@@ -102,22 +98,19 @@ public class BookmarkTypeAdapter extends RecyclerView.Adapter<BookmarkTypeAdapte
 
     public class ViewHolder extends RecyclerView.ViewHolder {
 
-        @BindView(R.id.type_iv)
-        ImageView typeIv;
-        @BindView(R.id.type_tv)
-        TextView typeTv;
-        @BindView(R.id.check_iv)
-        ImageView checkIv;
-        @BindView(R.id.seperator1)
-        View seperator;
+        BookmarkTypeItemBinding binding;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            ButterKnife.bind(this, itemView);
+            binding = BookmarkTypeItemBinding.bind(itemView);
+            attachListeners();
         }
 
-        @OnClick(R.id.item_container)
-        public void onClickItem() {
+        private void attachListeners() {
+            binding.itemContainer.setOnClickListener(v -> onClickItem());
+        }
+
+        private void onClickItem() {
             selectedType = getAdapterPosition();
             notifyDataSetChanged();
             listener.onSelectItem(selectedType + 1);

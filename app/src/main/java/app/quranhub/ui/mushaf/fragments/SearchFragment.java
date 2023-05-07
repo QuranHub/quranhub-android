@@ -9,26 +9,21 @@ import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.EditText;
-import android.widget.ImageButton;
-import android.widget.ProgressBar;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import app.quranhub.R;
+import app.quranhub.databinding.FragmentSearchBinding;
 import app.quranhub.ui.common.dialogs.OptionsListDialogFragment;
 import app.quranhub.ui.common.interfaces.ToolbarActionsListener;
 import app.quranhub.ui.mushaf.adapter.SearchAdapter;
@@ -38,32 +33,10 @@ import app.quranhub.ui.mushaf.listener.QuranNavigationCallbacks;
 import app.quranhub.ui.mushaf.model.SearchModel;
 import app.quranhub.ui.mushaf.viewmodel.SearchViewModel;
 import app.quranhub.util.ScreenUtils;
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
 
 public class SearchFragment extends Fragment implements ItemSelectionListener<SearchModel>, OptionDialog.ItemClickListener, OptionsListDialogFragment.ItemSelectionListener {
 
-    @BindView(R.id.search_rv)
-    RecyclerView searchRv;
-    @BindView(R.id.et_search)
-    EditText searchEt;
-    @BindView(R.id.ib_clear_search)
-    ImageButton clearSearchImageButton;
-    @BindView(R.id.noresult_tv)
-    TextView noResultTv;
-    @BindView(R.id.sura_tv)
-    TextView suraTv;
-    @BindView(R.id.chapter_tv)
-    TextView chapterTv;
-    @BindView(R.id.rob3_tv)
-    TextView quarterTv;
-    @BindView(R.id.hezb_tv)
-    TextView hezbTv;
-    @BindView(R.id.progrees_bar)
-    ProgressBar progressBar;
-    @BindView(R.id.filter_container)
-    ConstraintLayout filterContainer;
+    private FragmentSearchBinding binding;
 
     public static final int SURA_FILTER_CODE = 1;
     public static final int JUZ_FILTER_CODE = 2;
@@ -100,17 +73,13 @@ public class SearchFragment extends Fragment implements ItemSelectionListener<Se
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        //View view = inflater.inflate(R.layout.fragment_search, container, false);
-
-        View view = getView() != null ? getView() :
-                inflater.inflate(R.layout.fragment_search, container, false);
-        ButterKnife.bind(this, view);
-        return view;
+        binding = FragmentSearchBinding.inflate(inflater, container, false);
+        return binding.getRoot();
     }
 
     @Override
-    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
 
         if (savedInstanceState != null) {
             isOriented = true;
@@ -119,25 +88,38 @@ public class SearchFragment extends Fragment implements ItemSelectionListener<Se
 
         initRecycler();
         bindViewModel();
-        observeOnInputSearch();
         setViewsFromBackStack();
+
+        attachListeners();
+    }
+
+    private void attachListeners() {
+        observeOnInputSearch();
+
+        binding.ibClearSearch.setOnClickListener(v -> clearSearch());
+        binding.hamburgerIv.setOnClickListener(v -> onNavHamburgerClick());
+        binding.filterContainer.partContainer.setOnClickListener(v -> onClickPartFilter());
+        binding.filterContainer.suraContainer.setOnClickListener(v -> onClickSuraFilter());
+        binding.filterContainer.hezbContainer.setOnClickListener(v -> onClickHezbFilter());
+        binding.filterContainer.rob3Container.setOnClickListener(v -> onClickQuraterFilter());
+        binding.moreIv.setOnClickListener(v -> onGetMoreFilterOptions());
     }
 
     private void setViewsFromBackStack() {
         if (isFilterOptionsShow) {
-            filterContainer.setVisibility(View.VISIBLE);
+            binding.filterContainer.getRoot().setVisibility(View.VISIBLE);
         }
         if (selectedSura != 0) {
-            suraTv.setText(getActivity().getResources().getStringArray(R.array.sura_name)[selectedSura - 1]);
+            binding.filterContainer.suraTv.setText(getActivity().getResources().getStringArray(R.array.sura_name)[selectedSura - 1]);
         }
         if (selectedJuz != 0) {
-            chapterTv.setText(refactorOptionText(getActivity().getResources().getStringArray(R.array.agza2_name)[selectedJuz - 1]));
+            binding.filterContainer.chapterTv.setText(refactorOptionText(getActivity().getResources().getStringArray(R.array.agza2_name)[selectedJuz - 1]));
         }
         if (selectedHezb != 0) {
-            hezbTv.setText(hezbOptions.get(selectedHezb));
+            binding.filterContainer.hezbTv.setText(hezbOptions.get(selectedHezb));
         }
         if (selectedQuarter != 0) {
-            quarterTv.setText(quarterOptions.get(selectedQuarter));
+            binding.filterContainer.rob3Tv.setText(quarterOptions.get(selectedQuarter));
         }
     }
 
@@ -169,7 +151,7 @@ public class SearchFragment extends Fragment implements ItemSelectionListener<Se
     @SuppressLint("CheckResult")
     private void observeOnInputSearch() {
 
-        searchEt.addTextChangedListener(new TextWatcher() {
+        binding.etSearch.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
             }
@@ -178,7 +160,7 @@ public class SearchFragment extends Fragment implements ItemSelectionListener<Se
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 inputSearch = s.toString();
                 if (!isOriented) {
-                    progressBar.setVisibility(View.VISIBLE);
+                    binding.progreesBar.setVisibility(View.VISIBLE);
                     searchAya();
                 } else {
                     isOriented = false;
@@ -186,9 +168,9 @@ public class SearchFragment extends Fragment implements ItemSelectionListener<Se
 
                 // show or hide clear button in search field
                 if (TextUtils.isEmpty(s)) {
-                    clearSearchImageButton.setVisibility(View.INVISIBLE);
+                    binding.ibClearSearch.setVisibility(View.INVISIBLE);
                 } else {
-                    clearSearchImageButton.setVisibility(View.VISIBLE);
+                    binding.ibClearSearch.setVisibility(View.VISIBLE);
                 }
             }
 
@@ -198,9 +180,8 @@ public class SearchFragment extends Fragment implements ItemSelectionListener<Se
         });
     }
 
-    @OnClick(R.id.ib_clear_search)
-    void clearSearch() {
-        searchEt.getText().clear();
+    private void clearSearch() {
+        binding.etSearch.getText().clear();
     }
 
     private void searchAya() {
@@ -223,21 +204,21 @@ public class SearchFragment extends Fragment implements ItemSelectionListener<Se
 
     private void clearResult() {
         searchAdapter.setSearchModels(new ArrayList<>());
-        noResultTv.setVisibility(View.VISIBLE);
-        progressBar.setVisibility(View.GONE);
+        binding.noresultTv.setVisibility(View.VISIBLE);
+        binding.progreesBar.setVisibility(View.GONE);
     }
 
     private void bindViewModel() {
         searchViewModel = new ViewModelProvider(this).get(SearchViewModel.class);
 
         searchViewModel.getSearch().observe(getViewLifecycleOwner(), searchModels -> {
-            progressBar.setVisibility(View.GONE);
+            binding.progreesBar.setVisibility(View.GONE);
             if (searchModels == null) {
                 Toast.makeText(getActivity(), getString(R.string.search_failed), Toast.LENGTH_LONG).show();
             } else if (searchModels.isEmpty()) {
                 clearResult();
             } else if (!inputSearch.trim().isEmpty()) {
-                noResultTv.setVisibility(View.GONE);
+                binding.noresultTv.setVisibility(View.GONE);
                 searchAdapter.setSearchModels(searchModels);
             }
         });
@@ -258,9 +239,9 @@ public class SearchFragment extends Fragment implements ItemSelectionListener<Se
     }
 
     private void initRecycler() {
-        searchAdapter = new SearchAdapter(getActivity(), this);
-        searchRv.setLayoutManager(new LinearLayoutManager(getActivity()));
-        searchRv.setAdapter(searchAdapter);
+        searchAdapter = new SearchAdapter(requireContext(), this);
+        binding.searchRv.setLayoutManager(new LinearLayoutManager(getActivity()));
+        binding.searchRv.setAdapter(searchAdapter);
     }
 
     private void getPrevState(Bundle savedInstanceState) {
@@ -270,26 +251,24 @@ public class SearchFragment extends Fragment implements ItemSelectionListener<Se
         selectedHezb = savedInstanceState.getInt("input_hezb");
         selectedQuarter = savedInstanceState.getInt("input_qurater");
         if (selectedJuz != 0) {
-            chapterTv.setText(refactorOptionText(getActivity().getResources().getStringArray(R.array.agza2_name)[selectedJuz - 1]));
+            binding.filterContainer.chapterTv.setText(refactorOptionText(getActivity().getResources().getStringArray(R.array.agza2_name)[selectedJuz - 1]));
         }
         if (selectedSura != 0) {
-            suraTv.setText(getActivity().getResources().getStringArray(R.array.sura_name)[selectedSura - 1]);
+            binding.filterContainer.suraTv.setText(getActivity().getResources().getStringArray(R.array.sura_name)[selectedSura - 1]);
         }
         if (selectedHezb != 0) {
-            hezbTv.setText(getActivity().getResources().getStringArray(R.array.hezb_name)[selectedHezb - 1]);
+            binding.filterContainer.hezbTv.setText(getActivity().getResources().getStringArray(R.array.hezb_name)[selectedHezb - 1]);
         }
         if (selectedQuarter != 0) {
-            quarterTv.setText(getActivity().getResources().getStringArray(R.array.quarter_name)[selectedQuarter - 1]);
+            binding.filterContainer.rob3Tv.setText(getActivity().getResources().getStringArray(R.array.quarter_name)[selectedQuarter - 1]);
         }
     }
 
-    @OnClick(R.id.hamburger_iv)
-    public void onNavHamburgerClick() {
+    private void onNavHamburgerClick() {
         navDrawerListener.onNavDrawerClick();
     }
 
-    @OnClick(R.id.part_container)
-    public void onClickPartFilter() {
+    private void onClickPartFilter() {
         if (juzOptions == null) {
             List<String> options = Arrays.asList(getResources().getStringArray(R.array.agza2_name));
             juzOptions = new ArrayList<>();
@@ -315,8 +294,7 @@ public class SearchFragment extends Fragment implements ItemSelectionListener<Se
         dialog.show(getChildFragmentManager(), "OptionDialog");
     }
 
-    @OnClick(R.id.sura_container)
-    public void onClickSuraFilter() {
+    private void onClickSuraFilter() {
         if (selectedJuz == 0) {
             List<String> options = Arrays.asList(getResources().getStringArray(R.array.sura_name));
             suraOptions = new ArrayList<>();
@@ -326,8 +304,7 @@ public class SearchFragment extends Fragment implements ItemSelectionListener<Se
         setSuraDialog();
     }
 
-    @OnClick(R.id.hezb_container)
-    public void onClickHezbFilter() {
+    private void onClickHezbFilter() {
         if (selectedJuz == 0) {
             Toast.makeText(getActivity(), R.string.select_juz_first, Toast.LENGTH_LONG).show();
             return;
@@ -342,8 +319,7 @@ public class SearchFragment extends Fragment implements ItemSelectionListener<Se
         fragment.show(getActivity().getSupportFragmentManager(), "HizbFilterDialog");
     }
 
-    @OnClick(R.id.rob3_container)
-    public void onClickQuraterFilter() {
+    private void onClickQuraterFilter() {
         if (selectedHezb == 0) {
             Toast.makeText(getActivity(), R.string.select_hezb_first, Toast.LENGTH_LONG).show();
             return;
@@ -360,25 +336,25 @@ public class SearchFragment extends Fragment implements ItemSelectionListener<Se
 
     @Override
     public void onSelectItem(SearchModel item) {
-        ScreenUtils.dismissKeyboard(getContext(), searchEt);
+        ScreenUtils.dismissKeyboard(getContext(), binding.etSearch);
         quranNavigationCallbacks.gotoQuranPageAya(item.getPage(), item.getId(), true);
     }
 
     @Override
     public void onItemClick(String optionName, int optionIndex, int requestCode) {
         if (requestCode == SURA_FILTER_CODE) {
-            suraTv.setText(optionName);
+            binding.filterContainer.suraTv.setText(optionName);
             selectedSura = selectedJuz == 0 ? optionIndex : juzSuraNumbers.get(optionIndex);
             searchAya();
         } else if (requestCode == JUZ_FILTER_CODE) {
-            chapterTv.setText(optionIndex == 0 ? optionName : refactorOptionText(optionName));
-            suraTv.setText(getString(R.string.sura));
+            binding.filterContainer.chapterTv.setText(optionIndex == 0 ? optionName : refactorOptionText(optionName));
+            binding.filterContainer.suraTv.setText(getString(R.string.sura));
             selectedSura = 0;
             if (optionIndex == 0) {
                 selectedQuarter = 0;
                 selectedHezb = 0;
-                quarterTv.setText(getString(R.string.rub3));
-                hezbTv.setText(getString(R.string.hizb));
+                binding.filterContainer.rob3Tv.setText(getString(R.string.rub3));
+                binding.filterContainer.hezbTv.setText(getString(R.string.hizb));
             } else {
                 searchViewModel.getChapterSuras(optionIndex);
             }
@@ -398,25 +374,24 @@ public class SearchFragment extends Fragment implements ItemSelectionListener<Se
     public void onItemSelected(int requestCode, int itemIndex) {
         if (requestCode == HEZB_FILTER_CODE) {
             selectedHezb = itemIndex;
-            hezbTv.setText(hezbOptions.get(itemIndex));
+            binding.filterContainer.hezbTv.setText(hezbOptions.get(itemIndex));
             if (selectedHezb == 0) {
                 selectedQuarter = 0;
-                quarterTv.setText(getString(R.string.rub3));
+                binding.filterContainer.rob3Tv.setText(getString(R.string.rub3));
             }
             searchAya();
         } else if (requestCode == QUARTER_FILTER_CODE) {
             selectedQuarter = itemIndex;
-            quarterTv.setText(quarterOptions.get(itemIndex));
+            binding.filterContainer.rob3Tv.setText(quarterOptions.get(itemIndex));
             searchAya();
         }
     }
 
-    @OnClick(R.id.more_iv)
-    public void onGetMoreFilterOptions() {
+    private void onGetMoreFilterOptions() {
         if (isFilterOptionsShow) {
-            filterContainer.setVisibility(View.GONE);
+            binding.filterContainer.getRoot().setVisibility(View.GONE);
         } else {
-            filterContainer.setVisibility(View.VISIBLE);
+            binding.filterContainer.getRoot().setVisibility(View.VISIBLE);
         }
 
         isFilterOptionsShow = !isFilterOptionsShow;

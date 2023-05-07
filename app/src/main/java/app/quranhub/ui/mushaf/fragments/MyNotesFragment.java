@@ -10,20 +10,17 @@ import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.EditText;
-import android.widget.ImageButton;
-import android.widget.ProgressBar;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 import app.quranhub.R;
 import app.quranhub.data.local.entity.Note;
+import app.quranhub.databinding.FragmentMyNotesBinding;
 import app.quranhub.ui.common.interfaces.ToolbarActionsListener;
 import app.quranhub.ui.mushaf.adapter.NotesAdapter;
 import app.quranhub.ui.mushaf.dialogs.AddNoteDialog;
@@ -33,28 +30,10 @@ import app.quranhub.ui.mushaf.listener.QuranNavigationCallbacks;
 import app.quranhub.ui.mushaf.model.DisplayedNote;
 import app.quranhub.ui.mushaf.viewmodel.NotesViewModel;
 import app.quranhub.util.ScreenUtils;
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
-
 
 public class MyNotesFragment extends Fragment implements NotesAdapter.NoteCallback, AddNoteDialog.AddNoteListener, ItemSelectionListener<Integer> {
 
-    @BindView(R.id.ib_finish_edit)
-    ImageButton finishEditImageButton;
-    @BindView(R.id.edit_btn)
-    ImageButton editButton;
-    @BindView(R.id.filter_btn)
-    ImageButton filterButton;
-    @BindView(R.id.et_search)
-    EditText searchEt;
-    @BindView(R.id.notes_rv)
-    RecyclerView notesRv;
-    @BindView(R.id.progrees_bar)
-    ProgressBar progressBar;
-    @BindView(R.id.no_notes_tv)
-    TextView noNotesTv;
-
+    private FragmentMyNotesBinding binding;
 
     private String inputSearch = "";
     private ToolbarActionsListener navDrawerListener;
@@ -67,7 +46,7 @@ public class MyNotesFragment extends Fragment implements NotesAdapter.NoteCallba
 
 
     @Override
-    public void onAttach(Context context) {
+    public void onAttach(@NonNull Context context) {
         super.onAttach(context);
         if (context instanceof ToolbarActionsListener) {
             navDrawerListener = (ToolbarActionsListener) context;
@@ -78,17 +57,32 @@ public class MyNotesFragment extends Fragment implements NotesAdapter.NoteCallba
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_my_notes, container, false);
-        ButterKnife.bind(this, view);
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             ViewGroup container,
+                             Bundle savedInstanceState
+    ) {
+        binding = FragmentMyNotesBinding.inflate(inflater, container, false);
+        return binding.getRoot();
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
         if (savedInstanceState != null) {
             getPrevState(savedInstanceState);
         }
+
         initViews();
         bindViewModel();
         observeSearchInput();
-        return view;
+        attachListeners();
+    }
+
+    private void attachListeners() {
+        binding.hamburgerIv.setOnClickListener(v -> onNavHamburgerClick());
+        binding.editBtn.setOnClickListener(v -> onNoteEdit());
+        binding.filterBtn.setOnClickListener(v -> onClickFilter());
+        binding.ibFinishEdit.setOnClickListener(v -> onFinishEdit());
     }
 
     private void getPrevState(Bundle savedInstanceState) {
@@ -115,7 +109,7 @@ public class MyNotesFragment extends Fragment implements NotesAdapter.NoteCallba
         viewModel = new ViewModelProvider(this).get(NotesViewModel.class);
         viewModel.getAllNotes();
         viewModel.getNotes().observe(getViewLifecycleOwner(), displayedNotes -> {
-            progressBar.setVisibility(View.GONE);
+            binding.progreesBar.setVisibility(View.GONE);
             if (displayedNotes != null && displayedNotes.size() > 0) {
                 adapter.setNoteList(displayedNotes);
                 if (inputSearch != null && !TextUtils.isEmpty(inputSearch.trim())) {
@@ -125,13 +119,13 @@ public class MyNotesFragment extends Fragment implements NotesAdapter.NoteCallba
                     adapter.setFilteredNotes(selectedFilterNoteType - 1);
                 }
             } else {
-                noNotesTv.setVisibility(View.VISIBLE);
+                binding.noNotesTv.setVisibility(View.VISIBLE);
             }
         });
     }
 
     private void observeSearchInput() {
-        searchEt.addTextChangedListener(new TextWatcher() {
+        binding.etSearch.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
             }
@@ -149,19 +143,18 @@ public class MyNotesFragment extends Fragment implements NotesAdapter.NoteCallba
     }
 
     private void initViews() {
-        adapter = new NotesAdapter(getActivity(), this);
-        notesRv.setLayoutManager(new LinearLayoutManager(getActivity()));
-        notesRv.setAdapter(adapter);
+        adapter = new NotesAdapter(requireContext(), this);
+        binding.notesRv.setLayoutManager(new LinearLayoutManager(getActivity()));
+        binding.notesRv.setAdapter(adapter);
     }
 
-    @OnClick(R.id.hamburger_iv)
-    void onNavHamburgerClick() {
+    private void onNavHamburgerClick() {
         navDrawerListener.onNavDrawerClick();
     }
 
     @Override
     public void onNavigateToAya(int ayaId, int pageNum) {
-        ScreenUtils.dismissKeyboard(getContext(), searchEt);
+        ScreenUtils.dismissKeyboard(requireContext(), binding.etSearch);
         quranNavigationCallbacks.gotoQuranPageAya(pageNum, ayaId, false);
     }
 
@@ -170,13 +163,13 @@ public class MyNotesFragment extends Fragment implements NotesAdapter.NoteCallba
      */
     @Override
     public void onGetNoteDetails(DisplayedNote displayedNote) {
-        if (ScreenUtils.getOrientationState(getActivity()) == ScreenUtils.PORTRAIT_STATE) {
+        if (ScreenUtils.getOrientationState(requireActivity()) == ScreenUtils.PORTRAIT_STATE) {
             openAddNoteDialog(displayedNote);
         } else {
             openDialog = true;
             selectedAyaNote = displayedNote;
         }
-        getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        requireActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
     }
 
     private void openAddNoteDialog(DisplayedNote displayedNote) {
@@ -203,28 +196,24 @@ public class MyNotesFragment extends Fragment implements NotesAdapter.NoteCallba
         requireActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
     }
 
-    @OnClick(R.id.edit_btn)
-    public void onNoteEdit() {
+    private void onNoteEdit() {
         adapter.setEditable(true);
-        finishEditImageButton.setVisibility(View.VISIBLE);
-        editButton.setVisibility(View.GONE);
-        filterButton.setVisibility(View.GONE);
+        binding.ibFinishEdit.setVisibility(View.VISIBLE);
+        binding.editBtn.setVisibility(View.GONE);
+        binding.filterBtn.setVisibility(View.GONE);
     }
 
-    @OnClick(R.id.filter_btn)
-    public void onClickFilter() {
+    private void onClickFilter() {
         NotesFilterDialog filterDialog = NotesFilterDialog.getInstance(selectedFilterNoteType);
         filterDialog.show(getChildFragmentManager(), "NotesFilterDialog");
     }
 
-    @OnClick(R.id.ib_finish_edit)
-    public void onFinishEdit() {
+    private void onFinishEdit() {
         adapter.setEditable(false);
-        finishEditImageButton.setVisibility(View.GONE);
-        editButton.setVisibility(View.VISIBLE);
-        filterButton.setVisibility(View.VISIBLE);
+        binding.ibFinishEdit.setVisibility(View.GONE);
+        binding.editBtn.setVisibility(View.VISIBLE);
+        binding.filterBtn.setVisibility(View.VISIBLE);
     }
-
 
     @Override
     public void onSelectItem(Integer noteFilterType) {
@@ -235,5 +224,11 @@ public class MyNotesFragment extends Fragment implements NotesAdapter.NoteCallba
             adapter.setFilteredNotes(selectedFilterNoteType - 1);
         }
 
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        binding = null;
     }
 }

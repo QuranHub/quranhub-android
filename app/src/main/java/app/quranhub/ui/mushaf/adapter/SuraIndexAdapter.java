@@ -4,8 +4,6 @@ import android.content.Context;
 import android.graphics.Typeface;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
-import android.widget.ImageView;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.res.ResourcesCompat;
@@ -22,8 +20,6 @@ import app.quranhub.R;
 import app.quranhub.databinding.SuraIndexRowBinding;
 import app.quranhub.ui.mushaf.listener.ItemSelectionListener;
 import app.quranhub.ui.mushaf.model.SuraIndexModelMapper;
-import butterknife.BindView;
-import butterknife.ButterKnife;
 
 public class SuraIndexAdapter extends RecyclerView.Adapter<SuraIndexAdapter.ViewHolder> {
 
@@ -54,13 +50,13 @@ public class SuraIndexAdapter extends RecyclerView.Adapter<SuraIndexAdapter.View
             return;
         SuraIndexModelMapper suraIndexModel = suraIndexFiliterList.get(position);
         if (TextUtilsCompat.getLayoutDirectionFromLocale(Locale.getDefault()) == ViewCompat.LAYOUT_DIRECTION_RTL) {
-            holder.leftBorder.setImageResource(R.drawable.gold_ornament_surah_ic);
-            holder.rightBorder.setImageResource(R.drawable.gold_ornament_surah_mirror_ic);
-            holder.suraName.setTypeface(ResourcesCompat.getFont(context, R.font.secondary_font), Typeface.BOLD);
+            holder.binding.leftSuraBorder.setImageResource(R.drawable.gold_ornament_surah_ic);
+            holder.binding.rightSuraBorder.setImageResource(R.drawable.gold_ornament_surah_mirror_ic);
+            holder.binding.suraNameTv.setTypeface(ResourcesCompat.getFont(context, R.font.secondary_font), Typeface.BOLD);
             //holder.suraName.setTextSize(TypedValue.COMPLEX_UNIT_SP,context.getResources().getDimension(R.dimen.text_size_18));
         }
 
-        holder.rowBinding.setSuraIndex(suraIndexModel);
+        holder.binding.setSuraIndex(suraIndexModel);
         holder.itemView.setOnClickListener(v -> {
             itemSelectionListener.onSelectItem(Integer.valueOf(suraIndexModel.getPage()));
         });
@@ -95,20 +91,13 @@ public class SuraIndexAdapter extends RecyclerView.Adapter<SuraIndexAdapter.View
         notifyDataSetChanged();
     }
 
-    public class ViewHolder extends RecyclerView.ViewHolder {
+    public static class ViewHolder extends RecyclerView.ViewHolder {
 
-        SuraIndexRowBinding rowBinding;
-        @BindView(R.id.right_sura_border)
-        ImageView rightBorder;
-        @BindView(R.id.left_sura_border)
-        ImageView leftBorder;
-        @BindView(R.id.sura_name_tv)
-        TextView suraName;
+        SuraIndexRowBinding binding;
 
-        public ViewHolder(SuraIndexRowBinding rowBinding) {
-            super(rowBinding.getRoot());
-            this.rowBinding = rowBinding;
-            ButterKnife.bind(this, rowBinding.getRoot());
+        public ViewHolder(SuraIndexRowBinding binding) {
+            super(binding.getRoot());
+            this.binding = binding;
         }
     }
 }

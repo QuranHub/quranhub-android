@@ -6,13 +6,9 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.view.Gravity;
-import android.view.LayoutInflater;
-import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.ImageView;
 import android.widget.SeekBar;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -24,15 +20,11 @@ import java.util.Objects;
 import app.quranhub.R;
 import app.quranhub.data.Constants;
 import app.quranhub.data.local.prefs.AppPreferencesManager;
+import app.quranhub.databinding.DialogPlayAyaRecorderBinding;
 import app.quranhub.util.RecorderMediaHelper;
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
-
 
 public class AyaRecorderPlayerDialog extends DialogFragment implements RecorderMediaHelper.MediaPlayerCallback {
 
-    private View dialogView;
     private Dialog dialog;
     private static final String ARG_AYA_ID = "ARG_AYA_ID";
     private AyaRecorderPlayerListener listener;
@@ -42,13 +34,7 @@ public class AyaRecorderPlayerDialog extends DialogFragment implements RecorderM
     private boolean isPlaying = false, userIsSeeking = false, firstPlay = true;
     private int userSelectedPosition;
 
-    @BindView(R.id.play_iv)
-    ImageView playIv;
-    @BindView(R.id.recorder_progress)
-    SeekBar progressRecorder;
-    @BindView(R.id.recorder_time_tv)
-    TextView recorderTime;
-
+    private DialogPlayAyaRecorderBinding binding;
 
     public static AyaRecorderPlayerDialog getInstance(int ayaId) {
         Bundle bundle = new Bundle();
@@ -67,9 +53,7 @@ public class AyaRecorderPlayerDialog extends DialogFragment implements RecorderM
 
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
-        LayoutInflater inflater = getActivity().getLayoutInflater();
-        dialogView = inflater.inflate(R.layout.dialog_play_aya_recorder, null);
-        ButterKnife.bind(this, dialogView);
+        binding = DialogPlayAyaRecorderBinding.inflate(getLayoutInflater());
         initializeDialog();
         setRecordingFile();
         initSoundMedia();
@@ -88,7 +72,7 @@ public class AyaRecorderPlayerDialog extends DialogFragment implements RecorderM
 
     private void restorePlayingState() {
         if (isPlaying) {
-            playIv.setImageResource(R.drawable.ic_pause);
+            binding.playIv.setImageResource(R.drawable.ic_pause);
             recorderMediaHelper.play();
         }
     }
@@ -107,16 +91,16 @@ public class AyaRecorderPlayerDialog extends DialogFragment implements RecorderM
         dialog.getWindow().requestFeature(Window.FEATURE_NO_TITLE);
         WindowManager.LayoutParams layoutParams = dialog.getWindow().getAttributes();
         layoutParams.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
-        dialog.setContentView(dialogView);
+        dialog.setContentView(binding.getRoot());
         Objects.requireNonNull(dialog.getWindow()).setBackgroundDrawableResource(android.R.color.transparent);
         if (getArguments() != null) {
             ayaId = getArguments().getInt(ARG_AYA_ID);
         }
-
+        attachListeners();
     }
 
     private void setRecordingFile() {
-        int recitation = AppPreferencesManager.getRecitationSetting(getActivity());
+        int recitation = AppPreferencesManager.getRecitationSetting(requireActivity());
         File file = new File(getActivity().getExternalFilesDir(Environment.DIRECTORY_MUSIC), Constants.Directory.AYA_VOICE_RECORDER
                 + File.separator + recitation + File.separator
                 + ayaId + ".3gp");
@@ -130,7 +114,7 @@ public class AyaRecorderPlayerDialog extends DialogFragment implements RecorderM
     }
 
     private void listenToSeekbarChanges() {
-        progressRecorder.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+        binding.recorderProgress.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
 
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
@@ -160,25 +144,28 @@ public class AyaRecorderPlayerDialog extends DialogFragment implements RecorderM
         }
     }
 
-    @OnClick(R.id.remove_record_iv)
-    public void onRemoveRecorder() {
+    private void attachListeners() {
+        binding.removeRecordIv.setOnClickListener(v -> onRemoveRecorder());
+        binding.playIv.setOnClickListener(v -> onPlayRecorder());
+    }
+
+    private void onRemoveRecorder() {
         recorderMediaHelper.release();
         listener.onClickDeleteRecorder();
         dismiss();
     }
 
-    @OnClick(R.id.play_iv)
     public void onPlayRecorder() {
         if (isPlaying) {
-            playIv.setImageResource(R.drawable.player_play_white_ic);
+            binding.playIv.setImageResource(R.drawable.player_play_white_ic);
             recorderMediaHelper.pause();
         } else {
-            playIv.setImageResource(R.drawable.ic_pause);
+            binding.playIv.setImageResource(R.drawable.ic_pause);
             recorderMediaHelper.play();
             recorderMediaHelper.startUpdatingAudioTime();
             if (firstPlay) {
                 firstPlay = false;
-                recorderTime.setText("0:00");
+                binding.recorderTimeTv.setText("0:00");
             }
         }
         isPlaying = !isPlaying;
@@ -186,32 +173,32 @@ public class AyaRecorderPlayerDialog extends DialogFragment implements RecorderM
 
     @Override
     public void onGetMaxDuration(int duration) {
-        progressRecorder.setMax(duration);
+        binding.recorderProgress.setMax(duration);
     }
 
     @Override
     public void onPositionChanged(int position) {
         if (!userIsSeeking) {
             if (Build.VERSION.SDK_INT >= 24) {
-                progressRecorder.setProgress(position, true);
+                binding.recorderProgress.setProgress(position, true);
             } else {
-                progressRecorder.setProgress(position);
+                binding.recorderProgress.setProgress(position);
             }
         }
     }
 
     @Override
     public void onUpdatedTime(String time) {
-        recorderTime.setText(time);
+        binding.recorderTimeTv.setText(time);
     }
 
     @Override
     public void onStateChanged(int state) {
         if (state == State.COMPLETED) {
-            progressRecorder.setProgress(0);
+            binding.recorderProgress.setProgress(0);
             isPlaying = false;
             firstPlay = true;
-            playIv.setImageResource(R.drawable.player_play_white_ic);
+            binding.playIv.setImageResource(R.drawable.player_play_white_ic);
         }
     }
 
@@ -221,6 +208,7 @@ public class AyaRecorderPlayerDialog extends DialogFragment implements RecorderM
         if (!getActivity().isChangingConfigurations() && recorderMediaHelper != null) {
             recorderMediaHelper.release();
         }
+        binding = null;
     }
 
     public interface AyaRecorderPlayerListener {
