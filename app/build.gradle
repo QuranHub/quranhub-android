@@ -107,7 +107,7 @@ dependencies {
 
     // Room
     implementation 'androidx.room:room-runtime:2.5.0'
-    kapt 'androidx.room:room-compiler:2.5.0'
+    kapt 'androidx.room:room-compiler:2.5.1'
     implementation 'androidx.room:room-rxjava2:2.5.0'
 
     // Lifecycle, ViewModel & LiveData
