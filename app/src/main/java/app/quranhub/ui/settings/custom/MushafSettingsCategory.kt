@@ -1,72 +1,65 @@
-package app.quranhub.ui.settings.custom;
+package app.quranhub.ui.settings.custom
 
-import android.content.Context;
-import android.content.res.TypedArray;
-import android.graphics.drawable.ColorDrawable;
-import android.util.AttributeSet;
-import android.view.LayoutInflater;
-import android.widget.LinearLayout;
-import android.widget.TextView;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.core.content.ContextCompat;
-
-import app.quranhub.R;
+import android.content.Context
+import android.graphics.drawable.ColorDrawable
+import android.util.AttributeSet
+import android.view.LayoutInflater
+import android.widget.LinearLayout
+import android.widget.TextView
+import androidx.core.content.ContextCompat
+import app.quranhub.R
 
 /**
  * Settings category ViewGroup that displays a given category title at the top.
  * Extension of LinearLayout, use it the same way you would use a linear layout.
  */
-public class MushafSettingsCategory extends LinearLayout {
-
-    private static final String TAG = MushafSettingsCategory.class.getSimpleName();
+class MushafSettingsCategory(context: Context, attrs: AttributeSet?) :
+    LinearLayout(context, attrs) {
 
     /**
      * Title for the category; mandatory.
      */
-    private String categoryTitle;
+    private var categoryTitle: String? = null
+    private val titleTextView: TextView
 
-    private TextView titleTextView;
-
-
-    public MushafSettingsCategory(Context context, @Nullable AttributeSet attrs) {
-        super(context, attrs);
+    init {
 
         // first, read the attributes
-        TypedArray typedArray = context.obtainStyledAttributes(attrs,
-                R.styleable.MushafSettingsCategory, 0, 0);
-        if (typedArray.hasValue(R.styleable.MushafSettingsCategory_categoryTitle)) {
-            categoryTitle = typedArray.getString(R.styleable.MushafSettingsCategory_categoryTitle);
+        val typedArray = context.obtainStyledAttributes(
+            attrs,
+            R.styleable.MushafSettingsCategory, 0, 0
+        )
+        categoryTitle = if (typedArray.hasValue(R.styleable.MushafSettingsCategory_categoryTitle)) {
+            typedArray.getString(R.styleable.MushafSettingsCategory_categoryTitle)
         } else {
-            throw new RuntimeException(
-                    "Attribute 'categoryTitle' is not defined or could not be coerced to a string.");
+            throw RuntimeException(
+                "Attribute 'categoryTitle' is not defined or could not be coerced to a string."
+            )
         }
-        typedArray.recycle();
+        typedArray.recycle()
 
         // initialize the View
-        setOrientation(LinearLayout.VERTICAL);
-        setDividerDrawable(new ColorDrawable(ContextCompat.getColor(context, R.color.dark_grey)));
-        setDividerPadding((int) context.getResources().getDimension(com.intuit.sdp.R.dimen._10sdp));
-        setShowDividers(SHOW_DIVIDER_MIDDLE);
-
-        LayoutInflater inflater = (LayoutInflater) context
-                .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        inflater.inflate(R.layout.view_mushaf_settings_category, this, true);
-
-        titleTextView = (TextView) getChildAt(0);
-        titleTextView.setText(categoryTitle);
-
+        orientation = VERTICAL
+        dividerDrawable = ColorDrawable(ContextCompat.getColor(context, R.color.dark_grey))
+        dividerPadding = context.resources.getDimension(com.intuit.sdp.R.dimen._10sdp).toInt()
+        showDividers = SHOW_DIVIDER_MIDDLE
+        val inflater = context
+            .getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
+        inflater.inflate(R.layout.view_mushaf_settings_category, this, true)
+        titleTextView = getChildAt(0) as TextView
+        titleTextView.text = categoryTitle
     }
 
-    public void setCategoryTitle(@NonNull String title) {
-        categoryTitle = title;
-        titleTextView.setText(categoryTitle);
+    fun setCategoryTitle(title: String) {
+        categoryTitle = title
+        titleTextView.text = categoryTitle
     }
 
-    @NonNull
-    public String getCategoryTitle() {
-        return categoryTitle;
+    fun getCategoryTitle(): String {
+        return categoryTitle!!
     }
 
+    companion object {
+        private val TAG = MushafSettingsCategory::class.java.simpleName
+    }
 }

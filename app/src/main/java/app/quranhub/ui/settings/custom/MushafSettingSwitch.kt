@@ -1,101 +1,95 @@
-package app.quranhub.ui.settings.custom;
+package app.quranhub.ui.settings.custom
 
-import android.content.Context;
-import android.content.res.TypedArray;
-import android.util.AttributeSet;
-import android.util.TypedValue;
-import android.view.LayoutInflater;
-import android.widget.Checkable;
-import android.widget.FrameLayout;
-import android.widget.Switch;
-import android.widget.TextView;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
-import app.quranhub.R;
+import android.content.Context
+import android.util.AttributeSet
+import android.util.TypedValue
+import android.view.LayoutInflater
+import android.view.View
+import android.widget.Checkable
+import android.widget.FrameLayout
+import android.widget.Switch
+import android.widget.TextView
+import app.quranhub.R
 
 /**
  * A Setting item that can display the setting name & a toggle switch.
  */
-public class MushafSettingSwitch extends FrameLayout implements Checkable {
+class MushafSettingSwitch(context: Context, attrs: AttributeSet?) : FrameLayout(context, attrs),
+    Checkable {
 
-    private static final String TAG = MushafSettingSwitch.class.getSimpleName();
+    /**
+     * Name of the setting; mandatory
+     */
+    private var name: String? = null
 
-    private String name;  // Name of the setting; mandatory
+    /**
+     * Whether the Switch is checked or not; optional (default false)
+     */
+    private var checked: Boolean
+    private val nameTextView: TextView
+    private val settingSwitch: Switch
+    private var onCheckedChangeListener: OnCheckedChangeListener? = null
 
-    private Boolean checked; // Whether the Switch is checked or not; optional (default false)
-
-    private TextView nameTextView;
-    private Switch settingSwitch;
-
-    @Nullable
-    private OnCheckedChangeListener onCheckedChangeListener;
-
-
-    public MushafSettingSwitch(Context context, @Nullable AttributeSet attrs) {
-        super(context, attrs);
+    init {
 
         // first, read the attributes
-        TypedArray typedArray = context.obtainStyledAttributes(attrs,
-                R.styleable.MushafSettingSwitch, 0, 0);
-        if (typedArray.hasValue(R.styleable.MushafSettingSwitch_switchSettingName)) {
-            name = typedArray.getString(R.styleable.MushafSettingSwitch_switchSettingName);
+        val typedArray = context.obtainStyledAttributes(
+            attrs,
+            R.styleable.MushafSettingSwitch, 0, 0
+        )
+        name = if (typedArray.hasValue(R.styleable.MushafSettingSwitch_switchSettingName)) {
+            typedArray.getString(R.styleable.MushafSettingSwitch_switchSettingName)
         } else {
-            throw new RuntimeException(
-                    "Attribute 'switchSettingName' is not defined or could not be coerced to a string.");
+            throw RuntimeException(
+                "Attribute 'switchSettingName' is not defined or could not be coerced to a string."
+            )
         }
-        checked = typedArray.getBoolean(R.styleable.MushafSettingSwitch_switchChecked, false);
-        typedArray.recycle();
+        checked = typedArray.getBoolean(R.styleable.MushafSettingSwitch_switchChecked, false)
+        typedArray.recycle()
 
         // initialize the View
-        TypedValue outValue = new TypedValue();
-        getContext().getTheme().resolveAttribute(android.R.attr.selectableItemBackground, outValue
-                , true);
-        setBackgroundResource(outValue.resourceId);
-        setClickable(true);
-
-        LayoutInflater inflater = (LayoutInflater) context
-                .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        inflater.inflate(R.layout.view_mushaf_setting_switch, this, true);
-
-        nameTextView = findViewById(R.id.tv_name);
-        settingSwitch = findViewById(R.id.switch_setting);
-
-        nameTextView.setText(name);
-        settingSwitch.setChecked(checked);
-        settingSwitch.setClickable(false);
-        this.setOnClickListener(v -> {
-            toggle();
+        val outValue = TypedValue()
+        getContext().theme.resolveAttribute(
+            android.R.attr.selectableItemBackground, outValue, true
+        )
+        setBackgroundResource(outValue.resourceId)
+        isClickable = true
+        val inflater = context
+            .getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
+        inflater.inflate(R.layout.view_mushaf_setting_switch, this, true)
+        nameTextView = findViewById(R.id.tv_name)
+        settingSwitch = findViewById(R.id.switch_setting)
+        nameTextView.text = name
+        settingSwitch.isChecked = checked
+        settingSwitch.isClickable = false
+        setOnClickListener { v: View? ->
+            toggle()
             if (onCheckedChangeListener != null) {
-                onCheckedChangeListener.onCheckedChanged(this, checked);
+                onCheckedChangeListener!!.onCheckedChanged(this, checked)
             }
-        });
+        }
     }
 
-    public String getName() {
-        return name;
+    fun getName(): String? {
+        return name
     }
 
-    public void setName(String name) {
-        this.name = name;
-        nameTextView.setText(this.name);
+    fun setName(name: String?) {
+        this.name = name
+        nameTextView.text = this.name
     }
 
-    @Override
-    public void setChecked(boolean checked) {
-        this.checked = checked;
-        settingSwitch.setChecked(this.checked);
+    override fun setChecked(checked: Boolean) {
+        this.checked = checked
+        settingSwitch.isChecked = this.checked
     }
 
-    @Override
-    public boolean isChecked() {
-        return checked;
+    override fun isChecked(): Boolean {
+        return checked
     }
 
-    @Override
-    public void toggle() {
-        setChecked(!checked);
+    override fun toggle() {
+        isChecked = !checked
     }
 
     /**
@@ -103,17 +97,19 @@ public class MushafSettingSwitch extends FrameLayout implements Checkable {
      *
      * @param listener the callback to call on checked state change
      */
-    public void setOnCheckedChangeListener(@Nullable OnCheckedChangeListener listener) {
-        onCheckedChangeListener = listener;
+    fun setOnCheckedChangeListener(listener: OnCheckedChangeListener?) {
+        onCheckedChangeListener = listener
     }
 
-    public void removeOnCheckedListener() {
-        onCheckedChangeListener = null;
+    fun removeOnCheckedListener() {
+        onCheckedChangeListener = null
     }
 
-
-    public interface OnCheckedChangeListener {
-        void onCheckedChanged(@NonNull MushafSettingSwitch settingSwitch, boolean checked);
+    interface OnCheckedChangeListener {
+        fun onCheckedChanged(settingSwitch: MushafSettingSwitch, checked: Boolean)
     }
 
+    companion object {
+        private val TAG = MushafSettingSwitch::class.java.simpleName
+    }
 }

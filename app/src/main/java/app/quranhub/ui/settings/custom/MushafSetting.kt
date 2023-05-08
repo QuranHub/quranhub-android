@@ -1,104 +1,80 @@
-package app.quranhub.ui.settings.custom;
+package app.quranhub.ui.settings.custom
 
-import android.content.Context;
-import android.content.res.TypedArray;
-import android.util.AttributeSet;
-import android.util.TypedValue;
-import android.view.LayoutInflater;
-import android.widget.FrameLayout;
-import android.widget.ImageView;
-import android.widget.TextView;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
-import app.quranhub.R;
+import android.content.Context
+import android.util.AttributeSet
+import android.util.TypedValue
+import android.view.LayoutInflater
+import android.widget.FrameLayout
+import android.widget.ImageView
+import android.widget.TextView
+import app.quranhub.R
 
 /**
  * A Setting item that can display the setting name & current setting value.
  */
-public class MushafSetting extends FrameLayout {
+class MushafSetting(context: Context, attrs: AttributeSet?) : FrameLayout(context, attrs) {
 
-    private static final String TAG = MushafSetting.class.getSimpleName();
+    private val nameTextView: TextView
+    private val currentValueTextView: TextView
+    private val arrowImageView: ImageView
 
     /**
      * Name of the setting; mandatory.
      */
-    private String name;
+    var name: String? = null
+        set(value) {
+            field = value
+            nameTextView.text = value
+        }
 
     /**
      * Current value of the setting; optional (default empty string).
      */
-    private String currentValue;
-
-    private TextView nameTextView;
-    private TextView currentValueTextView;
-    private ImageView arrowImageView;
-
-
-    public MushafSetting(Context context, @Nullable AttributeSet attrs) {
-        super(context, attrs);
-
-        // first, read the attributes
-        TypedArray typedArray = context.obtainStyledAttributes(attrs,
-                R.styleable.MushafSetting, 0, 0);
-        if (typedArray.hasValue(R.styleable.MushafSetting_settingName)) {
-            name = typedArray.getString(R.styleable.MushafSetting_settingName);
-        } else {
-            throw new RuntimeException(
-                    "Attribute 'settingName' is not defined or could not be coerced to a string.");
+    var currentValue: String? = null
+        set(value) {
+            field = value ?: ""
+            currentValueTextView.text = value
         }
-        if (typedArray.hasValue(R.styleable.MushafSetting_currentValue)) {
-            currentValue = typedArray.getString(R.styleable.MushafSetting_currentValue);
-        } else {
-            currentValue = "";
-        }
-        typedArray.recycle();
+
+    init {
 
         // initialize the View
-        TypedValue outValue = new TypedValue();
-        getContext().getTheme().resolveAttribute(android.R.attr.selectableItemBackground, outValue
-                , true);
-        setBackgroundResource(outValue.resourceId);
-        setClickable(true);
+        val outValue = TypedValue()
+        getContext().theme.resolveAttribute(
+            android.R.attr.selectableItemBackground, outValue, true
+        )
+        setBackgroundResource(outValue.resourceId)
 
-        LayoutInflater inflater = (LayoutInflater) context
-                .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        inflater.inflate(R.layout.view_mushaf_setting, this, true);
+        isClickable = true
 
-        nameTextView = findViewById(R.id.tv_name);
-        currentValueTextView = findViewById(R.id.tv_current_value);
-        arrowImageView = findViewById(R.id.iv_arrow);
+        val inflater = LayoutInflater.from(context)
+        inflater.inflate(R.layout.view_mushaf_setting, this, true)
 
-        nameTextView.setText(name);
-        currentValueTextView.setText(currentValue);
-        if (getResources().getConfiguration().getLayoutDirection() == LAYOUT_DIRECTION_RTL) {
-            arrowImageView.setImageResource(R.drawable.arrow_backward_gray_ic);
+        nameTextView = findViewById(R.id.tv_name)
+        currentValueTextView = findViewById(R.id.tv_current_value)
+        arrowImageView = findViewById(R.id.iv_arrow)
+
+        if (resources.configuration.layoutDirection == LAYOUT_DIRECTION_RTL) {
+            arrowImageView.setImageResource(R.drawable.arrow_backward_gray_ic)
         }
-    }
 
-    public void setName(@NonNull String name) {
-        this.name = name;
-        nameTextView.setText(this.name);
-    }
-
-    @NonNull
-    public String getName() {
-        return name;
-    }
-
-    public void setCurrentValue(@Nullable String currentValue) {
-        if (currentValue == null) {
-            this.currentValue = "";
+        // read the attributes
+        val typedArray = context.obtainStyledAttributes(
+            attrs,
+            R.styleable.MushafSetting, 0, 0
+        )
+        name = if (typedArray.hasValue(R.styleable.MushafSetting_settingName)) {
+            typedArray.getString(R.styleable.MushafSetting_settingName)
         } else {
-            this.currentValue = currentValue;
+            error("Attribute 'settingName' is not defined or could not be coerced to a string.")
         }
-        currentValueTextView.setText(this.currentValue);
+        currentValue = if (typedArray.hasValue(R.styleable.MushafSetting_currentValue)) {
+            typedArray.getString(R.styleable.MushafSetting_currentValue)
+        } else ""
+        typedArray.recycle()
     }
 
-    @Nullable
-    public String getCurrentValue() {
-        return currentValue;
+    companion object {
+        private val TAG = MushafSetting::class.java.simpleName
     }
-
 }
