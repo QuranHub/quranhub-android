@@ -1,23 +1,18 @@
-package app.quranhub.ui.base;
+package app.quranhub.ui.base
 
-public class BasePresenterImp<T extends BaseView> implements BasePresenter<T> {
+open class BasePresenterImp<T : BaseView?> : BasePresenter<T> {
 
-    protected T baseView = null;
+    @JvmField
+    protected var baseView: T? = null
 
-    @Override
-    public void onAttach(T view) {
-        this.baseView = view;
+    override val isViewAttached: Boolean
+        get() = baseView != null
+
+    override fun onAttach(view: T) {
+        baseView = view
     }
 
-    @Override
-    public void onDetach() {
-        baseView = null;
+    override fun onDetach() {
+        baseView = null
     }
-
-    @Override
-    public boolean isViewAttached() {
-        return baseView != null;
-    }
-
-
 }

@@ -1,22 +1,17 @@
-package app.quranhub.ui.base;
+package app.quranhub.ui.base
 
-import android.app.Service;
-import android.content.Context;
+import android.app.Service
+import android.content.Context
+import app.quranhub.util.LocaleUtils.initAppLanguage
 
-import app.quranhub.util.LocaleUtils;
+abstract class BaseService : Service() {
 
-public abstract class BaseService extends Service {
-
-    @Override
-    public void onCreate() {
-        LocaleUtils.initAppLanguage(this);
-        super.onCreate();
+    override fun onCreate() {
+        initAppLanguage(this)
+        super.onCreate()
     }
 
-    @Override
-    protected void attachBaseContext(Context newBase) {
-        super.attachBaseContext(LocaleUtils.initAppLanguage(newBase));
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(initAppLanguage(newBase))
     }
-
-
 }

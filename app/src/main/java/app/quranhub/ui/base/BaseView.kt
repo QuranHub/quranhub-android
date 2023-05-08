@@ -1,11 +1,10 @@
-package app.quranhub.ui.base;
+package app.quranhub.ui.base
 
-public interface BaseView {
+interface BaseView {
 
-    void showMessage(String message);
+    fun showMessage(message: String)
 
-    void showLoading();
+    fun showLoading()
 
-    void hideLoading();
-
+    fun hideLoading()
 }

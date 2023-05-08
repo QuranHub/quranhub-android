@@ -1,36 +1,32 @@
-package app.quranhub.ui.base;
+package app.quranhub.ui.base
 
-import android.content.Context;
-import android.os.Bundle;
-import android.util.Log;
+import android.content.Context
+import android.os.Bundle
+import android.util.Log
+import androidx.appcompat.app.AppCompatActivity
+import app.quranhub.util.LocaleUtils.initAppLanguage
 
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
+abstract class BaseActivity : AppCompatActivity() {
 
-import app.quranhub.util.LocaleUtils;
-
-public abstract class BaseActivity extends AppCompatActivity {
-
-    private static final String TAG = BaseActivity.class.getSimpleName();
-
-    @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
-        LocaleUtils.initAppLanguage(this);
-        super.onCreate(savedInstanceState);
+    override fun onCreate(savedInstanceState: Bundle?) {
+        initAppLanguage(this)
+        super.onCreate(savedInstanceState)
     }
 
-    @Override
-    protected void attachBaseContext(Context newBase) {
-        super.attachBaseContext(LocaleUtils.initAppLanguage(newBase));
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(initAppLanguage(newBase))
     }
 
-    public void restart() {
-        if (getIntent() != null) {
-            startActivity(getIntent());
-            finish();
+    fun restart() {
+        if (intent != null) {
+            startActivity(intent)
+            finish()
         } else {
-            Log.e(TAG, "Couldn't restart the activity!");
+            Log.e(TAG, "Couldn't restart the activity!")
         }
     }
 
+    companion object {
+        private val TAG = BaseActivity::class.java.simpleName
+    }
 }

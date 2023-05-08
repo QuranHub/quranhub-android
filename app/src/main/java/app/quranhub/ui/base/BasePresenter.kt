@@ -1,11 +1,10 @@
-package app.quranhub.ui.base;
+package app.quranhub.ui.base
 
-public interface BasePresenter<T extends BaseView> {
+interface BasePresenter<T : BaseView?> {
 
-    void onAttach(T view);
+    val isViewAttached: Boolean
 
-    void onDetach();
+    fun onAttach(view: T)
 
-    boolean isViewAttached();
-
+    fun onDetach()
 }
