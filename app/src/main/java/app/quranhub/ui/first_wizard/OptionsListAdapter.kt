@@ -1,204 +1,190 @@
-package app.quranhub.ui.first_wizard;
+package app.quranhub.ui.first_wizard
 
-import android.util.Pair;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.Filter;
-import android.widget.Filterable;
+import android.util.Pair
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.Filter
+import android.widget.Filterable
+import androidx.recyclerview.widget.RecyclerView
+import app.quranhub.R
+import app.quranhub.databinding.ItemOptionBinding
+import java.util.Locale
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.recyclerview.widget.RecyclerView;
+class OptionsListAdapter : RecyclerView.Adapter<OptionsListAdapter.ViewHolder>, Filterable {
 
-import java.util.ArrayList;
-import java.util.List;
+    private var optionsList: MutableList<String>
+    private var filteredOptionsList: List<String>
+    private var optionsThumbnailsDrawableIds: IntArray? = null
+    private var filteredOptionsThumbnailsDrawableIds: IntArray? = null
+    private var selectedOptionIndex: Int
+    private var itemClickListener: ItemClickListener
 
-import app.quranhub.R;
-import app.quranhub.databinding.ItemOptionBinding;
-
-public class OptionsListAdapter extends RecyclerView.Adapter<OptionsListAdapter.ViewHolder> implements Filterable {
-
-    private static final String TAG = OptionsListAdapter.class.getSimpleName();
-
-    @NonNull
-    private List<String> optionsList;
-    @NonNull
-    private List<String> filteredOptionsList;
-    @Nullable
-    private int[] optionsThumbnailsDrawableIds;
-    @Nullable
-    private int[] filteredOptionsThumbnailsDrawableIds;
-    private int selectedOptionIndex;
-    @NonNull
-    private ItemClickListener itemClickListener;
-
-    public OptionsListAdapter(@NonNull List<String> optionsList, @NonNull ItemClickListener listener) {
-        this.optionsList = optionsList;
-        this.filteredOptionsList = optionsList;
-        this.itemClickListener = listener;
-        selectedOptionIndex = -1;
+    constructor(optionsList: MutableList<String>, listener: ItemClickListener) {
+        this.optionsList = optionsList
+        filteredOptionsList = optionsList
+        itemClickListener = listener
+        selectedOptionIndex = -1
     }
 
-    public OptionsListAdapter(@NonNull List<String> optionsList, int selectedOptionIndex
-            , @NonNull ItemClickListener listener) {
-        this.optionsList = optionsList;
-        this.filteredOptionsList = optionsList;
-        this.selectedOptionIndex = selectedOptionIndex;
-        this.itemClickListener = listener;
+    constructor(
+        optionsList: MutableList<String>, selectedOptionIndex: Int, listener: ItemClickListener
+    ) {
+        this.optionsList = optionsList
+        filteredOptionsList = optionsList
+        this.selectedOptionIndex = selectedOptionIndex
+        itemClickListener = listener
     }
 
-    public OptionsListAdapter(@NonNull List<String> optionsList, @Nullable int[] optionsThumbnailsDrawableIds
-            , int selectedOptionIndex, @NonNull ItemClickListener listener) {
-        this.optionsList = optionsList;
-        this.filteredOptionsList = optionsList;
-        this.optionsThumbnailsDrawableIds = optionsThumbnailsDrawableIds;
-        this.filteredOptionsThumbnailsDrawableIds = optionsThumbnailsDrawableIds;
-        this.selectedOptionIndex = selectedOptionIndex;
-        this.itemClickListener = listener;
+    constructor(
+        optionsList: List<String>,
+        optionsThumbnailsDrawableIds: IntArray?,
+        selectedOptionIndex: Int,
+        listener: ItemClickListener
+    ) {
+        this.optionsList = optionsList.toMutableList()
+        filteredOptionsList = optionsList
+        this.optionsThumbnailsDrawableIds = optionsThumbnailsDrawableIds
+        filteredOptionsThumbnailsDrawableIds = optionsThumbnailsDrawableIds
+        this.selectedOptionIndex = selectedOptionIndex
+        itemClickListener = listener
     }
 
-    @NonNull
-    public List<String> getOptionsList() {
-        return optionsList;
+    fun getOptionsList(): List<String> {
+        return optionsList
     }
 
-    public void setOptionsList(@NonNull List<String> optionsList) {
-        this.optionsList = optionsList;
-        this.filteredOptionsList = optionsList;
-        notifyDataSetChanged();
+    fun setOptionsList(optionsList: MutableList<String>) {
+        this.optionsList = optionsList
+        filteredOptionsList = optionsList
+        notifyDataSetChanged()
     }
 
-    public void setOptions(@NonNull List<String> optionsList
-            , @Nullable int[] optionsThumbnailsDrawableIds) {
-        this.optionsList = optionsList;
-        this.filteredOptionsList = optionsList;
-        this.optionsThumbnailsDrawableIds = optionsThumbnailsDrawableIds;
-        this.filteredOptionsThumbnailsDrawableIds = optionsThumbnailsDrawableIds;
-        notifyDataSetChanged();
+    fun setOptions(
+        optionsList: MutableList<String>, optionsThumbnailsDrawableIds: IntArray?
+    ) {
+        this.optionsList = optionsList
+        filteredOptionsList = optionsList
+        this.optionsThumbnailsDrawableIds = optionsThumbnailsDrawableIds
+        filteredOptionsThumbnailsDrawableIds = optionsThumbnailsDrawableIds
+        notifyDataSetChanged()
     }
 
-    public int getSelectedOptionIndex() {
-        return selectedOptionIndex;
+    fun getSelectedOptionIndex(): Int {
+        return selectedOptionIndex
     }
 
-    public void setSelectedOptionIndex(int selectedOptionIndex) {
-        this.selectedOptionIndex = selectedOptionIndex;
-        notifyDataSetChanged();
+    fun setSelectedOptionIndex(selectedOptionIndex: Int) {
+        this.selectedOptionIndex = selectedOptionIndex
+        notifyDataSetChanged()
     }
 
-    @NonNull
-    @Override
-    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View itemView = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_option, parent, false);
-
-        ViewHolder vh = new ViewHolder(itemView);
-        return vh;
+    override fun onCreateViewHolder(
+        parent: ViewGroup,
+        viewType: Int
+    ): ViewHolder {
+        val itemView = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_option, parent, false)
+        return ViewHolder(itemView)
     }
 
-    @Override
-    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         if (filteredOptionsThumbnailsDrawableIds != null) {
-            int drawableResId = filteredOptionsThumbnailsDrawableIds[position];
-            holder.binding.ivOptionThumbnail.setVisibility(View.VISIBLE);
-            holder.binding.ivOptionThumbnail.setImageResource(drawableResId);
+            val drawableResId = filteredOptionsThumbnailsDrawableIds!![position]
+            holder.binding.ivOptionThumbnail.visibility = View.VISIBLE
+            holder.binding.ivOptionThumbnail.setImageResource(drawableResId)
         } else {
-            holder.binding.ivOptionThumbnail.setVisibility(View.GONE);
+            holder.binding.ivOptionThumbnail.visibility = View.GONE
         }
-        String option = filteredOptionsList.get(position);
-        holder.binding.tvOptionName.setText(option);
+        val option = filteredOptionsList[position]
+        holder.binding.tvOptionName.text = option
         if (position == selectedOptionIndex) {
-            holder.binding.ivCheckBox.setVisibility(View.VISIBLE);
+            holder.binding.ivCheckBox.visibility = View.VISIBLE
         } else {
-            holder.binding.ivCheckBox.setVisibility(View.INVISIBLE);
+            holder.binding.ivCheckBox.visibility = View.INVISIBLE
         }
     }
 
-    @Override
-    public int getItemCount() {
-        if (filteredOptionsList == null)
-            return 0;
-        return filteredOptionsList.size();
+    override fun getItemCount(): Int {
+        return filteredOptionsList.size
     }
 
-    @Override
-    public Filter getFilter() {
+    override fun getFilter(): Filter {
         // TODO refactor & enhance Filter
-        return new Filter() {
-            @Override
-            protected FilterResults performFiltering(CharSequence constraint) {
-                List<String> filterOptionsResult = new ArrayList<>();
-                List<Integer> filterThumbnailsResult = null;
-                if (constraint.length() == 0) {
-                    filterOptionsResult = optionsList;
+        return object : Filter() {
+            override fun performFiltering(constraint: CharSequence): FilterResults {
+                var filterOptionsResult: MutableList<String> = ArrayList()
+                var filterThumbnailsResult: MutableList<Int?>? = null
+                if (constraint.length == 0) {
+                    filterOptionsResult = optionsList
                     if (optionsThumbnailsDrawableIds != null) {
-                        filterThumbnailsResult = new ArrayList<>();
-                        for (int d : optionsThumbnailsDrawableIds) {
-                            filterThumbnailsResult.add(d);
+                        filterThumbnailsResult = ArrayList()
+                        for (d in optionsThumbnailsDrawableIds!!) {
+                            filterThumbnailsResult.add(d)
                         }
                     }
                 } else {
                     if (optionsThumbnailsDrawableIds != null) {
-                        filterThumbnailsResult = new ArrayList<>();
+                        filterThumbnailsResult = ArrayList()
                     }
-                    for (int i = 0; i < optionsList.size(); i++) {
-                        String opt = optionsList.get(i);
-                        if (opt.toLowerCase().contains(constraint.toString().toLowerCase())) {
-                            filterOptionsResult.add(opt);
-                            if (filterThumbnailsResult != null) {
-                                filterThumbnailsResult.add(optionsThumbnailsDrawableIds[i]);
-                            }
+                    for (i in optionsList.indices) {
+                        val opt = optionsList[i]
+                        if (opt.lowercase(Locale.getDefault()).contains(
+                                constraint.toString().lowercase(
+                                    Locale.getDefault()
+                                )
+                            )
+                        ) {
+                            filterOptionsResult.add(opt)
+                            filterThumbnailsResult?.add(optionsThumbnailsDrawableIds!![i])
                         }
                     }
                 }
-
-                FilterResults results = new FilterResults();
-                results.values = new Pair<>(filterOptionsResult, filterThumbnailsResult);
-                return results;
+                val results = FilterResults()
+                results.values =
+                    Pair<List<String>, List<Int?>?>(filterOptionsResult, filterThumbnailsResult)
+                return results
             }
 
-            @Override
-            protected void publishResults(CharSequence constraint, FilterResults results) {
-                Pair<List<String>, List<Integer>> filterResult =
-                        ((Pair<List<String>, List<Integer>>) results.values);
-                filteredOptionsList = filterResult.first;
+            override fun publishResults(constraint: CharSequence, results: FilterResults) {
+                val filterResult = results.values as Pair<List<String>, List<Int>?>
+                filteredOptionsList = filterResult.first
                 if (filterResult.second != null) {
-                    filteredOptionsThumbnailsDrawableIds = new int[filterResult.second.size()];
-                    for (int i = 0; i < filterResult.second.size(); i++) {
-                        filteredOptionsThumbnailsDrawableIds[i] = filterResult.second.get(i);
+                    filteredOptionsThumbnailsDrawableIds = IntArray(filterResult.second!!.size)
+                    for (i in filterResult.second!!.indices) {
+                        filteredOptionsThumbnailsDrawableIds!![i] = filterResult.second!![i]
                     }
                 } else {
-                    filteredOptionsThumbnailsDrawableIds = null;
+                    filteredOptionsThumbnailsDrawableIds = null
                 }
-                notifyDataSetChanged();
+                notifyDataSetChanged()
             }
-        };
+        }
     }
 
-    class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
+    inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView),
+        View.OnClickListener {
+        var binding: ItemOptionBinding
 
-        ItemOptionBinding binding;
-
-        public ViewHolder(@NonNull View itemView) {
-            super(itemView);
-            binding = ItemOptionBinding.bind(itemView);
-
-            itemView.setOnClickListener(this);
+        init {
+            binding = ItemOptionBinding.bind(itemView)
+            itemView.setOnClickListener(this)
         }
 
-        @Override
-        public void onClick(View v) {
-            setSelectedOptionIndex(getAdapterPosition());
-            itemClickListener.onItemClick(selectedOptionIndex);
+        override fun onClick(v: View) {
+            setSelectedOptionIndex(adapterPosition)
+            itemClickListener.onItemClick(selectedOptionIndex)
         }
     }
 
     /**
      * Used in handling items clicks
      */
-    public interface ItemClickListener {
-        void onItemClick(int clickedItemIndex);
+    interface ItemClickListener {
+        fun onItemClick(clickedItemIndex: Int)
     }
 
+    companion object {
+        private val TAG = OptionsListAdapter::class.java.simpleName
+    }
 }

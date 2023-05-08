@@ -1,190 +1,119 @@
-package app.quranhub.ui.first_wizard;
+package app.quranhub.ui.first_wizard
 
-import android.content.Context;
-import android.os.Bundle;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
-import androidx.recyclerview.widget.DividerItemDecoration;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import app.quranhub.databinding.FragmentOptionsListBinding;
-import app.quranhub.ui.common.interfaces.Searchable;
+import android.content.Context
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.DividerItemDecoration
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import app.quranhub.databinding.FragmentOptionsListBinding
+import app.quranhub.ui.common.interfaces.Searchable
+import app.quranhub.ui.first_wizard.OptionsListFragment.OnOptionClickListener
 
 /**
  * Activities that contain this fragment must implement the
- * {@link OnOptionClickListener} interface
+ * [OnOptionClickListener] interface
  * to handle interaction events.
- * Use the {@link OptionsListFragment#newInstance} factory method to
+ * Use the [OptionsListFragment.newInstance] factory method to
  * create an instance of this fragment.
  */
-public class OptionsListFragment extends Fragment implements OptionsListAdapter.ItemClickListener, Searchable {
+class OptionsListFragment : Fragment(), OptionsListAdapter.ItemClickListener, Searchable {
 
-    private static final String TAG = OptionsListFragment.class.getSimpleName();
+    private var requestCode = 0
+    private lateinit var options: List<String>
+    private var optionsThumbnailsDrawableIds: IntArray? = null
+    private var selectedOptionPosition = 0
+    private var listener: OnOptionClickListener? = null
+    private var optionsListAdapter: OptionsListAdapter? = null
+    private var searchText: String? = ""
+    private var binding: FragmentOptionsListBinding? = null
 
-    private static final String STATE_SEARCH_TEXT = "STATE_SEARCH_TEXT";
-
-    private static final String ARG_OPTIONS = "ARG_OPTIONS";
-    private static final String ARG_OPTIONS_THUMBNAILS = "ARG_OPTIONS_THUMBNAILS";
-    private static final String ARG_SELECTED_OPTION_POSITION = "ARG_SELECTED_OPTION_POSITION";
-    private static final String ARG_REQUEST_CODE = "ARG_REQUEST_CODE";
-
-    private int requestCode;
-    @NonNull
-    private List<String> options;
-    @Nullable
-    private int[] optionsThumbnailsDrawableIds;
-    private int selectedOptionPosition;
-
-    private OnOptionClickListener listener;
-
-    OptionsListAdapter optionsListAdapter;
-
-    private String searchText = "";
-
-    private FragmentOptionsListBinding binding;
-
-    public OptionsListFragment() {
-        // Required empty public constructor
-    }
-
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     */
-    public static OptionsListFragment newInstance(@NonNull ArrayList<String> options
-            , @Nullable int[] optionsThumbnailsDrawableIds, int selectedOptionPosition, int requestCode) {
-        OptionsListFragment fragment = new OptionsListFragment();
-        Bundle args = new Bundle();
-        args.putStringArrayList(ARG_OPTIONS, options);
-        args.putIntArray(ARG_OPTIONS_THUMBNAILS, optionsThumbnailsDrawableIds);
-        args.putInt(ARG_SELECTED_OPTION_POSITION, selectedOptionPosition);
-        args.putInt(ARG_REQUEST_CODE, requestCode);
-        fragment.setArguments(args);
-        return fragment;
-    }
-
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     */
-    public static OptionsListFragment newInstance(@NonNull Context context, @NonNull int[] optionsStrResIds
-            , int selectedOptionPosition, int requestCode) {
-        ArrayList<String> options = new ArrayList<>();
-        for (int strResId : optionsStrResIds) {
-            options.add(context.getString(strResId));
-        }
-        return newInstance(options, null, selectedOptionPosition, requestCode);
-    }
-
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     */
-    public static OptionsListFragment newInstance(@NonNull Context context, @NonNull int[] optionsStrResIds
-            , @Nullable int[] optionsThumbnailsDrawableIds, int selectedOptionPosition, int requestCode) {
-        ArrayList<String> options = new ArrayList<>();
-        for (int strResId : optionsStrResIds) {
-            options.add(context.getString(strResId));
-        }
-        return newInstance(options, optionsThumbnailsDrawableIds, selectedOptionPosition, requestCode);
-    }
-
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            options = getArguments().getStringArrayList(ARG_OPTIONS);
-            optionsThumbnailsDrawableIds = getArguments().getIntArray(ARG_OPTIONS_THUMBNAILS);
-            selectedOptionPosition = getArguments().getInt(ARG_SELECTED_OPTION_POSITION);
-            requestCode = getArguments().getInt(ARG_REQUEST_CODE);
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        arguments?.let {
+            options = it.getStringArrayList(ARG_OPTIONS)!!
+            optionsThumbnailsDrawableIds = it.getIntArray(ARG_OPTIONS_THUMBNAILS)
+            selectedOptionPosition = it.getInt(ARG_SELECTED_OPTION_POSITION)
+            requestCode = it.getInt(ARG_REQUEST_CODE)
         }
     }
 
-    @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
         // Inflate the layout for this fragment
-        binding = FragmentOptionsListBinding.inflate(inflater, container, false);
-        initOptionsRecyclerView();
-        return binding.getRoot();
+        binding = FragmentOptionsListBinding.inflate(inflater, container, false)
+        initOptionsRecyclerView()
+        return binding!!.root
     }
 
-    @Override
-    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
-
-        if (savedInstanceState != null) {
-            String search = savedInstanceState.getString(STATE_SEARCH_TEXT, null);
-            if (search != null) {
-                searchText = search;
-                search(searchText);
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        super.onActivityCreated(savedInstanceState)
+        savedInstanceState?.let {
+            val search = it.getString(STATE_SEARCH_TEXT, null)
+            search?.let {
+                searchText = search
+                search(searchText)
             }
         }
-
     }
 
-    @Override
-    public void onSaveInstanceState(@NonNull Bundle outState) {
-        super.onSaveInstanceState(outState);
-
-        if (searchText.length() != 0) {
-            outState.putString(STATE_SEARCH_TEXT, searchText);
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        if (!searchText.isNullOrEmpty()) {
+            outState.putString(STATE_SEARCH_TEXT, searchText)
         }
     }
 
-    private void initOptionsRecyclerView() {
-        binding.rvOptions.setHasFixedSize(true);
-        binding.rvOptions.setLayoutManager(new LinearLayoutManager(getContext()
-                , RecyclerView.VERTICAL, false));
-        DividerItemDecoration dividerItemDecoration = new DividerItemDecoration(getContext(),
-                DividerItemDecoration.VERTICAL);
-        binding.rvOptions.addItemDecoration(dividerItemDecoration);
-        optionsListAdapter = new OptionsListAdapter(options, optionsThumbnailsDrawableIds
-                , selectedOptionPosition, this);
-        binding.rvOptions.setAdapter(optionsListAdapter);
+    private fun initOptionsRecyclerView() {
+        binding!!.rvOptions.setHasFixedSize(true)
+        binding!!.rvOptions.layoutManager = LinearLayoutManager(
+            context, RecyclerView.VERTICAL, false
+        )
+        val dividerItemDecoration = DividerItemDecoration(
+            context,
+            DividerItemDecoration.VERTICAL
+        )
+        binding!!.rvOptions.addItemDecoration(dividerItemDecoration)
+        optionsListAdapter = OptionsListAdapter(
+            options, optionsThumbnailsDrawableIds, selectedOptionPosition, this
+        )
+        binding!!.rvOptions.adapter = optionsListAdapter
     }
 
-    @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-        if (context instanceof OnOptionClickListener) {
-            listener = (OnOptionClickListener) context;
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        listener = if (context is OnOptionClickListener) {
+            context
         } else {
-            throw new RuntimeException(context.toString()
-                    + " must implement OnOptionClickListener");
+            throw RuntimeException(
+                context.toString()
+                        + " must implement OnOptionClickListener"
+            )
         }
     }
 
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        binding = null;
+    override fun onDestroyView() {
+        super.onDestroyView()
+        binding = null
     }
 
-    @Override
-    public void onDetach() {
-        super.onDetach();
-        listener = null;
+    override fun onDetach() {
+        super.onDetach()
+        listener = null
     }
 
-    @Override
-    public void onItemClick(int clickedItemIndex) {
-        listener.onOptionClicked(requestCode, options.get(clickedItemIndex), clickedItemIndex);
+    override fun onItemClick(clickedItemIndex: Int) {
+        listener!!.onOptionClicked(requestCode, options[clickedItemIndex], clickedItemIndex)
     }
 
-    @Override
-    public void search(String text) {
-        searchText = text;
-        optionsListAdapter.getFilter().filter(text);
+    override fun search(text: String?) {
+        searchText = text
+        optionsListAdapter!!.filter.filter(text)
     }
 
     /**
@@ -193,7 +122,79 @@ public class OptionsListFragment extends Fragment implements OptionsListAdapter.
      * to the activity and potentially other fragments contained in that
      * activity.
      */
-    public interface OnOptionClickListener {
-        void onOptionClicked(int requestCode, @NonNull String option, int position);
+    interface OnOptionClickListener {
+        fun onOptionClicked(requestCode: Int, option: String, position: Int)
+    }
+
+    companion object {
+
+        private val TAG = OptionsListFragment::class.java.simpleName
+
+        private const val STATE_SEARCH_TEXT = "STATE_SEARCH_TEXT"
+
+        private const val ARG_OPTIONS = "ARG_OPTIONS"
+        private const val ARG_OPTIONS_THUMBNAILS = "ARG_OPTIONS_THUMBNAILS"
+        private const val ARG_SELECTED_OPTION_POSITION = "ARG_SELECTED_OPTION_POSITION"
+        private const val ARG_REQUEST_CODE = "ARG_REQUEST_CODE"
+
+        /**
+         * Use this factory method to create a new instance of
+         * this fragment using the provided parameters.
+         */
+        fun newInstance(
+            options: ArrayList<String>,
+            optionsThumbnailsDrawableIds: IntArray?,
+            selectedOptionPosition: Int,
+            requestCode: Int
+        ): OptionsListFragment {
+            val fragment = OptionsListFragment()
+            val args = Bundle()
+            args.putStringArrayList(ARG_OPTIONS, options)
+            args.putIntArray(ARG_OPTIONS_THUMBNAILS, optionsThumbnailsDrawableIds)
+            args.putInt(ARG_SELECTED_OPTION_POSITION, selectedOptionPosition)
+            args.putInt(ARG_REQUEST_CODE, requestCode)
+            fragment.arguments = args
+            return fragment
+        }
+
+        /**
+         * Use this factory method to create a new instance of
+         * this fragment using the provided parameters.
+         */
+        fun newInstance(
+            context: Context,
+            optionsStrResIds: IntArray,
+            selectedOptionPosition: Int,
+            requestCode: Int
+        ): OptionsListFragment {
+            val options = ArrayList<String>()
+            for (strResId in optionsStrResIds) {
+                options.add(context.getString(strResId))
+            }
+            return newInstance(options, null, selectedOptionPosition, requestCode)
+        }
+
+        /**
+         * Use this factory method to create a new instance of
+         * this fragment using the provided parameters.
+         */
+        fun newInstance(
+            context: Context,
+            optionsStrResIds: IntArray,
+            optionsThumbnailsDrawableIds: IntArray?,
+            selectedOptionPosition: Int,
+            requestCode: Int
+        ): OptionsListFragment {
+            val options = ArrayList<String>()
+            for (strResId in optionsStrResIds) {
+                options.add(context.getString(strResId))
+            }
+            return newInstance(
+                options,
+                optionsThumbnailsDrawableIds,
+                selectedOptionPosition,
+                requestCode
+            )
+        }
     }
 }
