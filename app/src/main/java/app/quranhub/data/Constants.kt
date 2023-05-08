@@ -9,7 +9,8 @@ object Constants {
 
     object Quran {
         const val HAFS_IMG_BASE_URL = "$STATIC_FILES_BASE_URL/quran-pages-images/kfgqpc/hafs-wasat/"
-        const val WARSH_IMG_BASE_URL = "$STATIC_FILES_BASE_URL/quran-pages-images/kfgqpc/warsh/"
+        const val WARSH_IMG_BASE_URL = "$STATIC_FILES_BASE_URL/quran-pages-images/ayat/warsh/"
+
         const val NUM_OF_PAGES = 604
 
         // Quran pages sizes in pixels
@@ -17,10 +18,8 @@ object Constants {
         const val HAFS_PAGE_IMG_ORIGINAL_HEIGHT = 1205
         const val HAFS_PAGE_IMG_FIRST_TWO_ORIGINAL_WIDTH = 843
         const val HAFS_PAGE_IMG_FIRST_TWO_ORIGINAL_HEIGHT = 1140
-        const val WARSH_PAGE_IMG_ORIGINAL_WIDTH = 1064
-        const val WARSH_PAGE_IMG_ORIGINAL_HEIGHT = 1570
-        const val WARSH_PAGE_IMG_FIRST_TWO_ORIGINAL_WIDTH = 1211
-        const val WARSH_PAGE_IMG_FIRST_TWO_ORIGINAL_HEIGHT = 1640
+        const val WARSH_PAGE_IMG_ORIGINAL_WIDTH = 620
+        const val WARSH_PAGE_IMG_ORIGINAL_HEIGHT = 1005
         const val NUM_OF_VERSES = 6236
     }
 

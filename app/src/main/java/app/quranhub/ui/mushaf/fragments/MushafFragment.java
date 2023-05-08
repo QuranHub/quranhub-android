@@ -501,20 +501,24 @@ public class MushafFragment extends Fragment implements MushafView, MushafBottom
 
     private void initViewPager(boolean isInstanceSaved) {
         String quranImageBaseUrl;
+        List<String> quranPageImages = new ArrayList<>();
         switch (recitationId) {
             case Constants.Recitation.HAFS_ID:
                 quranImageBaseUrl = Constants.Quran.HAFS_IMG_BASE_URL;
+                for (int i = Constants.Quran.NUM_OF_PAGES; i >= 1; i--) {
+                    String imageName = String.format(Locale.US, "%03d.jpg", i);
+                    quranPageImages.add(quranImageBaseUrl + imageName);
+                }
                 break;
             case Constants.Recitation.WARSH_ID:
                 quranImageBaseUrl = Constants.Quran.WARSH_IMG_BASE_URL;
+                for (int i = Constants.Quran.NUM_OF_PAGES; i >= 1; i--) {
+                    String imageName = String.format(Locale.US, "%d.png", i);
+                    quranPageImages.add(quranImageBaseUrl + imageName);
+                }
                 break;
             default:
                 throw new RuntimeException("Cannot identify recitation");
-        }
-        List<String> quranPageImages = new ArrayList<>();
-        for (int i = Constants.Quran.NUM_OF_PAGES; i >= 1; i--) {
-            String imageName = String.format(Locale.US, "%03d.jpg", i);
-            quranPageImages.add(quranImageBaseUrl + imageName);
         }
         pagerAdapter = new QuranViewPagerAdapter(getChildFragmentManager()
                 , quranPageImages, presenter.getNightMode(), initAyaId);
