@@ -1,496 +1,513 @@
-package app.quranhub.ui.mushaf.audio_manager;
+package app.quranhub.ui.mushaf.audio_manager
 
-import android.annotation.SuppressLint;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
-import android.content.Intent;
-import android.content.res.Resources;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
-import android.graphics.drawable.ColorDrawable;
-import android.media.MediaPlayer;
-import android.os.Build;
-import android.os.Handler;
-import android.os.IBinder;
-import android.util.Log;
+import android.annotation.SuppressLint
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.drawable.ColorDrawable
+import android.media.MediaPlayer
+import android.media.MediaPlayer.OnCompletionListener
+import android.media.MediaPlayer.OnPreparedListener
+import android.os.Build
+import android.os.Handler
+import android.os.IBinder
+import android.util.Log
+import androidx.core.app.NotificationCompat
+import app.quranhub.R
+import app.quranhub.data.Constants
+import app.quranhub.data.local.db.UserDatabase
+import app.quranhub.data.local.prefs.AppPreferencesManager
+import app.quranhub.ui.base.BaseService
+import app.quranhub.ui.main.MainActivity
+import app.quranhub.ui.mushaf.model.AyaIdInfo
+import app.quranhub.ui.mushaf.model.SuraVersesNumber
+import app.quranhub.util.LocaleUtils.isRTL
+import app.quranhub.util.SharedPrefsUtils.saveBoolean
+import app.quranhub.util.SharedPrefsUtils.saveInteger
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.schedulers.Schedulers
+import org.greenrobot.eventbus.EventBus
+import java.io.File
 
-import androidx.annotation.Nullable;
-import androidx.core.app.NotificationCompat;
+class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener {
 
-import org.greenrobot.eventbus.EventBus;
+    private var playAudioDelayRunnable: Runnable? = null
+    private var playAudioHandler: Handler? = null
+    private var currentAyaRepeatNumber = 1
+    private var currentGroupRepeatNumber = 1
+    private var currentAudioPath: String? = null
+    private var fromNotification = false
+    private var mediaPlayer: MediaPlayer? = null
+    private var notificationIcon: Bitmap? = null
+    private var notificationIntent: PendingIntent? = null
+    private var resumeIntent: PendingIntent? = null
+    private var nextIntent: PendingIntent? = null
+    private var prevIntent: PendingIntent? = null
+    private var stopIntent: PendingIntent? = null
+    private var pauseIntent: PendingIntent? = null
+    private var userDatabase: UserDatabase? = null
+    private var currentAyaId = 0
+    private var suraVersesNumberArrayList: ArrayList<SuraVersesNumber>? = null
+    private var ayaIdInfoArrayList: ArrayList<AyaIdInfo>? = null
+    private var suras: Array<String> = arrayOf()
+    private var notificationBuilder: NotificationCompat.Builder? = null
+    private var pausedNotificationBuilder: NotificationCompat.Builder? = null
+    private var notificationManager: NotificationManager? = null
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Objects;
-
-import app.quranhub.R;
-import app.quranhub.data.Constants;
-import app.quranhub.data.local.db.UserDatabase;
-import app.quranhub.data.local.prefs.AppPreferencesManager;
-import app.quranhub.ui.base.BaseService;
-import app.quranhub.ui.main.MainActivity;
-import app.quranhub.ui.mushaf.model.AyaIdInfo;
-import app.quranhub.ui.mushaf.model.RepeatModel;
-import app.quranhub.ui.mushaf.model.SuraVersesNumber;
-import app.quranhub.util.LocaleUtils;
-import app.quranhub.util.SharedPrefsUtils;
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.schedulers.Schedulers;
-
-public class AyaAudioService extends BaseService
-        implements MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener {
-
-    private static final String NOTIFICATION_CHANNEL_ID = "AyaAudioService.NOTIFICATION_CHANNEL_ID";
-    private static final int NOTIFICATION_ID = 2;
-
-    public static final String ACTION_PLAY = "PLAY";
-    public static final String ACTION_RESUME = "RESUME";
-    public static final String ACTION_PAUSE = "PAUSE";
-    public static final String ACTION_STOP = "STOP";
-    public static final String ACTION_NEXT = "NEXT";
-    public static final String ACTION_PREVIOUS = "PREVIOUS";
-
-    private static final int REQUEST_CODE_MAIN = 0;
-    private static final int REQUEST_CODE_PREVIOUS = 1;
-    private static final int REQUEST_CODE_PAUSE = 2;
-    private static final int REQUEST_CODE_NEXT = 3;
-    private static final int REQUEST_CODE_STOP = 4;
-    private static final int REQUEST_CODE_RESUME = 5;
-
-    private static final int AYA_REPEAT_CASE = 1;
-    private static final int GROUP_REPEAT_CASE = 2;
-    private static final int NEXT_AYA_CASE = 4;
-
-
-    public static final String AYA_ID_KEY = "AYA_ID_KEY";
-    public static final String FROM_NOTIFICATION = "FROM_NOTIFICATION";
-    public static final String SURA_VERSES_KEY = "SURA_VERSES_KEY";
-    public static final String SERVICE_RUNNING = "SERVICE_RUNNING";
-    public static final String AUDIO_PLAYING = "AUDIO_PLAYING";
-    private static final String TAG = "AyaAudioService.service";
-
-    private Runnable playAudioDelayRunnable;
-    private Handler playAudioHandler;
-    private int currentAyaRepeatNumber = 1, currentGroupRepeatNumber = 1;
-    private String currentAudioPath;
-    private boolean fromNotification;
-    private MediaPlayer mediaPlayer;
-    private Bitmap notificationIcon;
-    private PendingIntent notificationIntent, resumeIntent, nextIntent, prevIntent, stopIntent, pauseIntent;
-    private UserDatabase userDatabase;
-    private int currentAyaId;
-    private ArrayList<SuraVersesNumber> suraVersesNumberArrayList;
-    private ArrayList<AyaIdInfo> ayaIdInfoArrayList;
-    private String[] suras;
-    private NotificationCompat.Builder notificationBuilder;
-    private NotificationCompat.Builder pausedNotificationBuilder;
-    private NotificationManager notificationManager;
-
-    @Override
-    public void onCreate() {
-        super.onCreate();
-        createNotification();
-        initPlayer();
-        userDatabase = UserDatabase.getInstance(this);
+    override fun onCreate() {
+        super.onCreate()
+        createNotification()
+        initPlayer()
+        userDatabase = UserDatabase.getInstance(this)
     }
 
-    private void initPlayer() {
-        mediaPlayer = new MediaPlayer();
-        mediaPlayer.setOnPreparedListener(this);
-        mediaPlayer.setOnCompletionListener(this);
+    private fun initPlayer() {
+        mediaPlayer = MediaPlayer()
+        mediaPlayer!!.setOnPreparedListener(this)
+        mediaPlayer!!.setOnCompletionListener(this)
     }
 
-    private void createNotification() {
-        createNotificationChannel();
-        setNotificationIcon();
-        setActionsIntent();
-        notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+    private fun createNotification() {
+        createNotificationChannel()
+        setNotificationIcon()
+        setActionsIntent()
+        notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         if (notificationBuilder == null) {
-            notificationBuilder = new NotificationCompat.Builder(this
-                    , NOTIFICATION_CHANNEL_ID);
-            notificationBuilder.setContentTitle(getString(R.string.app_name))
-                    .setContentText(getString(R.string.audio_playing))
-                    .setContentTitle(getString(R.string.sura))
-                    .setLargeIcon(notificationIcon)
-                    .setSmallIcon(R.drawable.play_ayha_action_white_ic)
-                    .setPriority(NotificationCompat.PRIORITY_LOW)
-                    .setContentIntent(notificationIntent)
-                    .addAction(R.drawable.player_fast_rewind_white_ic, getString(R.string.prev), prevIntent)
-                    .addAction(R.drawable.ic_pause, getString(R.string.pause), pauseIntent)
-                    .addAction(R.drawable.player_fast_forward_white_ic, getString(R.string.next), nextIntent)
-                    .setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
-                            .setShowActionsInCompactView(0, 1, 2));
+            notificationBuilder = NotificationCompat.Builder(
+                this, NOTIFICATION_CHANNEL_ID
+            )
+            notificationBuilder!!.setContentTitle(getString(R.string.app_name))
+                .setContentText(getString(R.string.audio_playing))
+                .setContentTitle(getString(R.string.sura))
+                .setLargeIcon(notificationIcon)
+                .setSmallIcon(R.drawable.play_ayha_action_white_ic)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setContentIntent(notificationIntent)
+                .addAction(
+                    R.drawable.player_fast_rewind_white_ic,
+                    getString(R.string.prev),
+                    prevIntent
+                )
+                .addAction(R.drawable.ic_pause, getString(R.string.pause), pauseIntent)
+                .addAction(
+                    R.drawable.player_fast_forward_white_ic,
+                    getString(R.string.next),
+                    nextIntent
+                )
+                .setStyle(
+                    androidx.media.app.NotificationCompat.MediaStyle()
+                        .setShowActionsInCompactView(0, 1, 2)
+                )
         }
         if (pausedNotificationBuilder == null) {
-            pausedNotificationBuilder = new NotificationCompat.Builder(this
-                    , NOTIFICATION_CHANNEL_ID);
-            pausedNotificationBuilder.setContentTitle(getString(R.string.app_name))
-                    .setContentText(getString(R.string.audio_playing))
-                    .setContentTitle(getString(R.string.sura))
-                    .setLargeIcon(notificationIcon)
-                    .setSmallIcon(R.drawable.play_ayha_action_white_ic)
-                    .setPriority(NotificationCompat.PRIORITY_LOW)
-                    .setContentIntent(notificationIntent)
-                    .addAction(R.drawable.ic_new_close, getString(R.string.stop), stopIntent)
-                    .addAction(R.drawable.player_play_white_ic, getString(R.string.resume), resumeIntent)
-                    .setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
-                            .setShowActionsInCompactView(0, 1));
+            pausedNotificationBuilder = NotificationCompat.Builder(
+                this, NOTIFICATION_CHANNEL_ID
+            )
+            pausedNotificationBuilder!!.setContentTitle(getString(R.string.app_name))
+                .setContentText(getString(R.string.audio_playing))
+                .setContentTitle(getString(R.string.sura))
+                .setLargeIcon(notificationIcon)
+                .setSmallIcon(R.drawable.play_ayha_action_white_ic)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setContentIntent(notificationIntent)
+                .addAction(R.drawable.ic_new_close, getString(R.string.stop), stopIntent)
+                .addAction(
+                    R.drawable.player_play_white_ic,
+                    getString(R.string.resume),
+                    resumeIntent
+                )
+                .setStyle(
+                    androidx.media.app.NotificationCompat.MediaStyle()
+                        .setShowActionsInCompactView(0, 1)
+                )
         }
     }
 
-    private void createNotificationChannel() {
-
+    private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CharSequence name = getString(R.string.audio_playing);
-            String description = getString(R.string.audio_playing_desc);
-            NotificationChannel channel = new NotificationChannel(NOTIFICATION_CHANNEL_ID, name
-                    , NotificationManager.IMPORTANCE_LOW);
-            channel.setDescription(description);
-
-            NotificationManager notificationManager = getSystemService(NotificationManager.class);
-            notificationManager.createNotificationChannel(channel);
+            val name: CharSequence = getString(R.string.audio_playing)
+            val description = getString(R.string.audio_playing_desc)
+            val channel = NotificationChannel(
+                NOTIFICATION_CHANNEL_ID, name, NotificationManager.IMPORTANCE_LOW
+            )
+            channel.description = description
+            val notificationManager = getSystemService(
+                NotificationManager::class.java
+            )
+            notificationManager.createNotificationChannel(channel)
         }
     }
 
-    private void updateNotificationState(boolean isPausd) {
-        SharedPrefsUtils.saveBoolean(this, AUDIO_PLAYING, !isPausd);
+    private fun updateNotificationState(isPausd: Boolean) {
+        saveBoolean(this, AUDIO_PLAYING, !isPausd)
         if (isPausd) {
-            notificationManager.notify(NOTIFICATION_ID, pausedNotificationBuilder.build());
+            notificationManager!!.notify(NOTIFICATION_ID, pausedNotificationBuilder!!.build())
         } else {
-            notificationManager.notify(NOTIFICATION_ID, notificationBuilder.build());
+            notificationManager!!.notify(NOTIFICATION_ID, notificationBuilder!!.build())
         }
     }
 
-    private void updateNotificationContent(boolean isPausd, AyaIdInfo ayaIdInfo) {
-        if (isPausd) {
-            pausedNotificationBuilder.setContentTitle(suras[ayaIdInfo.getSuraNum() - 1]);
-            pausedNotificationBuilder.setContentText(getString(R.string.aya_num, String.valueOf(ayaIdInfo.getAyaNumInSura())));
-            notificationManager.notify(NOTIFICATION_ID, pausedNotificationBuilder.build());
+    private fun updateNotificationContent(isPaused: Boolean, ayaIdInfo: AyaIdInfo) {
+        if (isPaused) {
+            pausedNotificationBuilder!!.setContentTitle(suras[ayaIdInfo.suraNum - 1])
+            pausedNotificationBuilder!!.setContentText(
+                getString(
+                    R.string.aya_num,
+                    ayaIdInfo.ayaNumInSura.toString()
+                )
+            )
+            notificationManager!!.notify(NOTIFICATION_ID, pausedNotificationBuilder!!.build())
         } else {
-            notificationBuilder.setContentTitle(suras[ayaIdInfo.getSuraNum() - 1]);
-            notificationBuilder.setContentText(getString(R.string.aya_num, String.valueOf(ayaIdInfo.getAyaNumInSura())));
-            notificationManager.notify(NOTIFICATION_ID, notificationBuilder.build());
+            notificationBuilder!!.setContentTitle(suras[ayaIdInfo.suraNum - 1])
+            notificationBuilder!!.setContentText(
+                getString(
+                    R.string.aya_num,
+                    ayaIdInfo.ayaNumInSura.toString()
+                )
+            )
+            notificationManager!!.notify(NOTIFICATION_ID, notificationBuilder!!.build())
         }
     }
 
-    private void setActionsIntent() {
-
-        int pendingIntentFlags = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) ?
-                (PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT)
-                : PendingIntent.FLAG_UPDATE_CURRENT;
-
-        notificationIntent = PendingIntent.getActivity(getApplicationContext(), REQUEST_CODE_MAIN,
-                getMainActivityIntent(), pendingIntentFlags);
-
-        resumeIntent = PendingIntent.getService(getApplicationContext(), REQUEST_CODE_RESUME,
-                getAudioIntent(ACTION_RESUME), pendingIntentFlags);
-
-        nextIntent = PendingIntent.getService(getApplicationContext(), REQUEST_CODE_NEXT,
-                getAudioIntent(LocaleUtils.isRTL(this) ? ACTION_PREVIOUS : ACTION_NEXT), pendingIntentFlags);
-
-        prevIntent = PendingIntent.getService(getApplicationContext(), REQUEST_CODE_PREVIOUS,
-                getAudioIntent(LocaleUtils.isRTL(this) ? ACTION_NEXT : ACTION_PREVIOUS), pendingIntentFlags);
-
-        stopIntent = PendingIntent.getService(getApplicationContext(), REQUEST_CODE_STOP,
-                getAudioIntent(ACTION_STOP), pendingIntentFlags);
-
-        pauseIntent = PendingIntent.getService(getApplicationContext(), REQUEST_CODE_PAUSE,
-                getAudioIntent(ACTION_PAUSE), pendingIntentFlags);
-
+    private fun setActionsIntent() {
+        val pendingIntentFlags =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT else PendingIntent.FLAG_UPDATE_CURRENT
+        notificationIntent = PendingIntent.getActivity(
+            applicationContext, REQUEST_CODE_MAIN,
+            mainActivityIntent, pendingIntentFlags
+        )
+        resumeIntent = PendingIntent.getService(
+            applicationContext, REQUEST_CODE_RESUME,
+            getAudioIntent(ACTION_RESUME), pendingIntentFlags
+        )
+        nextIntent = PendingIntent.getService(
+            applicationContext, REQUEST_CODE_NEXT,
+            getAudioIntent(if (isRTL(this)) ACTION_PREVIOUS else ACTION_NEXT), pendingIntentFlags
+        )
+        prevIntent = PendingIntent.getService(
+            applicationContext, REQUEST_CODE_PREVIOUS,
+            getAudioIntent(if (isRTL(this)) ACTION_NEXT else ACTION_PREVIOUS), pendingIntentFlags
+        )
+        stopIntent = PendingIntent.getService(
+            applicationContext, REQUEST_CODE_STOP,
+            getAudioIntent(ACTION_STOP), pendingIntentFlags
+        )
+        pauseIntent = PendingIntent.getService(
+            applicationContext, REQUEST_CODE_PAUSE,
+            getAudioIntent(ACTION_PAUSE), pendingIntentFlags
+        )
     }
 
-    private Intent getMainActivityIntent() {
-        Intent mainIntent = new Intent(this, MainActivity.class);
-        mainIntent.putExtra(FROM_NOTIFICATION, true);
-        return mainIntent;
+    private val mainActivityIntent: Intent
+        get() {
+            val mainIntent = Intent(this, MainActivity::class.java)
+            mainIntent.putExtra(FROM_NOTIFICATION, true)
+            return mainIntent
+        }
+
+    fun getAudioIntent(action: String?): Intent {
+        val intent = Intent(this, AyaAudioService::class.java)
+        intent.action = action
+        intent.putExtra(FROM_NOTIFICATION, true)
+        return intent
     }
 
-    public Intent getAudioIntent(String action) {
-        final Intent intent = new Intent(this, AyaAudioService.class);
-        intent.setAction(action);
-        intent.putExtra(AyaAudioService.FROM_NOTIFICATION, true);
-        return intent;
-    }
-
-    private void setNotificationIcon() {
+    private fun setNotificationIcon() {
         if (notificationIcon == null) {
             try {
-                Resources resources = getApplicationContext().getResources();
-                Bitmap logo = BitmapFactory.decodeResource(resources, R.drawable.quranhub_logo_144dp);
-                int iconWidth = logo.getWidth();
-                int iconHeight = logo.getHeight();
-                ColorDrawable cd = new ColorDrawable();
-                Bitmap bitmap = Bitmap.createBitmap(iconWidth * 2, iconHeight * 2, Bitmap.Config.ARGB_8888);
-                Canvas canvas = new Canvas(bitmap);
-                cd.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
-                cd.draw(canvas);
-                canvas.drawBitmap(logo, iconWidth / 2, iconHeight / 2, null);
-                notificationIcon = bitmap;
-            } catch (OutOfMemoryError oomError) {
-                Log.d(TAG, "Notification icon OutOfMemoryError");
+                val resources = applicationContext.resources
+                val logo = BitmapFactory.decodeResource(resources, R.drawable.quranhub_logo_144dp)
+                val iconWidth = logo.width
+                val iconHeight = logo.height
+                val cd = ColorDrawable()
+                val bitmap =
+                    Bitmap.createBitmap(iconWidth * 2, iconHeight * 2, Bitmap.Config.ARGB_8888)
+                val canvas = Canvas(bitmap)
+                cd.setBounds(0, 0, canvas.width, canvas.height)
+                cd.draw(canvas)
+                canvas.drawBitmap(logo, (iconWidth / 2).toFloat(), (iconHeight / 2).toFloat(), null)
+                notificationIcon = bitmap
+            } catch (oomError: OutOfMemoryError) {
+                Log.d(TAG, "Notification icon OutOfMemoryError")
             }
         }
     }
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        releaseAudio();
-        stopAyaAudioDelay();
-        SharedPrefsUtils.saveBoolean(this, SERVICE_RUNNING, false);
-        SharedPrefsUtils.saveBoolean(this, AUDIO_PLAYING, false);
+    override fun onDestroy() {
+        super.onDestroy()
+        releaseAudio()
+        stopAyaAudioDelay()
+        saveBoolean(this, SERVICE_RUNNING, false)
+        saveBoolean(this, AUDIO_PLAYING, false)
     }
 
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        startForeground(NOTIFICATION_ID, notificationBuilder.build());
-        getIntentExtra(intent);
-
-        Log.d(TAG, "onStartCommand: " + currentAyaId);
-        setAudioState(Objects.requireNonNull(intent.getAction()));
+    override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
+        startForeground(NOTIFICATION_ID, notificationBuilder!!.build())
+        getIntentExtra(intent)
+        Log.d(TAG, "onStartCommand: $currentAyaId")
+        setAudioState(intent.action!!)
 
         // we don't want the service to restart if killed
-        return START_NOT_STICKY;
+        return START_NOT_STICKY
     }
 
-    private void getIntentExtra(Intent intent) {
-        fromNotification = intent.getBooleanExtra(FROM_NOTIFICATION, false);
+    private fun getIntentExtra(intent: Intent) {
+        fromNotification = intent.getBooleanExtra(FROM_NOTIFICATION, false)
         if (!fromNotification) {
-            currentAyaId = intent.getIntExtra(AYA_ID_KEY, currentAyaId);
+            currentAyaId = intent.getIntExtra(AYA_ID_KEY, currentAyaId)
         }
         if (suraVersesNumberArrayList == null) {
-            suraVersesNumberArrayList = intent.getParcelableArrayListExtra(SURA_VERSES_KEY);
-            suras = getResources().getStringArray(R.array.sura_name);
-            setAyaIdInfo();
+            suraVersesNumberArrayList = intent.getParcelableArrayListExtra(SURA_VERSES_KEY)
+            suras = resources.getStringArray(R.array.sura_name)
+            setAyaIdInfo()
         }
     }
 
-    private void setAyaIdInfo() {
-        ayaIdInfoArrayList = new ArrayList<>();
-        for (SuraVersesNumber suraVersesNumber : suraVersesNumberArrayList) {
-            for (int i = 1; i <= suraVersesNumber.getAyas(); i++) {
-                ayaIdInfoArrayList.add(new AyaIdInfo(i, suraVersesNumber.getId()));
+    private fun setAyaIdInfo() {
+        ayaIdInfoArrayList = ArrayList()
+        for (suraVersesNumber in suraVersesNumberArrayList!!) {
+            for (i in 1..suraVersesNumber.ayas) {
+                ayaIdInfoArrayList!!.add(AyaIdInfo(i, suraVersesNumber.id))
             }
         }
     }
 
     // handle service actions and update audio state depend on sending action
-    private void setAudioState(String action) {
-        SharedPrefsUtils.saveBoolean(this, SERVICE_RUNNING, true);
-        if (action.equals(ACTION_PLAY)) {
-            checkSelectedAyaInRepeat();
-            checkAyaAudioDownloaded(currentAyaId);
-        } else if (action.equals(ACTION_PAUSE)) {
-            Log.d(TAG, "pause " + currentAyaId);
-            updateNotificationContent(true, ayaIdInfoArrayList.get(currentAyaId - 1));
-            updateNotificationState(true);
-            EventBus.getDefault().post(new AudioStateEvent(AudioStateEvent.State.PAUSED));
-            pauseAudio();
-        } else if (action.equals(ACTION_RESUME)) {
-            Log.d(TAG, "resume: " + currentAyaId);
-            updateNotificationState(false);
-            EventBus.getDefault().post(new AudioStateEvent(AudioStateEvent.State.RESUME));
-            playAudio();
-        } else if (action.equals(ACTION_NEXT) && currentAyaId != Constants.Quran.NUM_OF_VERSES + 1) {
-            EventBus.getDefault().post(new AudioStateEvent(AudioStateEvent.State.PLAY_NEXT));
-            Log.d(TAG, "next: " + currentAyaId);
-            if (fromNotification)
-                ++currentAyaId;
-            checkSelectedAyaInRepeat();
-            checkAyaAudioDownloaded(currentAyaId);
-        } else if (action.equals(ACTION_PREVIOUS) && currentAyaId != 0) {
-            EventBus.getDefault().post(new AudioStateEvent(AudioStateEvent.State.PLAY_PREV));
-            if (fromNotification)
-                --currentAyaId;
-            Log.d(TAG, "prev: " + currentAyaId);
-            checkSelectedAyaInRepeat();
-            checkAyaAudioDownloaded(currentAyaId);
-        } else if (action.equals(ACTION_STOP)) {
-            Log.d(TAG, "stop " + currentAyaId);
-            EventBus.getDefault().post(new AudioStateEvent(AudioStateEvent.State.STOP));
-            releaseAudio();
-            stopSelf();
+    private fun setAudioState(action: String) {
+        saveBoolean(this, SERVICE_RUNNING, true)
+        if (action == ACTION_PLAY) {
+            checkSelectedAyaInRepeat()
+            checkAyaAudioDownloaded(currentAyaId)
+        } else if (action == ACTION_PAUSE) {
+            Log.d(TAG, "pause $currentAyaId")
+            updateNotificationContent(true, ayaIdInfoArrayList!![currentAyaId - 1])
+            updateNotificationState(true)
+            EventBus.getDefault().post(AudioStateEvent(AudioStateEvent.State.PAUSED))
+            pauseAudio()
+        } else if (action == ACTION_RESUME) {
+            Log.d(TAG, "resume: $currentAyaId")
+            updateNotificationState(false)
+            EventBus.getDefault().post(AudioStateEvent(AudioStateEvent.State.RESUME))
+            playAudio()
+        } else if (action == ACTION_NEXT && currentAyaId != Constants.Quran.NUM_OF_VERSES + 1) {
+            EventBus.getDefault().post(AudioStateEvent(AudioStateEvent.State.PLAY_NEXT))
+            Log.d(TAG, "next: $currentAyaId")
+            if (fromNotification) ++currentAyaId
+            checkSelectedAyaInRepeat()
+            checkAyaAudioDownloaded(currentAyaId)
+        } else if (action == ACTION_PREVIOUS && currentAyaId != 0) {
+            EventBus.getDefault().post(AudioStateEvent(AudioStateEvent.State.PLAY_PREV))
+            if (fromNotification) --currentAyaId
+            Log.d(TAG, "prev: $currentAyaId")
+            checkSelectedAyaInRepeat()
+            checkAyaAudioDownloaded(currentAyaId)
+        } else if (action == ACTION_STOP) {
+            Log.d(TAG, "stop $currentAyaId")
+            EventBus.getDefault().post(AudioStateEvent(AudioStateEvent.State.STOP))
+            releaseAudio()
+            stopSelf()
         }
     }
 
-    public void releaseAudio() {
+    fun releaseAudio() {
         if (mediaPlayer != null) {
-            mediaPlayer.release();
+            mediaPlayer!!.release()
         }
     }
 
-    public boolean isAudioPlaying() {
-        try {
-            return mediaPlayer.isPlaying();
-        } catch (Exception e) {
-            return false;
+    val isAudioPlaying: Boolean
+        get() = try {
+            mediaPlayer!!.isPlaying
+        } catch (e: Exception) {
+            false
         }
-    }
 
-    public void pauseAudio() {
-        if (mediaPlayer != null && isAudioPlaying()) {
+    fun pauseAudio() {
+        if (mediaPlayer != null && isAudioPlaying) {
             try {
-                mediaPlayer.pause();
-
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-        }
-    }
-
-    public void playAudio() {
-        if (mediaPlayer != null && !isAudioPlaying()) {
-            try {
-                mediaPlayer.start();
-            } catch (Exception e) {
-                e.printStackTrace();
+                mediaPlayer!!.pause()
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
     }
 
-
-    @Override
-    public void onPrepared(MediaPlayer mp) {
-        EventBus.getDefault().post(new AudioStateEvent(AudioStateEvent.State.PLAYING));
-        mp.start();
-    }
-
-    private void checkSelectedAyaInRepeat() {
-        if (SharedRepeatModel.isIsRepeatModelChanged()) {
-            currentAyaRepeatNumber = 1;
-            currentGroupRepeatNumber = 1;
-            SharedRepeatModel.setIsRepeatModelChanged(false);
-        }
-        RepeatModel repeatModel = SharedRepeatModel.getRepeatModel();
-        if (repeatModel != null && (repeatModel.getFromAyaId() > currentAyaId || repeatModel.getToAyaId() < currentAyaId)) {
-            currentGroupRepeatNumber = 1;
-            currentAyaRepeatNumber = 1;
-            SharedRepeatModel.setRepeatModel(null);
+    fun playAudio() {
+        if (mediaPlayer != null && !isAudioPlaying) {
+            try {
+                mediaPlayer!!.start()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
-    public void stopAyaAudioDelay() {
+    override fun onPrepared(mp: MediaPlayer) {
+        EventBus.getDefault().post(AudioStateEvent(AudioStateEvent.State.PLAYING))
+        mp.start()
+    }
+
+    private fun checkSelectedAyaInRepeat() {
+        if (SharedRepeatModel.isRepeatModelChanged) {
+            currentAyaRepeatNumber = 1
+            currentGroupRepeatNumber = 1
+            SharedRepeatModel.isRepeatModelChanged = false
+        }
+        val repeatModel = SharedRepeatModel.repeatModel
+        if (repeatModel != null && (repeatModel.fromAyaId > currentAyaId || repeatModel.toAyaId < currentAyaId)) {
+            currentGroupRepeatNumber = 1
+            currentAyaRepeatNumber = 1
+            SharedRepeatModel.repeatModel = null
+        }
+    }
+
+    fun stopAyaAudioDelay() {
         if (playAudioHandler != null && playAudioDelayRunnable != null) {
-            playAudioHandler.removeCallbacks(playAudioDelayRunnable);
+            playAudioHandler!!.removeCallbacks(playAudioDelayRunnable!!)
         }
     }
 
-    @Override
-    public void onCompletion(MediaPlayer mp) {
+    override fun onCompletion(mp: MediaPlayer) {
         if (currentAyaId != Constants.Quran.NUM_OF_VERSES) {
-            checkSelectedAyaInRepeat();
-            RepeatModel repeatModel = SharedRepeatModel.getRepeatModel();
-            Log.d(TAG, "completed " + currentAyaId);
-            if (repeatModel != null && currentAyaRepeatNumber != repeatModel.getAyaRepeatNum()) {
-                stopAudio();
-                ++currentAyaRepeatNumber;
-                if (repeatModel.getDelayTime() > 0) {
-                    setAudioDelay(AYA_REPEAT_CASE, repeatModel.getDelayTime());
+            checkSelectedAyaInRepeat()
+            val repeatModel = SharedRepeatModel.repeatModel
+            Log.d(TAG, "completed $currentAyaId")
+            if (repeatModel != null && currentAyaRepeatNumber != repeatModel.ayaRepeatNum) {
+                stopAudio()
+                ++currentAyaRepeatNumber
+                if (repeatModel.delayTime > 0) {
+                    setAudioDelay(AYA_REPEAT_CASE, repeatModel.delayTime)
                 } else {
-                    checkFileAudioExist(currentAudioPath);
+                    checkFileAudioExist(currentAudioPath)
                 }
-            } else if (repeatModel != null && currentGroupRepeatNumber != repeatModel.getGroupRepeatNum()
-                    && currentAyaId == repeatModel.getToAyaId()) {
-                ++currentGroupRepeatNumber;
-                if (repeatModel.getDelayTime() > 0) {
-                    setAudioDelay(GROUP_REPEAT_CASE, repeatModel.getDelayTime());
+            } else if (repeatModel != null && currentGroupRepeatNumber != repeatModel.groupRepeatNum && currentAyaId == repeatModel.toAyaId) {
+                ++currentGroupRepeatNumber
+                if (repeatModel.delayTime > 0) {
+                    setAudioDelay(GROUP_REPEAT_CASE, repeatModel.delayTime)
                 } else {
-                    EventBus.getDefault().post(new AudioStateEvent(AudioStateEvent.State.GROUP_REPEAT_COMPLETED));
+                    EventBus.getDefault()
+                        .post(AudioStateEvent(AudioStateEvent.State.GROUP_REPEAT_COMPLETED))
                 }
-
-
             } else {
-                if (repeatModel != null && repeatModel.getDelayTime() > 0)
-                    setAudioDelay(NEXT_AYA_CASE, repeatModel.getDelayTime());
-                else
-                    playNextAya();
+                if (repeatModel != null && repeatModel.delayTime > 0) setAudioDelay(
+                    NEXT_AYA_CASE,
+                    repeatModel.delayTime
+                ) else playNextAya()
             }
         }
     }
 
-    private void playNextAya() {
-        EventBus.getDefault().post(new AudioStateEvent(AudioStateEvent.State.COMPLETED));
-        ++currentAyaId;
-        checkAyaAudioDownloaded(currentAyaId);
+    private fun playNextAya() {
+        EventBus.getDefault().post(AudioStateEvent(AudioStateEvent.State.COMPLETED))
+        ++currentAyaId
+        checkAyaAudioDownloaded(currentAyaId)
     }
 
-    private void setAudioDelay(int ayaRepeatCase, int audioDelay) {
+    private fun setAudioDelay(ayaRepeatCase: Int, audioDelay: Int) {
         if (playAudioHandler == null) {
-            playAudioHandler = new Handler();
+            playAudioHandler = Handler()
         }
+        when (ayaRepeatCase) {
+            AYA_REPEAT_CASE -> playAudioDelayRunnable =
+                Runnable { checkFileAudioExist(currentAudioPath) }
 
-        switch (ayaRepeatCase) {
-            case AYA_REPEAT_CASE:
-                playAudioDelayRunnable = () -> checkFileAudioExist(currentAudioPath);
-                break;
-            case GROUP_REPEAT_CASE:
-                playAudioDelayRunnable = () -> EventBus.getDefault().post(new AudioStateEvent(AudioStateEvent.State.GROUP_REPEAT_COMPLETED));
-                break;
-            case NEXT_AYA_CASE:
-                playAudioDelayRunnable = () -> playNextAya();
-                break;
+            GROUP_REPEAT_CASE -> playAudioDelayRunnable = Runnable {
+                EventBus.getDefault()
+                    .post(AudioStateEvent(AudioStateEvent.State.GROUP_REPEAT_COMPLETED))
+            }
 
+            NEXT_AYA_CASE -> playAudioDelayRunnable = Runnable { playNextAya() }
         }
-        playAudioHandler.postDelayed(playAudioDelayRunnable, audioDelay * 1000);
+        playAudioHandler!!.postDelayed(playAudioDelayRunnable!!, (audioDelay * 1000).toLong())
     }
 
-
-    public void stopAudio() {
+    fun stopAudio() {
         try {
-            mediaPlayer.reset();
-        } catch (Exception e) {
-            e.printStackTrace();
+            mediaPlayer!!.reset()
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
     @SuppressLint("CheckResult")
-    public void checkAyaAudioDownloaded(int ayaId) {
-        SharedPrefsUtils.saveInteger(this, AYA_ID_KEY, ayaId);
-        currentAyaRepeatNumber = 1;
-        stopAudio();
-        stopAyaAudioDelay();
-        String sheikhId = AppPreferencesManager.getReciterSheikhSetting(this);
-        int recitationId = AppPreferencesManager.getRecitationSetting(this);
-        userDatabase.getQuranAudioDao()
-                .getAyaAudioPath(ayaId, recitationId, sheikhId)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(result -> {
-                    result = getApplicationContext().getExternalFilesDir(null) + result;
-                    checkFileAudioExist(result);
-                }, error -> {
-                    EventBus.getDefault().post(new AudioStateEvent(AudioStateEvent.State.NOT_DOWNLOADED));
-                });
+    fun checkAyaAudioDownloaded(ayaId: Int) {
+        saveInteger(this, AYA_ID_KEY, ayaId)
+        currentAyaRepeatNumber = 1
+        stopAudio()
+        stopAyaAudioDelay()
+        val sheikhId = AppPreferencesManager.getReciterSheikhSetting(this)
+        val recitationId = AppPreferencesManager.getRecitationSetting(this)
+        userDatabase!!.quranAudioDao
+            .getAyaAudioPath(ayaId, recitationId, sheikhId)
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({ result: String ->
+                checkFileAudioExist(
+                    applicationContext.getExternalFilesDir(null).toString() + result
+                )
+            }) {
+                EventBus.getDefault().post(AudioStateEvent(AudioStateEvent.State.NOT_DOWNLOADED))
+            }
     }
 
-
-    private void checkFileAudioExist(String audioPath) {
+    private fun checkFileAudioExist(audioPath: String?) {
         if (audioPath != null) {
-            File audioFile = new File(audioPath);
+            val audioFile = File(audioPath)
             if (audioFile.exists()) {
                 try {
-                    mediaPlayer.setDataSource(audioPath);
-                    mediaPlayer.prepare();
-                    SharedPrefsUtils.saveBoolean(this, AUDIO_PLAYING, true);
-                    currentAudioPath = audioPath;
-                    updateNotificationContent(false, ayaIdInfoArrayList.get(currentAyaId - 1));
-                } catch (Exception e) {
-                    Log.d(TAG, "checkFileAudioExist: Exception");
+                    mediaPlayer!!.setDataSource(audioPath)
+                    mediaPlayer!!.prepare()
+                    saveBoolean(this, AUDIO_PLAYING, true)
+                    currentAudioPath = audioPath
+                    updateNotificationContent(false, ayaIdInfoArrayList!![currentAyaId - 1])
+                } catch (e: Exception) {
+                    Log.d(TAG, "checkFileAudioExist: Exception")
                 }
             } else {
-                EventBus.getDefault().post(new AudioStateEvent(AudioStateEvent.State.NOT_DOWNLOADED));
+                EventBus.getDefault().post(AudioStateEvent(AudioStateEvent.State.NOT_DOWNLOADED))
             }
         }
     }
 
+    override fun onBind(intent: Intent): IBinder? = null
 
-    @Nullable
-    @Override
-    public IBinder onBind(Intent intent) {
-        return null;
+    companion object {
+
+        private const val TAG = "AyaAudioService.service"
+
+        private const val NOTIFICATION_CHANNEL_ID = "AyaAudioService.NOTIFICATION_CHANNEL_ID"
+        private const val NOTIFICATION_ID = 2
+
+        const val ACTION_PLAY = "PLAY"
+        const val ACTION_RESUME = "RESUME"
+        const val ACTION_PAUSE = "PAUSE"
+        const val ACTION_STOP = "STOP"
+        const val ACTION_NEXT = "NEXT"
+        const val ACTION_PREVIOUS = "PREVIOUS"
+
+        private const val REQUEST_CODE_MAIN = 0
+        private const val REQUEST_CODE_PREVIOUS = 1
+        private const val REQUEST_CODE_PAUSE = 2
+        private const val REQUEST_CODE_NEXT = 3
+        private const val REQUEST_CODE_STOP = 4
+        private const val REQUEST_CODE_RESUME = 5
+
+        private const val AYA_REPEAT_CASE = 1
+        private const val GROUP_REPEAT_CASE = 2
+        private const val NEXT_AYA_CASE = 4
+
+        const val AYA_ID_KEY = "AYA_ID_KEY"
+
+        const val FROM_NOTIFICATION = "FROM_NOTIFICATION"
+
+        const val SURA_VERSES_KEY = "SURA_VERSES_KEY"
+
+        const val SERVICE_RUNNING = "SERVICE_RUNNING"
+
+        const val AUDIO_PLAYING = "AUDIO_PLAYING"
     }
-
 }

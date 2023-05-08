@@ -1,29 +1,18 @@
-package app.quranhub.ui.mushaf.audio_manager;
+package app.quranhub.ui.mushaf.audio_manager
 
-public class AudioStateEvent {
-    private int audioState;
+class AudioStateEvent(var audioState: Int) {
 
-    public AudioStateEvent(int audioState) {
-        this.audioState = audioState;
-    }
-
-    public int getAudioState() {
-        return audioState;
-    }
-
-    public void setAudioState(int audioState) {
-        this.audioState = audioState;
-    }
-
-    public interface State {
-        int PLAYING = 0;
-        int PAUSED = 1;
-        int RESUME = 2;
-        int STOP = 3;
-        int COMPLETED = 4;
-        int PLAY_NEXT = 5;
-        int PLAY_PREV = 6;
-        int NOT_DOWNLOADED = 7;
-        int GROUP_REPEAT_COMPLETED = 8;
+    interface State {
+        companion object {
+            const val PLAYING = 0
+            const val PAUSED = 1
+            const val RESUME = 2
+            const val STOP = 3
+            const val COMPLETED = 4
+            const val PLAY_NEXT = 5
+            const val PLAY_PREV = 6
+            const val NOT_DOWNLOADED = 7
+            const val GROUP_REPEAT_COMPLETED = 8
+        }
     }
 }

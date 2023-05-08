@@ -1,125 +1,123 @@
-package app.quranhub.ui.mushaf.dialogs;
+package app.quranhub.ui.mushaf.dialogs
 
-import android.app.Dialog;
-import android.content.Context;
-import android.os.Bundle;
-import android.os.SystemClock;
-import android.view.Gravity;
-import android.view.Window;
-import android.view.WindowManager;
+import android.app.Dialog
+import android.content.Context
+import android.os.Bundle
+import android.os.SystemClock
+import android.view.Gravity
+import android.view.View
+import android.view.Window
+import androidx.fragment.app.DialogFragment
+import androidx.lifecycle.ViewModelProvider
+import app.quranhub.R
+import app.quranhub.databinding.DialogAyaRecorderBinding
+import app.quranhub.ui.mushaf.viewmodel.VoiceRecorderViewModel
 
-import androidx.annotation.NonNull;
-import androidx.fragment.app.DialogFragment;
-import androidx.lifecycle.ViewModelProvider;
+class AyaRecorderDialog : DialogFragment() {
 
-import java.util.Objects;
+    private var dialog: Dialog? = null
+    private var listener: StopRecordingListener? = null
+    private var ayaId = 0
+    private var voiceRecorderViewModel: VoiceRecorderViewModel? = null
+    private var binding: DialogAyaRecorderBinding? = null
 
-import app.quranhub.databinding.DialogAyaRecorderBinding;
-import app.quranhub.ui.mushaf.viewmodel.VoiceRecorderViewModel;
-
-public class AyaRecorderDialog extends DialogFragment {
-
-    private Dialog dialog;
-    private StopRecordingListener listener;
-    private int ayaId;
-    private VoiceRecorderViewModel voiceRecorderViewModel;
-    private static final String ARG_AYA_ID = "ARG_AYA_ID";
-
-    private DialogAyaRecorderBinding binding;
-
-    public static AyaRecorderDialog getInstance(int ayaId) {
-        Bundle bundle = new Bundle();
-        bundle.putInt(ARG_AYA_ID, ayaId);
-        AyaRecorderDialog recorderDialog = new AyaRecorderDialog();
-        recorderDialog.setArguments(bundle);
-        return recorderDialog;
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        listener = parentFragment as? StopRecordingListener
     }
 
-    @Override
-    public void onAttach(@NonNull Context context) {
-        super.onAttach(context);
-        listener = (StopRecordingListener) getParentFragment();
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        binding = DialogAyaRecorderBinding.inflate(layoutInflater)
+        readArgs()
+        initializeDialog()
+        initReorder(savedInstanceState == null)
+        getPrevState(savedInstanceState)
+        return dialog!!
     }
 
-
-    @NonNull
-    @Override
-    public Dialog onCreateDialog(Bundle savedInstanceState) {
-        binding = DialogAyaRecorderBinding.inflate(getLayoutInflater());
-        getArgs();
-        initializeDialog();
-        initReorder(savedInstanceState == null);
-        getPrevState(savedInstanceState);
-        return dialog;
-    }
-
-    private void getPrevState(Bundle savedInstanceState) {
+    private fun getPrevState(savedInstanceState: Bundle?) {
         if (savedInstanceState == null) {
-            startTimer(SystemClock.elapsedRealtime());
+            startTimer(SystemClock.elapsedRealtime())
         } else {
-            startTimer(SystemClock.elapsedRealtime() + savedInstanceState.getLong("chronometer_time"));
+            startTimer(SystemClock.elapsedRealtime() + savedInstanceState.getLong("chronometer_time"))
         }
     }
 
-    @Override
-    public void onSaveInstanceState(@NonNull Bundle outState) {
-        super.onSaveInstanceState(outState);
-        outState.putLong("chronometer_time", binding.recorderChronometer.getBase() - SystemClock.elapsedRealtime());
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putLong(
+            "chronometer_time",
+            binding!!.recorderChronometer.base - SystemClock.elapsedRealtime()
+        )
     }
 
-    private void initReorder(boolean startRecord) {
-        voiceRecorderViewModel = new ViewModelProvider(this).get(VoiceRecorderViewModel.class);
+    private fun initReorder(startRecord: Boolean) {
+        voiceRecorderViewModel = ViewModelProvider(this).get(
+            VoiceRecorderViewModel::class.java
+        )
         if (startRecord) {
-            voiceRecorderViewModel.setAyaRecorderPath(ayaId, getActivity());
-            voiceRecorderViewModel.startRecord();
+            voiceRecorderViewModel!!.setAyaRecorderPath(ayaId, activity)
+            voiceRecorderViewModel!!.startRecord()
         }
     }
 
-    private void getArgs() {
-        if (getArguments() != null) {
-            ayaId = getArguments().getInt(ARG_AYA_ID);
+    private fun readArgs() {
+        arguments?.let {
+            ayaId = it.getInt(ARG_AYA_ID)
         }
     }
 
-    public void initializeDialog() {
-        dialog = new Dialog(getActivity());
-        dialog.getWindow().requestFeature(Window.FEATURE_NO_TITLE);
-        dialog.setCanceledOnTouchOutside(false);
-        WindowManager.LayoutParams layoutParams = dialog.getWindow().getAttributes();
-        layoutParams.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
-        dialog.setContentView(binding.getRoot());
-        Objects.requireNonNull(dialog.getWindow()).setBackgroundDrawableResource(android.R.color.transparent);
-        attachListeners();
+    fun initializeDialog() {
+        dialog = Dialog(requireActivity())
+        dialog!!.window!!.requestFeature(Window.FEATURE_NO_TITLE)
+        dialog!!.setCanceledOnTouchOutside(false)
+        val layoutParams = dialog!!.window!!.attributes
+        layoutParams.gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+        dialog!!.setContentView(binding!!.root)
+        dialog!!.window?.setBackgroundDrawableResource(R.color.transparent_color)
+        attachListeners()
     }
 
-
-    private void startTimer(long base) {
-        binding.recorderChronometer.setBase(base);
-        binding.recorderChronometer.start();
+    private fun startTimer(base: Long) {
+        binding!!.recorderChronometer.base = base
+        binding!!.recorderChronometer.start()
     }
 
-    private void attachListeners() {
-        binding.stopRecordingView.setOnClickListener(v -> onStopRecording());
+    private fun attachListeners() {
+        binding!!.stopRecordingView.setOnClickListener { v: View? -> onStopRecording() }
     }
 
-    private void onStopRecording() {
-        voiceRecorderViewModel.releaseRecorder();
-        binding.recorderChronometer.stop();
-        listener.onStopRecording(voiceRecorderViewModel.getOutputRecorderPath());
-        dismiss();
+    private fun onStopRecording() {
+        voiceRecorderViewModel!!.releaseRecorder()
+        binding!!.recorderChronometer.stop()
+        listener!!.onStopRecording(voiceRecorderViewModel!!.outputRecorderPath)
+        dismiss()
     }
 
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        binding.recorderChronometer.stop();
-        if (!getActivity().isChangingConfigurations()) {
-            voiceRecorderViewModel.releaseRecorder();
+    override fun onDestroyView() {
+        super.onDestroyView()
+        binding!!.recorderChronometer.stop()
+        if (!requireActivity().isChangingConfigurations) {
+            voiceRecorderViewModel!!.releaseRecorder()
         }
-        binding = null;
+        binding = null
     }
 
-    public interface StopRecordingListener {
-        void onStopRecording(String filePath);
+    interface StopRecordingListener {
+        fun onStopRecording(filePath: String?)
+    }
+
+    companion object {
+
+        private const val ARG_AYA_ID = "ARG_AYA_ID"
+
+        @JvmStatic
+        fun getInstance(ayaId: Int): AyaRecorderDialog {
+            val bundle = Bundle()
+            bundle.putInt(ARG_AYA_ID, ayaId)
+            val recorderDialog = AyaRecorderDialog()
+            recorderDialog.arguments = bundle
+            return recorderDialog
+        }
     }
 }

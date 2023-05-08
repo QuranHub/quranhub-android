@@ -1,69 +1,65 @@
-package app.quranhub.ui.mushaf.dialogs;
+package app.quranhub.ui.mushaf.dialogs
 
-import android.app.Dialog;
-import android.content.Context;
-import android.os.Bundle;
-import android.view.Window;
+import android.R
+import android.app.Dialog
+import android.content.Context
+import android.os.Bundle
+import android.view.View
+import android.view.Window
+import androidx.fragment.app.DialogFragment
+import app.quranhub.databinding.DialogOpenFileBinding
 
-import androidx.annotation.NonNull;
-import androidx.fragment.app.DialogFragment;
+class OpenFileDialog : DialogFragment() {
 
-import java.util.Objects;
+    private var binding: DialogOpenFileBinding? = null
+    private var dialog: Dialog? = null
+    private var listener: OpenFileListener? = null
 
-import app.quranhub.databinding.DialogOpenFileBinding;
-
-public class OpenFileDialog extends DialogFragment {
-
-    private DialogOpenFileBinding binding;
-
-    private Dialog dialog;
-    private OpenFileListener listener;
-    public static final int IN_APP = 1;
-    public static final int OUT_APP = 2;
-
-    @Override
-    public void onAttach(@NonNull Context context) {
-        super.onAttach(context);
-        listener = (OpenFileListener) getParentFragment();
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        listener = parentFragment as? OpenFileListener
     }
 
-    @Override
-    public Dialog onCreateDialog(Bundle savedInstanceState) {
-        binding = DialogOpenFileBinding.inflate(getLayoutInflater());
-        initializeDialog();
-        return dialog;
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        binding = DialogOpenFileBinding.inflate(layoutInflater)
+        initializeDialog()
+        return dialog!!
     }
 
-    private void openPdfInApp() {
-        dialog.cancel();
-        listener.onOpefFile(IN_APP);
+    private fun openPdfInApp() {
+        dialog!!.cancel()
+        listener!!.onOpenFile(IN_APP)
     }
 
-    private void openPdfOutApp() {
-        dialog.cancel();
-        listener.onOpefFile(OUT_APP);
+    private fun openPdfOutApp() {
+        dialog!!.cancel()
+        listener!!.onOpenFile(OUT_APP)
     }
 
-    private void initializeDialog() {
-        dialog = new Dialog(requireActivity());
-        dialog.getWindow().requestFeature(Window.FEATURE_NO_TITLE);
-        dialog.setContentView(binding.getRoot());
-        Objects.requireNonNull(dialog.getWindow()).setBackgroundDrawableResource(android.R.color.transparent);
-        attachListeners();
+    private fun initializeDialog() {
+        dialog = Dialog(requireActivity())
+        dialog!!.window!!.requestFeature(Window.FEATURE_NO_TITLE)
+        dialog!!.setContentView(binding!!.root)
+        dialog!!.window?.setBackgroundDrawableResource(R.color.transparent)
+        attachListeners()
     }
 
-    private void attachListeners() {
-        binding.inApp.setOnClickListener(v -> openPdfInApp());
-        binding.outApp.setOnClickListener(v -> openPdfOutApp());
+    private fun attachListeners() {
+        binding!!.inApp.setOnClickListener { v: View? -> openPdfInApp() }
+        binding!!.outApp.setOnClickListener { v: View? -> openPdfOutApp() }
     }
 
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        binding = null;
+    override fun onDestroyView() {
+        super.onDestroyView()
+        binding = null
     }
 
-    public interface OpenFileListener {
-        void onOpefFile(int openType);
+    interface OpenFileListener {
+        fun onOpenFile(openType: Int)
+    }
+
+    companion object {
+        const val IN_APP = 1
+        const val OUT_APP = 2
     }
 }

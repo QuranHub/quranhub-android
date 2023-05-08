@@ -1,217 +1,208 @@
-package app.quranhub.ui.mushaf.dialogs;
+package app.quranhub.ui.mushaf.dialogs
 
-import android.app.Dialog;
-import android.content.Context;
-import android.os.Build;
-import android.os.Bundle;
-import android.os.Environment;
-import android.view.Gravity;
-import android.view.Window;
-import android.view.WindowManager;
-import android.widget.SeekBar;
-import android.widget.Toast;
+import android.app.Dialog
+import android.content.Context
+import android.os.Build
+import android.os.Bundle
+import android.os.Environment
+import android.view.Gravity
+import android.view.View
+import android.view.Window
+import android.widget.SeekBar
+import android.widget.SeekBar.OnSeekBarChangeListener
+import android.widget.Toast
+import androidx.fragment.app.DialogFragment
+import app.quranhub.R
+import app.quranhub.data.Constants
+import app.quranhub.data.local.prefs.AppPreferencesManager
+import app.quranhub.databinding.DialogPlayAyaRecorderBinding
+import app.quranhub.util.AyaAudioHelper
+import app.quranhub.util.RecorderMediaHelper
+import app.quranhub.util.RecorderMediaHelper.MediaPlayerCallback
+import java.io.File
 
-import androidx.annotation.NonNull;
-import androidx.fragment.app.DialogFragment;
+class AyaRecorderPlayerDialog : DialogFragment(), MediaPlayerCallback {
 
-import java.io.File;
-import java.util.Objects;
+    private var dialog: Dialog? = null
+    private var listener: AyaRecorderPlayerListener? = null
+    private var recorderMediaHelper: RecorderMediaHelper? = null
+    private var outputRecorderPath: String? = null
+    private var ayaId = 0
+    private var isPlaying = false
+    private var userIsSeeking = false
+    private var firstPlay = true
+    private var userSelectedPosition = 0
+    private var binding: DialogPlayAyaRecorderBinding? = null
 
-import app.quranhub.R;
-import app.quranhub.data.Constants;
-import app.quranhub.data.local.prefs.AppPreferencesManager;
-import app.quranhub.databinding.DialogPlayAyaRecorderBinding;
-import app.quranhub.util.RecorderMediaHelper;
-
-public class AyaRecorderPlayerDialog extends DialogFragment implements RecorderMediaHelper.MediaPlayerCallback {
-
-    private Dialog dialog;
-    private static final String ARG_AYA_ID = "ARG_AYA_ID";
-    private AyaRecorderPlayerListener listener;
-    private RecorderMediaHelper recorderMediaHelper;
-    private String outputRecorderPath;
-    private int ayaId;
-    private boolean isPlaying = false, userIsSeeking = false, firstPlay = true;
-    private int userSelectedPosition;
-
-    private DialogPlayAyaRecorderBinding binding;
-
-    public static AyaRecorderPlayerDialog getInstance(int ayaId) {
-        Bundle bundle = new Bundle();
-        bundle.putInt(ARG_AYA_ID, ayaId);
-        AyaRecorderPlayerDialog dialog = new AyaRecorderPlayerDialog();
-        dialog.setArguments(bundle);
-        return dialog;
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        listener = parentFragment as AyaRecorderPlayerListener?
     }
 
-    @Override
-    public void onAttach(@NonNull Context context) {
-        super.onAttach(context);
-        listener = (AyaRecorderPlayerListener) getParentFragment();
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        binding = DialogPlayAyaRecorderBinding.inflate(layoutInflater)
+        initializeDialog()
+        setRecordingFile()
+        initSoundMedia()
+        getPrevState(savedInstanceState)
+        listenToSeekbarChanges()
+        return dialog!!
     }
 
-
-    @Override
-    public Dialog onCreateDialog(Bundle savedInstanceState) {
-        binding = DialogPlayAyaRecorderBinding.inflate(getLayoutInflater());
-        initializeDialog();
-        setRecordingFile();
-        initSoundMedia();
-        getPrevState(savedInstanceState);
-        listenToSeekbarChanges();
-        return dialog;
-    }
-
-    private void getPrevState(Bundle savedInstanceState) {
+    private fun getPrevState(savedInstanceState: Bundle?) {
         if (savedInstanceState != null) {
-            recorderMediaHelper.seekTo(savedInstanceState.getInt("player_position"));
-            isPlaying = savedInstanceState.getBoolean("is_playing");
-            restorePlayingState();
+            recorderMediaHelper!!.seekTo(savedInstanceState.getInt("player_position"))
+            isPlaying = savedInstanceState.getBoolean("is_playing")
+            restorePlayingState()
         }
     }
 
-    private void restorePlayingState() {
+    private fun restorePlayingState() {
         if (isPlaying) {
-            binding.playIv.setImageResource(R.drawable.ic_pause);
-            recorderMediaHelper.play();
+            binding!!.playIv.setImageResource(R.drawable.ic_pause)
+            recorderMediaHelper!!.play()
         }
     }
 
-    @Override
-    public void onSaveInstanceState(@NonNull Bundle outState) {
-        super.onSaveInstanceState(outState);
-        outState.putBoolean("is_playing", isPlaying);
-        outState.putInt("player_position", recorderMediaHelper.getCurrentPosition());
-
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean("is_playing", isPlaying)
+        outState.putInt("player_position", recorderMediaHelper!!.currentPosition)
     }
 
-
-    public void initializeDialog() {
-        dialog = new Dialog(getActivity());
-        dialog.getWindow().requestFeature(Window.FEATURE_NO_TITLE);
-        WindowManager.LayoutParams layoutParams = dialog.getWindow().getAttributes();
-        layoutParams.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
-        dialog.setContentView(binding.getRoot());
-        Objects.requireNonNull(dialog.getWindow()).setBackgroundDrawableResource(android.R.color.transparent);
-        if (getArguments() != null) {
-            ayaId = getArguments().getInt(ARG_AYA_ID);
+    fun initializeDialog() {
+        dialog = Dialog(requireActivity())
+        dialog!!.window!!.requestFeature(Window.FEATURE_NO_TITLE)
+        val layoutParams = dialog!!.window!!.attributes
+        layoutParams.gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+        dialog!!.setContentView(binding!!.root)
+        dialog!!.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        arguments?.let {
+            ayaId = it.getInt(ARG_AYA_ID)
         }
-        attachListeners();
+        attachListeners()
     }
 
-    private void setRecordingFile() {
-        int recitation = AppPreferencesManager.getRecitationSetting(requireActivity());
-        File file = new File(getActivity().getExternalFilesDir(Environment.DIRECTORY_MUSIC), Constants.Directory.AYA_VOICE_RECORDER
-                + File.separator + recitation + File.separator
-                + ayaId + ".3gp");
+    private fun setRecordingFile() {
+        val recitation = AppPreferencesManager.getRecitationSetting(requireActivity())
+        val file = File(
+            requireActivity().getExternalFilesDir(Environment.DIRECTORY_MUSIC),
+            Constants.Directory.AYA_VOICE_RECORDER
+                    + File.separator + recitation + File.separator
+                    + ayaId + ".3gp"
+        )
         if (file.exists()) {
-            outputRecorderPath = file.getPath();
+            outputRecorderPath = file.path
         } else {
-            listener.onClickDeleteRecorder();
-            Toast.makeText(getActivity(), getString(R.string.file_not_exist), Toast.LENGTH_LONG).show();
-            dismiss();
+            listener!!.onClickDeleteRecorder()
+            Toast.makeText(activity, getString(R.string.file_not_exist), Toast.LENGTH_LONG).show()
+            dismiss()
         }
     }
 
-    private void listenToSeekbarChanges() {
-        binding.recorderProgress.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-                userIsSeeking = true;
+    private fun listenToSeekbarChanges() {
+        binding!!.recorderProgress.setOnSeekBarChangeListener(object : OnSeekBarChangeListener {
+            override fun onStartTrackingTouch(seekBar: SeekBar) {
+                userIsSeeking = true
             }
 
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+            override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
                 if (fromUser) {
-                    userSelectedPosition = progress;
+                    userSelectedPosition = progress
                 }
             }
 
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                userIsSeeking = false;
-                recorderMediaHelper.seekTo(userSelectedPosition);
+            override fun onStopTrackingTouch(seekBar: SeekBar) {
+                userIsSeeking = false
+                recorderMediaHelper!!.seekTo(userSelectedPosition)
             }
-        });
+        })
     }
 
-    private void initSoundMedia() {
+    private fun initSoundMedia() {
         if (outputRecorderPath != null) {
-            recorderMediaHelper = new RecorderMediaHelper();
-            recorderMediaHelper.setMediaPlayerCallback(this);
-            recorderMediaHelper.setAudioPath(outputRecorderPath);
+            recorderMediaHelper = RecorderMediaHelper()
+            recorderMediaHelper!!.setMediaPlayerCallback(this)
+            recorderMediaHelper!!.setAudioPath(outputRecorderPath)
         }
     }
 
-    private void attachListeners() {
-        binding.removeRecordIv.setOnClickListener(v -> onRemoveRecorder());
-        binding.playIv.setOnClickListener(v -> onPlayRecorder());
+    private fun attachListeners() {
+        binding!!.removeRecordIv.setOnClickListener { v: View? -> onRemoveRecorder() }
+        binding!!.playIv.setOnClickListener { v: View? -> onPlayRecorder() }
     }
 
-    private void onRemoveRecorder() {
-        recorderMediaHelper.release();
-        listener.onClickDeleteRecorder();
-        dismiss();
+    private fun onRemoveRecorder() {
+        recorderMediaHelper!!.release()
+        listener!!.onClickDeleteRecorder()
+        dismiss()
     }
 
-    public void onPlayRecorder() {
+    fun onPlayRecorder() {
         if (isPlaying) {
-            binding.playIv.setImageResource(R.drawable.player_play_white_ic);
-            recorderMediaHelper.pause();
+            binding!!.playIv.setImageResource(R.drawable.player_play_white_ic)
+            recorderMediaHelper!!.pause()
         } else {
-            binding.playIv.setImageResource(R.drawable.ic_pause);
-            recorderMediaHelper.play();
-            recorderMediaHelper.startUpdatingAudioTime();
+            binding!!.playIv.setImageResource(R.drawable.ic_pause)
+            recorderMediaHelper!!.play()
+            recorderMediaHelper!!.startUpdatingAudioTime()
             if (firstPlay) {
-                firstPlay = false;
-                binding.recorderTimeTv.setText("0:00");
+                firstPlay = false
+                binding!!.recorderTimeTv.text = "0:00"
             }
         }
-        isPlaying = !isPlaying;
+        isPlaying = !isPlaying
     }
 
-    @Override
-    public void onGetMaxDuration(int duration) {
-        binding.recorderProgress.setMax(duration);
+    override fun onGetMaxDuration(duration: Int) {
+        binding!!.recorderProgress.max = duration
     }
 
-    @Override
-    public void onPositionChanged(int position) {
+    override fun onPositionChanged(position: Int) {
         if (!userIsSeeking) {
             if (Build.VERSION.SDK_INT >= 24) {
-                binding.recorderProgress.setProgress(position, true);
+                binding!!.recorderProgress.setProgress(position, true)
             } else {
-                binding.recorderProgress.setProgress(position);
+                binding!!.recorderProgress.progress = position
             }
         }
     }
 
-    @Override
-    public void onUpdatedTime(String time) {
-        binding.recorderTimeTv.setText(time);
+    override fun onUpdatedTime(time: String?) {
+        binding!!.recorderTimeTv.text = time
     }
 
-    @Override
-    public void onStateChanged(int state) {
-        if (state == State.COMPLETED) {
-            binding.recorderProgress.setProgress(0);
-            isPlaying = false;
-            firstPlay = true;
-            binding.playIv.setImageResource(R.drawable.player_play_white_ic);
+    override fun onStateChanged(state: Int) {
+        if (state == AyaAudioHelper.AudioStateCallback.State.COMPLETED) {
+            binding!!.recorderProgress.progress = 0
+            isPlaying = false
+            firstPlay = true
+            binding!!.playIv.setImageResource(R.drawable.player_play_white_ic)
         }
     }
 
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        if (!getActivity().isChangingConfigurations() && recorderMediaHelper != null) {
-            recorderMediaHelper.release();
+    override fun onDestroyView() {
+        super.onDestroyView()
+        if (!requireActivity().isChangingConfigurations && recorderMediaHelper != null) {
+            recorderMediaHelper!!.release()
         }
-        binding = null;
+        binding = null
     }
 
-    public interface AyaRecorderPlayerListener {
-        void onClickDeleteRecorder();
+    interface AyaRecorderPlayerListener {
+        fun onClickDeleteRecorder()
+    }
+
+    companion object {
+        private const val ARG_AYA_ID = "ARG_AYA_ID"
+
+        @JvmStatic
+        fun getInstance(ayaId: Int): AyaRecorderPlayerDialog {
+            val bundle = Bundle()
+            bundle.putInt(ARG_AYA_ID, ayaId)
+            val dialog = AyaRecorderPlayerDialog()
+            dialog.arguments = bundle
+            return dialog
+        }
     }
 }

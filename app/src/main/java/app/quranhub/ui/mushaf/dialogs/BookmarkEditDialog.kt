@@ -1,147 +1,138 @@
-package app.quranhub.ui.mushaf.dialogs;
+package app.quranhub.ui.mushaf.dialogs
 
-import android.app.Dialog;
-import android.content.Context;
-import android.os.Bundle;
-import android.os.Parcelable;
-import android.view.View;
-import android.view.Window;
+import android.app.Dialog
+import android.content.Context
+import android.os.Bundle
+import android.os.Parcelable
+import android.view.View
+import android.view.Window
+import androidx.fragment.app.DialogFragment
+import androidx.recyclerview.widget.LinearLayoutManager
+import app.quranhub.R
+import app.quranhub.data.local.entity.BookmarkType
+import app.quranhub.databinding.DialogBookmarkFilterBinding
+import app.quranhub.ui.mushaf.adapter.BookmarkTypeAdapter
+import app.quranhub.ui.mushaf.listener.ItemSelectionListener
+import app.quranhub.util.DialogUtils.adjustDialogSize
 
-import androidx.annotation.NonNull;
-import androidx.fragment.app.DialogFragment;
-import androidx.recyclerview.widget.LinearLayoutManager;
+class BookmarkEditDialog : DialogFragment(), ItemSelectionListener<Int> {
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+    private var dialog: Dialog? = null
+    private var listener: BookmarkFilterListener? = null
+    private var selectedFilter = 0
+    private var bookmarkColorIndex = 0
+    private var adapter: BookmarkTypeAdapter? = null
+    private var bookmarkTypes: List<BookmarkType>? = null
+    private var editDialog = false
+    private var binding: DialogBookmarkFilterBinding? = null
 
-import app.quranhub.R;
-import app.quranhub.data.local.entity.BookmarkType;
-import app.quranhub.databinding.DialogBookmarkFilterBinding;
-import app.quranhub.ui.mushaf.adapter.BookmarkTypeAdapter;
-import app.quranhub.ui.mushaf.listener.ItemSelectionListener;
-import app.quranhub.util.DialogUtils;
-
-public class BookmarkEditDialog extends DialogFragment implements ItemSelectionListener<Integer> {
-
-    private final static String BOOKMARK_TYPES_ARGS = "BOOKMARK_TYPES_ARGS";
-    private final static String FILTER_TYPE = "FILTER_TYPE";
-    private final static String DIALOG_TYPE = "DIALOG_TYPE";
-
-    private Dialog dialog;
-    private BookmarkFilterListener listener;
-    public static final int ALL_BOOKMARK_FILTER = 0;
-    private int selectedFilter, bookmarkColorIndex;
-    private BookmarkTypeAdapter adapter;
-    private List<BookmarkType> bookmarkTypes;
-    private boolean editDialog;
-
-    private DialogBookmarkFilterBinding binding;
-
-    public static BookmarkEditDialog getInstance(List<BookmarkType> types, int type, boolean editDialog) {
-        Bundle bundle = new Bundle();
-        bundle.putParcelableArrayList(BOOKMARK_TYPES_ARGS, (ArrayList<? extends Parcelable>) types);
-        bundle.putBoolean(DIALOG_TYPE, editDialog);
-        bundle.putInt(FILTER_TYPE, type);
-        BookmarkEditDialog dialog = new BookmarkEditDialog();
-        dialog.setArguments(bundle);
-        return dialog;
-    }
-
-
-    @Override
-    public void onAttach(@NonNull Context context) {
-        super.onAttach(context);
-        try {
-            listener = (BookmarkFilterListener) getParentFragment();
-        } catch (ClassCastException e) {
-            throw new ClassCastException("The parent fragment of BookmarkEditDialog (" +
-                    getParentFragment().getClass().getSimpleName() + ") must implement the BookmarkFilterListener interface");
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        listener = try {
+            parentFragment as BookmarkFilterListener?
+        } catch (e: ClassCastException) {
+            throw ClassCastException(
+                "The parent fragment of BookmarkEditDialog (${requireParentFragment().javaClass.simpleName}) must implement the BookmarkFilterListener interface"
+            )
         }
     }
 
-    @NonNull
-    @Override
-    public Dialog onCreateDialog(Bundle savedInstanceState) {
-        binding = DialogBookmarkFilterBinding.inflate(getLayoutInflater());
-        getArgs();
-        initializeDialog();
-        setDialogTypeViews();
-        return dialog;
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        binding = DialogBookmarkFilterBinding.inflate(layoutInflater)
+        readArgs()
+        initializeDialog()
+        setDialogTypeViews()
+        return dialog!!
     }
 
-    private void setDialogTypeViews() {
+    private fun setDialogTypeViews() {
         if (editDialog) {
-            binding.btnShow.setText(getString(R.string.edit));
-            binding.allBookmarkCheckbox.setVisibility(View.GONE);
-            binding.allBookmark.setVisibility(View.GONE);
+            binding!!.btnShow.text = getString(R.string.edit)
+            binding!!.allBookmarkCheckbox.visibility = View.GONE
+            binding!!.allBookmark.visibility = View.GONE
         }
     }
 
-
-    private void getArgs() {
-        if (getArguments() != null) {
-            selectedFilter = getArguments().getInt(FILTER_TYPE, 0);
-            bookmarkTypes = getArguments().getParcelableArrayList(BOOKMARK_TYPES_ARGS);
-            editDialog = getArguments().getBoolean(DIALOG_TYPE);
+    private fun readArgs() {
+        arguments?.let {
+            selectedFilter = it.getInt(FILTER_TYPE, 0)
+            bookmarkTypes = it.getParcelableArrayList(BOOKMARK_TYPES_ARGS)
+            editDialog = it.getBoolean(DIALOG_TYPE)
         }
     }
 
-    @Override
-    public void onResume() {
-        super.onResume();
-
-        DialogUtils.adjustDialogSize(this);
+    override fun onResume() {
+        super.onResume()
+        adjustDialogSize(this)
     }
 
-    public void initializeDialog() {
-        dialog = new Dialog(requireActivity());
-        dialog.getWindow().requestFeature(Window.FEATURE_NO_TITLE);
-        dialog.setContentView(binding.getRoot());
-        Objects.requireNonNull(dialog.getWindow()).setBackgroundDrawableResource(android.R.color.transparent);
-        adapter = new BookmarkTypeAdapter(bookmarkTypes, getActivity(), this);
-        binding.bookmarkTypesRv.setLayoutManager(new LinearLayoutManager(getActivity()));
-        binding.bookmarkTypesRv.setAdapter(adapter);
+    fun initializeDialog() {
+        dialog = Dialog(requireActivity())
+        dialog!!.window!!.requestFeature(Window.FEATURE_NO_TITLE)
+        dialog!!.setContentView(binding!!.root)
+        dialog!!.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        adapter = BookmarkTypeAdapter(bookmarkTypes, activity, this)
+        binding!!.bookmarkTypesRv.layoutManager = LinearLayoutManager(activity)
+        binding!!.bookmarkTypesRv.adapter = adapter
         if (selectedFilter == 0) {
-            adapter.hideCheck();
+            adapter!!.hideCheck()
         } else {
-            binding.allBookmarkCheckbox.setVisibility(View.GONE);
-            adapter.setTypeCheck(selectedFilter);
+            binding!!.allBookmarkCheckbox.visibility = View.GONE
+            adapter!!.setTypeCheck(selectedFilter)
         }
-        attachListeners();
+        attachListeners()
     }
 
-    private void attachListeners() {
-        binding.allBookmark.setOnClickListener(v -> onSelectAllBookmark());
-        binding.btnShow.setOnClickListener(v -> onShowFilterList());
-        binding.btnBack.setOnClickListener(v -> onBackDialog());
+    private fun attachListeners() {
+        binding!!.allBookmark.setOnClickListener { onSelectAllBookmark() }
+        binding!!.btnShow.setOnClickListener { onShowFilterList() }
+        binding!!.btnBack.setOnClickListener { onBackDialog() }
     }
 
-    private void onSelectAllBookmark() {
-        binding.allBookmarkCheckbox.setVisibility(View.VISIBLE);
-        adapter.hideCheck();
-        selectedFilter = ALL_BOOKMARK_FILTER;
+    private fun onSelectAllBookmark() {
+        binding!!.allBookmarkCheckbox.visibility = View.VISIBLE
+        adapter!!.hideCheck()
+        selectedFilter = ALL_BOOKMARK_FILTER
     }
 
-    private void onShowFilterList() {
-        listener.onBookmarkFilter(selectedFilter, bookmarkColorIndex);
-        dialog.dismiss();
+    private fun onShowFilterList() {
+        listener!!.onBookmarkFilter(selectedFilter, bookmarkColorIndex)
+        dialog!!.dismiss()
     }
 
-    private void onBackDialog() {
-        dialog.dismiss();
+    private fun onBackDialog() {
+        dialog!!.dismiss()
     }
 
-    @Override
-    public void onSelectItem(Integer bookmarkType) {
-        binding.allBookmarkCheckbox.setVisibility(View.GONE);
-        selectedFilter = bookmarkType;
-        bookmarkColorIndex = bookmarkTypes.get(selectedFilter - 1).getColorIndex();
+    override fun onSelectItem(bookmarkType: Int) {
+        binding!!.allBookmarkCheckbox.visibility = View.GONE
+        selectedFilter = bookmarkType
+        bookmarkColorIndex = bookmarkTypes!![selectedFilter - 1].colorIndex
     }
 
-
-    public interface BookmarkFilterListener {
-        void onBookmarkFilter(int filter, int colorIndex);
+    interface BookmarkFilterListener {
+        fun onBookmarkFilter(filter: Int, colorIndex: Int)
     }
 
+    companion object {
+        private const val BOOKMARK_TYPES_ARGS = "BOOKMARK_TYPES_ARGS"
+        private const val FILTER_TYPE = "FILTER_TYPE"
+        private const val DIALOG_TYPE = "DIALOG_TYPE"
+        const val ALL_BOOKMARK_FILTER = 0
+
+        @JvmStatic
+        fun getInstance(
+            types: List<BookmarkType?>?,
+            type: Int,
+            editDialog: Boolean
+        ): BookmarkEditDialog {
+            val bundle = Bundle()
+            bundle.putParcelableArrayList(BOOKMARK_TYPES_ARGS, types as ArrayList<out Parcelable?>?)
+            bundle.putBoolean(DIALOG_TYPE, editDialog)
+            bundle.putInt(FILTER_TYPE, type)
+            val dialog = BookmarkEditDialog()
+            dialog.arguments = bundle
+            return dialog
+        }
+    }
 }

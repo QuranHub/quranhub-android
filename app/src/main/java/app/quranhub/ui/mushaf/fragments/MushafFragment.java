@@ -979,13 +979,13 @@ public class MushafFragment extends Fragment implements MushafView, MushafBottom
     @Override
     public void onAyasRepeat(RepeatModel repeatModel) {
         SharedRepeatModel.setRepeatModel(repeatModel);
-        SharedRepeatModel.setIsRepeatModelChanged(true);
+        SharedRepeatModel.isRepeatModelChanged = true;
         firstAyaInRepeatGroup = repeatModel.getFromAya();
         fromSuraDownloaded = repeatModel.getFromSura();
         presenter.getFromAyaPage(repeatModel.getFromAyaId());
     }
 
-    // swip to page which contain from-aya interval in repeating
+    // swipe to page which contain from-aya interval in repeating
     @Override
     public void onGetAyaPage(int page) {
         setCurrentQuranPageFragment();

@@ -1,7 +1,5 @@
-package app.quranhub.ui.mushaf.listener;
+package app.quranhub.ui.mushaf.listener
 
-public interface ItemSelectionListener<T> {
-
-    void onSelectItem(T item);
-
+interface ItemSelectionListener<T> {
+    fun onSelectItem(item: T)
 }

@@ -1,80 +1,62 @@
-package app.quranhub.ui.mushaf.dialogs;
+package app.quranhub.ui.mushaf.dialogs
 
-import android.app.Dialog;
-import android.content.Context;
-import android.os.Bundle;
-import android.view.Window;
+import android.app.Dialog
+import android.content.Context
+import android.os.Bundle
+import android.view.Window
+import androidx.fragment.app.DialogFragment
+import androidx.recyclerview.widget.LinearLayoutManager
+import app.quranhub.R
+import app.quranhub.databinding.DialogNoteFilterBinding
+import app.quranhub.ui.mushaf.adapter.FilterAdapter
+import app.quranhub.ui.mushaf.adapter.FilterAdapter.OptionClickListener
+import app.quranhub.ui.mushaf.listener.ItemSelectionListener
+import java.util.Arrays
 
-import androidx.annotation.NonNull;
-import androidx.fragment.app.DialogFragment;
-import androidx.recyclerview.widget.LinearLayoutManager;
+class NotesFilterDialog : DialogFragment(), OptionClickListener {
 
-import java.util.Arrays;
-import java.util.Objects;
+    private var dialog: Dialog? = null
+    private var listener: ItemSelectionListener<Int>? = null
+    private var selectedOption = 0
+    private var adapter: FilterAdapter? = null
+    private var options: Array<String> = arrayOf()
+    private var binding: DialogNoteFilterBinding? = null
 
-import app.quranhub.R;
-import app.quranhub.databinding.DialogNoteFilterBinding;
-import app.quranhub.ui.mushaf.adapter.FilterAdapter;
-import app.quranhub.ui.mushaf.listener.ItemSelectionListener;
-
-public class NotesFilterDialog extends DialogFragment implements FilterAdapter.OptionClickListener {
-
-    private static final String NOTE_TYPE_ARGS = "NOTE_TYPE_ARGS";
-    private Dialog dialog;
-    private ItemSelectionListener<Integer> listener;
-    private int selectedOption;
-    private FilterAdapter adapter;
-    private String[] options;
-
-    private DialogNoteFilterBinding binding;
-
-    public static NotesFilterDialog getInstance(int type) {
-        Bundle bundle = new Bundle();
-        bundle.putInt(NOTE_TYPE_ARGS, type);
-        NotesFilterDialog dialog = new NotesFilterDialog();
-        dialog.setArguments(bundle);
-        return dialog;
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        listener = parentFragment as? ItemSelectionListener<Int>
     }
 
-    @Override
-    public void onAttach(@NonNull Context context) {
-        super.onAttach(context);
-        listener = (ItemSelectionListener) getParentFragment();
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        binding = DialogNoteFilterBinding.inflate(layoutInflater)
+        initializeDialog()
+        setFilterOptions()
+        initViews()
+        return dialog!!
     }
 
-
-    @Override
-    public Dialog onCreateDialog(Bundle savedInstanceState) {
-        binding = DialogNoteFilterBinding.inflate(getLayoutInflater());
-        initializeDialog();
-        setFilterOptions();
-        initViews();
-        return dialog;
+    private fun setFilterOptions() {
+        options = arrayOf(
+            getString(R.string.all_types),
+            getString(R.string.general_comment),
+            getString(R.string.momerize_mistake),
+            getString(R.string.tajweed_mistake)
+        )
     }
 
-    private void setFilterOptions() {
-        options = new String[]{
-                getString(R.string.all_types),
-                getString(R.string.general_comment),
-                getString(R.string.momerize_mistake),
-                getString(R.string.tajweed_mistake)
-        };
+    private fun initViews() {
+        binding!!.noteFilterRv.layoutManager = LinearLayoutManager(activity)
+        adapter = FilterAdapter(Arrays.asList(*options), options[selectedOption], this, 0)
+        binding!!.noteFilterRv.adapter = adapter
     }
 
-    private void initViews() {
-        binding.noteFilterRv.setLayoutManager(new LinearLayoutManager(getActivity()));
-        adapter = new FilterAdapter(Arrays.asList(options), options[selectedOption], this, 0);
-        binding.noteFilterRv.setAdapter(adapter);
-    }
-
-
-    public void initializeDialog() {
-        dialog = new Dialog(requireActivity());
-        dialog.getWindow().requestFeature(Window.FEATURE_NO_TITLE);
-        dialog.setContentView(binding.getRoot());
-        Objects.requireNonNull(dialog.getWindow()).setBackgroundDrawableResource(android.R.color.transparent);
-        if (getArguments() != null) {
-            selectedOption = getArguments().getInt(NOTE_TYPE_ARGS);
+    fun initializeDialog() {
+        dialog = Dialog(requireActivity())
+        dialog!!.window!!.requestFeature(Window.FEATURE_NO_TITLE)
+        dialog!!.setContentView(binding!!.root)
+        dialog!!.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        arguments?.let {
+            selectedOption = it.getInt(NOTE_TYPE_ARGS)
         }
     }
 
@@ -89,16 +71,28 @@ public class NotesFilterDialog extends DialogFragment implements FilterAdapter.O
         dismiss();
     }*/
 
-    @Override
-    public void onOptionClick(String optionName, int optionIndex) {
+    override fun onOptionClick(optionName: String, optionIndex: Int) {
         //selectedOption = optionIndex;
-        listener.onSelectItem(optionIndex);
-        dismiss();
+        listener!!.onSelectItem(optionIndex)
+        dismiss()
     }
 
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        binding = null;
+    override fun onDestroyView() {
+        super.onDestroyView()
+        binding = null
+    }
+
+    companion object {
+
+        private const val NOTE_TYPE_ARGS = "NOTE_TYPE_ARGS"
+
+        @JvmStatic
+        fun getInstance(type: Int): NotesFilterDialog {
+            val bundle = Bundle()
+            bundle.putInt(NOTE_TYPE_ARGS, type)
+            val dialog = NotesFilterDialog()
+            dialog.arguments = bundle
+            return dialog
+        }
     }
 }

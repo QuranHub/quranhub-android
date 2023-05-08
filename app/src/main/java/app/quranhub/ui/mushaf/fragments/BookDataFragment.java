@@ -403,7 +403,7 @@ public class BookDataFragment extends Fragment implements Searchable, EasyPermis
     }
 
     @Override
-    public void onOpefFile(int openType) {
+    public void onOpenFile(int openType) {
         File file = new File(Environment.getExternalStorageDirectory() + File.separator
                 + Constants.Directory.LIBRARY_PUBLIC, selectedBook.getName() + ".pdf");
 

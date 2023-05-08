@@ -1,373 +1,381 @@
-package app.quranhub.ui.mushaf.dialogs;
+package app.quranhub.ui.mushaf.dialogs
 
-import android.Manifest;
-import android.app.Dialog;
-import android.content.Context;
-import android.content.pm.PackageManager;
-import android.media.MediaRecorder;
-import android.os.Build;
-import android.os.Bundle;
-import android.os.Environment;
-import android.os.SystemClock;
-import android.text.TextUtils;
-import android.view.View;
-import android.view.Window;
-import android.widget.RadioButton;
-import android.widget.SeekBar;
-import android.widget.Toast;
+import android.Manifest
+import android.app.Dialog
+import android.content.Context
+import android.content.pm.PackageManager
+import android.media.MediaRecorder
+import android.os.Build
+import android.os.Bundle
+import android.os.Environment
+import android.os.SystemClock
+import android.text.TextUtils
+import android.view.View
+import android.view.Window
+import android.widget.RadioButton
+import android.widget.SeekBar
+import android.widget.SeekBar.OnSeekBarChangeListener
+import android.widget.Toast
+import androidx.core.content.ContextCompat
+import androidx.fragment.app.DialogFragment
+import app.quranhub.R
+import app.quranhub.data.Constants
+import app.quranhub.data.local.entity.Note
+import app.quranhub.databinding.DialogAddNoteBinding
+import app.quranhub.util.AyaAudioHelper
+import app.quranhub.util.DialogUtils
+import app.quranhub.util.DialogUtils.adjustDialogSize
+import app.quranhub.util.RecorderMediaHelper
+import app.quranhub.util.RecorderMediaHelper.MediaPlayerCallback
+import java.io.File
+import java.io.IOException
 
-import androidx.annotation.NonNull;
-import androidx.core.content.ContextCompat;
-import androidx.fragment.app.DialogFragment;
+class AddNoteDialog : DialogFragment(), MediaPlayerCallback {
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Objects;
+    private var binding: DialogAddNoteBinding? = null
+    private var isRecord = false
+    private var isPlaying = false
+    private var isRecorderAttached = false
+    private var userIsSeeking = false
+    private var firstPlay = true
+    private var userSelectedPosition = 0
+    private var dialog: Dialog? = null
+    private var listener: AddNoteListener? = null
+    private var permissions: Array<String> = arrayOf()
+    private var outputRecorderPath: String? = null
+    private var ayaId = 0
+    private var audioRecorder: MediaRecorder? = null
+    private var recorderMediaHelper: RecorderMediaHelper? = null
+    private var outputFile: File? = null
+    private var note: Note? = null
+    private var isEditable = false
 
-import app.quranhub.R;
-import app.quranhub.data.Constants;
-import app.quranhub.data.local.entity.Note;
-import app.quranhub.databinding.DialogAddNoteBinding;
-import app.quranhub.util.DialogUtils;
-import app.quranhub.util.RecorderMediaHelper;
-
-public class AddNoteDialog extends DialogFragment implements RecorderMediaHelper.MediaPlayerCallback {
-
-    private DialogAddNoteBinding binding;
-
-    private boolean isRecord = false, isPlaying = false, isRecorderAttatched = false, userIsSeeking = false, firstPlay = true;
-    private int userSelectedPosition;
-    private Dialog dialog;
-    private AddNoteListener listener;
-    private String[] permissions;
-    private String outputRecorderPath;
-    private int ayaId;
-    private MediaRecorder audioRecorder;
-    private RecorderMediaHelper recorderMediaHelper;
-    private File outputFile;
-    private Note note;
-    private boolean isEditable = false;
-
-    public static AddNoteDialog getInstance(int ayaId) {
-        Bundle bundle = new Bundle();
-        bundle.putInt("aya_id", ayaId);
-        AddNoteDialog dialog = new AddNoteDialog();
-        dialog.setArguments(bundle);
-        return dialog;
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        listener = parentFragment as AddNoteListener?
     }
 
-    public static AddNoteDialog getInstance(Note selectedAyaNote) {
-        Bundle bundle = new Bundle();
-        bundle.putInt("aya_id", selectedAyaNote.getAyaId());
-        bundle.putParcelable("selected_aya", selectedAyaNote);
-        AddNoteDialog dialog = new AddNoteDialog();
-        dialog.setArguments(bundle);
-        return dialog;
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        binding = DialogAddNoteBinding.inflate(layoutInflater)
+        initializeDialog()
+        readArgs()
+        listenToSeekbarChanges()
+        return dialog!!
     }
 
-    @Override
-    public void onAttach(@NonNull Context context) {
-        super.onAttach(context);
-        listener = (AddNoteListener) getParentFragment();
+    override fun onResume() {
+        super.onResume()
+        adjustDialogSize(
+            this,
+            DialogUtils.DIALOG_STD_WIDTH_SCREEN_RATIO_PORTRAIT,
+            0.8f,
+            DialogUtils.DIALOG_STD_WIDTH_SCREEN_RATIO_LANDSCAPE,
+            DialogUtils.DIALOG_STD_HEIGHT_SCREEN_RATIO_LANDSCAPE
+        )
     }
 
-
-    @NonNull
-    @Override
-    public Dialog onCreateDialog(Bundle savedInstanceState) {
-        binding = DialogAddNoteBinding.inflate(getLayoutInflater());
-        initializeDialog();
-        getArgs();
-        listenToSeekbarChanges();
-        return dialog;
+    fun initializeDialog() {
+        dialog = Dialog(requireActivity())
+        dialog!!.window!!.requestFeature(Window.FEATURE_NO_TITLE)
+        dialog!!.setContentView(binding!!.root)
+        dialog!!.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        dialog!!.setCanceledOnTouchOutside(false)
+        permissions =
+            arrayOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        attachListeners()
     }
 
-    @Override
-    public void onResume() {
-        super.onResume();
-
-        DialogUtils.adjustDialogSize(this, DialogUtils.DIALOG_STD_WIDTH_SCREEN_RATIO_PORTRAIT, 0.8f
-                , DialogUtils.DIALOG_STD_WIDTH_SCREEN_RATIO_LANDSCAPE, DialogUtils.DIALOG_STD_HEIGHT_SCREEN_RATIO_LANDSCAPE);
-    }
-
-    public void initializeDialog() {
-        dialog = new Dialog(requireActivity());
-        dialog.getWindow().requestFeature(Window.FEATURE_NO_TITLE);
-        dialog.setContentView(binding.getRoot());
-        Objects.requireNonNull(dialog.getWindow()).setBackgroundDrawableResource(android.R.color.transparent);
-        dialog.setCanceledOnTouchOutside(false);
-        permissions = new String[]{Manifest.permission.RECORD_AUDIO, Manifest.permission.WRITE_EXTERNAL_STORAGE};
-        attachListeners();
-    }
-
-    private void getArgs() {
-        if (getArguments() != null) {
-            ayaId = getArguments().getInt("aya_id");
-            note = getArguments().getParcelable("selected_aya");
-            createRecordingFile();
+    private fun readArgs() {
+        arguments?.let {
+            ayaId = it.getInt("aya_id")
+            note = it.getParcelable("selected_aya")
+            createRecordingFile()
             if (note != null) {
-                isEditable = true;
-                setEditView();
-                binding.saveBtn.setText(getString(R.string.save));
+                isEditable = true
+                setEditView()
+                binding!!.saveBtn.text = getString(R.string.save)
             }
         }
     }
 
-    private void setEditView() {
-        binding.tvTitle.setText(getString(R.string.edit_note));
-        ((RadioButton) binding.noteTypeGroup.getChildAt(note.getNoteType())).setChecked(true);
-        if (note.getNoteText() != null) {
-            binding.addNoteEt.setText(note.getNoteText());
+    private fun setEditView() {
+        binding!!.tvTitle.text = getString(R.string.edit_note)
+        (binding!!.noteTypeGroup.getChildAt(note!!.noteType) as RadioButton).isChecked = true
+        if (note!!.noteText != null) {
+            binding!!.addNoteEt.setText(note!!.noteText)
         }
-        if (!note.getNoteRecorderPath().isEmpty()) {
-            setAudioViewsVisible();
-            isRecorderAttatched = true;
-            initSoundMedia();
+        if (!note!!.noteRecorderPath.isEmpty()) {
+            setAudioViewsVisible()
+            isRecorderAttached = true
+            initSoundMedia()
         }
-
     }
 
-    private void setAudioViewsVisible() {
-        binding.voiceTimerTv.setVisibility(View.VISIBLE);
-        binding.recordGroup.setVisibility(View.VISIBLE);
-        binding.addRecorderIv.setVisibility(View.INVISIBLE);
-        binding.voiceStatusTv.setText(getString(R.string.voice_listen));
+    private fun setAudioViewsVisible() {
+        binding!!.voiceTimerTv.visibility = View.VISIBLE
+        binding!!.recordGroup.visibility = View.VISIBLE
+        binding!!.addRecorderIv.visibility = View.INVISIBLE
+        binding!!.voiceStatusTv.text = getString(R.string.voice_listen)
     }
 
-    private void createRecordingFile() {
-
-        File file = new File(getActivity().getExternalFilesDir(Environment.DIRECTORY_MUSIC), Constants.Directory.NOTE_VOICE_RECORDER);
-
+    private fun createRecordingFile() {
+        val file = File(
+            requireActivity().getExternalFilesDir(Environment.DIRECTORY_MUSIC),
+            Constants.Directory.NOTE_VOICE_RECORDER
+        )
         if (!file.exists()) {
-            file.mkdir();
+            file.mkdir()
         }
-        outputRecorderPath = file.getPath() + File.separator + ayaId + ".3gp";
-        outputFile = new File(outputRecorderPath);
+        outputRecorderPath = file.path + File.separator + ayaId + ".3gp"
+        outputFile = File(outputRecorderPath!!)
     }
 
-    private void attachListeners() {
-        binding.saveBtn.setOnClickListener(v -> onAddNote());
-        binding.cancelBtn.setOnClickListener(v -> onCancel());
-        binding.addRecorderIv.setOnClickListener(v -> onClickRecord());
-        binding.playIv.setOnClickListener(v -> onPlayRecorder());
-        binding.removeRecordIv.setOnClickListener(v -> onRemoveRecord());
+    private fun attachListeners() {
+        binding!!.saveBtn.setOnClickListener { v: View? -> onAddNote() }
+        binding!!.cancelBtn.setOnClickListener { v: View? -> onCancel() }
+        binding!!.addRecorderIv.setOnClickListener { v: View? -> onClickRecord() }
+        binding!!.playIv.setOnClickListener { v: View? -> onPlayRecorder() }
+        binding!!.removeRecordIv.setOnClickListener { v: View? -> onRemoveRecord() }
     }
 
-    private void onAddNote() {
-        if (TextUtils.isEmpty(binding.addNoteEt.getText()) && !isRecorderAttatched && !isRecord) {
-            Toast.makeText(getActivity(), getString(R.string.note_empty), Toast.LENGTH_LONG).show();
+    private fun onAddNote() {
+        if (TextUtils.isEmpty(binding!!.addNoteEt.text) && !isRecorderAttached && !isRecord) {
+            Toast.makeText(activity, getString(R.string.note_empty), Toast.LENGTH_LONG).show()
         } else {
-            String path = "";
-            if (isRecorderAttatched || isRecord) {
-                path = outputRecorderPath;
+            var path: String? = ""
+            if (isRecorderAttached || isRecord) {
+                path = outputRecorderPath
             } else {
-                deleteRecorderFile();
+                deleteRecorderFile()
             }
-            int selectedType = binding.noteTypeGroup.indexOfChild(
-                    binding.getRoot().findViewById(binding.noteTypeGroup.getCheckedRadioButtonId())
-            );
-            listener.onAddNote(new Note(ayaId, selectedType, binding.addNoteEt.getText().toString(), path), isEditable);
-            dismiss();
+            val selectedType = binding!!.noteTypeGroup.indexOfChild(
+                binding!!.root.findViewById(binding!!.noteTypeGroup.checkedRadioButtonId)
+            )
+            listener!!.onAddNote(
+                Note(
+                    ayaId,
+                    selectedType,
+                    binding!!.addNoteEt.text.toString(),
+                    path
+                ), isEditable
+            )
+            dismiss()
         }
     }
 
-    private void onCancel() {
-        listener.onDismissDialog();
-        dismiss();
+    private fun onCancel() {
+        listener!!.onDismissDialog()
+        dismiss()
     }
 
-    private void onClickRecord() {
+    private fun onClickRecord() {
         if (isRecord) {
-            setAudioViewsVisible();
-            stopTimer();
-            stopRecorderMedia();
-            initSoundMedia();
-            isRecord = false;
-            isRecorderAttatched = true;
+            setAudioViewsVisible()
+            stopTimer()
+            stopRecorderMedia()
+            initSoundMedia()
+            isRecord = false
+            isRecorderAttached = true
         } else {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                if (ContextCompat.checkSelfPermission(getActivity(), permissions[0]) == PackageManager.PERMISSION_GRANTED
-                        && ContextCompat.checkSelfPermission(getActivity(), permissions[1]) == PackageManager.PERMISSION_GRANTED) {
-                    initRecording();
+                if (ContextCompat.checkSelfPermission(
+                        requireActivity(),
+                        permissions[0]
+                    ) == PackageManager.PERMISSION_GRANTED
+                    && ContextCompat.checkSelfPermission(
+                        requireActivity(),
+                        permissions[1]
+                    ) == PackageManager.PERMISSION_GRANTED
+                ) {
+                    initRecording()
                 } else {
-                    requestPermissions(permissions, 1);
+                    requestPermissions(permissions, 1)
                 }
             } else {
-                initRecording();
+                initRecording()
             }
         }
-
     }
 
-    private void initSoundMedia() {
-        recorderMediaHelper = new RecorderMediaHelper();
-        recorderMediaHelper.setMediaPlayerCallback(this);
-        recorderMediaHelper.setAudioPath(outputRecorderPath);
+    private fun initSoundMedia() {
+        recorderMediaHelper = RecorderMediaHelper()
+        recorderMediaHelper!!.setMediaPlayerCallback(this)
+        recorderMediaHelper!!.setAudioPath(outputRecorderPath)
     }
 
-    private void stopRecorderMedia() {
+    private fun stopRecorderMedia() {
         if (audioRecorder != null) {
             if (isRecord) {
-                audioRecorder.stop();
+                audioRecorder!!.stop()
             }
-            audioRecorder.release();
+            audioRecorder!!.release()
         }
         if (recorderMediaHelper != null) {
-            recorderMediaHelper.release();
+            recorderMediaHelper!!.release()
         }
     }
 
-    private void onPlayRecorder() {
-
+    private fun onPlayRecorder() {
         if (isPlaying) {
-            binding.playIv.setImageResource(R.drawable.player_play_white_ic);
-            recorderMediaHelper.pause();
+            binding!!.playIv.setImageResource(R.drawable.player_play_white_ic)
+            recorderMediaHelper!!.pause()
         } else {
-            binding.playIv.setImageResource(R.drawable.ic_pause);
-            recorderMediaHelper.play();
-            recorderMediaHelper.startUpdatingAudioTime();
+            binding!!.playIv.setImageResource(R.drawable.ic_pause)
+            recorderMediaHelper!!.play()
+            recorderMediaHelper!!.startUpdatingAudioTime()
             if (firstPlay) {
-                firstPlay = false;
-                binding.voiceTimerTv.setText("0:00");
+                firstPlay = false
+                binding!!.voiceTimerTv.text = "0:00"
             }
         }
-
-        isPlaying = !isPlaying;
+        isPlaying = !isPlaying
     }
 
-    private void onRemoveRecord() {
-        binding.recordGroup.setVisibility(View.GONE);
-        binding.voiceTimerTv.setVisibility(View.GONE);
-        binding.addRecorderIv.setVisibility(View.VISIBLE);
-        binding.addRecorderIv.setBackgroundResource(R.drawable.corner_primary_dialog);
-        binding.voiceStatusTv.setText(getString(R.string.add_voice));
-        recorderMediaHelper.release();
-        isRecorderAttatched = false;
+    private fun onRemoveRecord() {
+        binding!!.recordGroup.visibility = View.GONE
+        binding!!.voiceTimerTv.visibility = View.GONE
+        binding!!.addRecorderIv.visibility = View.VISIBLE
+        binding!!.addRecorderIv.setBackgroundResource(R.drawable.corner_primary_dialog)
+        binding!!.voiceStatusTv.text = getString(R.string.add_voice)
+        recorderMediaHelper!!.release()
+        isRecorderAttached = false
     }
 
-    public void deleteRecorderFile() {
-        if (outputFile.exists()) {
-            outputFile.delete();
+    fun deleteRecorderFile() {
+        if (outputFile!!.exists()) {
+            outputFile!!.delete()
         }
     }
 
-    private void listenToSeekbarChanges() {
-        binding.recorderProgress.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-                userIsSeeking = true;
+    private fun listenToSeekbarChanges() {
+        binding!!.recorderProgress.setOnSeekBarChangeListener(object : OnSeekBarChangeListener {
+            override fun onStartTrackingTouch(seekBar: SeekBar) {
+                userIsSeeking = true
             }
 
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+            override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
                 if (fromUser) {
-                    userSelectedPosition = progress;
+                    userSelectedPosition = progress
                 }
             }
 
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                userIsSeeking = false;
-                recorderMediaHelper.seekTo(userSelectedPosition);
+            override fun onStopTrackingTouch(seekBar: SeekBar) {
+                userIsSeeking = false
+                recorderMediaHelper!!.seekTo(userSelectedPosition)
             }
-        });
+        })
     }
 
-
-    private void initRecording() {
-        isRecord = true;
-        binding.addRecorderIv.setBackgroundResource(R.drawable.red_corner);
-        binding.voiceStatusTv.setText(getString(R.string.voice_recorded));
-        startTimer();
-        startRecord();
+    private fun initRecording() {
+        isRecord = true
+        binding!!.addRecorderIv.setBackgroundResource(R.drawable.red_corner)
+        binding!!.voiceStatusTv.text = getString(R.string.voice_recorded)
+        startTimer()
+        startRecord()
     }
 
-    private void startRecord() {
-        audioRecorder = new MediaRecorder();
-        audioRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-        audioRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-        audioRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);
-        audioRecorder.setOutputFile(outputRecorderPath);
+    private fun startRecord() {
+        audioRecorder = MediaRecorder()
+        audioRecorder!!.setAudioSource(MediaRecorder.AudioSource.MIC)
+        audioRecorder!!.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
+        audioRecorder!!.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT)
+        audioRecorder!!.setOutputFile(outputRecorderPath)
         try {
-            audioRecorder.prepare();
-            audioRecorder.start();
-        } catch (IOException e) {
-            e.printStackTrace();
+            audioRecorder!!.prepare()
+            audioRecorder!!.start()
+        } catch (e: IOException) {
+            e.printStackTrace()
         }
     }
 
-    private void stopTimer() {
-        binding.recorderChronometer.setVisibility(View.GONE);
-        binding.recorderChronometer.stop();
+    private fun stopTimer() {
+        binding!!.recorderChronometer.visibility = View.GONE
+        binding!!.recorderChronometer.stop()
     }
 
-    private void startTimer() {
-        binding.recorderChronometer.setVisibility(View.VISIBLE);
-        binding.recorderChronometer.setBase(SystemClock.elapsedRealtime());
-        binding.recorderChronometer.start();
+    private fun startTimer() {
+        binding!!.recorderChronometer.visibility = View.VISIBLE
+        binding!!.recorderChronometer.base = SystemClock.elapsedRealtime()
+        binding!!.recorderChronometer.start()
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        boolean isGranted = true;
-        for (int i = 0; i < permissions.length; i++) {
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        var isGranted = true
+        for (i in permissions.indices) {
             if (grantResults[i] != PackageManager.PERMISSION_GRANTED) {
-                isGranted = false;
-                break;
+                isGranted = false
+                break
             }
         }
         if (isGranted) {
-            initRecording();
+            initRecording()
         } else {
-            Toast.makeText(getActivity(), getString(R.string.accept_perm), Toast.LENGTH_LONG).show();
+            Toast.makeText(activity, getString(R.string.accept_perm), Toast.LENGTH_LONG).show()
         }
     }
 
-
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        listener.onDismissDialog();
-        stopRecorderMedia();
-        binding = null;
+    override fun onDestroyView() {
+        super.onDestroyView()
+        listener!!.onDismissDialog()
+        stopRecorderMedia()
+        binding = null
     }
 
-    @Override
-    public void onGetMaxDuration(int duration) {
-        binding.recorderProgress.setMax(duration);
+    override fun onGetMaxDuration(duration: Int) {
+        binding!!.recorderProgress.max = duration
     }
 
-    @Override
-    public void onPositionChanged(int position) {
+    override fun onPositionChanged(position: Int) {
         if (!userIsSeeking) {
             if (Build.VERSION.SDK_INT >= 24) {
-                binding.recorderProgress.setProgress(position, true);
+                binding!!.recorderProgress.setProgress(position, true)
             } else {
-                binding.recorderProgress.setProgress(position);
+                binding!!.recorderProgress.progress = position
             }
         }
     }
 
-    @Override
-    public void onStateChanged(int state) {
-        if (state == State.COMPLETED) {
-            binding.recorderProgress.setProgress(0);
-            isPlaying = false;
-            firstPlay = true;
-            binding.playIv.setImageResource(R.drawable.player_play_white_ic);
+    override fun onStateChanged(state: Int) {
+        if (state == AyaAudioHelper.AudioStateCallback.State.COMPLETED) {
+            binding!!.recorderProgress.progress = 0
+            isPlaying = false
+            firstPlay = true
+            binding!!.playIv.setImageResource(R.drawable.player_play_white_ic)
         }
     }
 
-    @Override
-    public void onUpdatedTime(String time) {
-        binding.voiceTimerTv.setText(time);
+    override fun onUpdatedTime(time: String?) {
+        binding!!.voiceTimerTv.text = time
     }
 
-    public interface AddNoteListener {
-        void onAddNote(Note note, boolean isEditable);
+    interface AddNoteListener {
+        fun onAddNote(note: Note?, isEditable: Boolean)
+        fun onDismissDialog()
+    }
 
-        void onDismissDialog();
+    companion object {
+
+        fun getInstance(ayaId: Int): AddNoteDialog {
+            val bundle = Bundle()
+            bundle.putInt("aya_id", ayaId)
+            val dialog = AddNoteDialog()
+            dialog.arguments = bundle
+            return dialog
+        }
+
+        @JvmStatic
+        fun getInstance(selectedAyaNote: Note): AddNoteDialog {
+            val bundle = Bundle()
+            bundle.putInt("aya_id", selectedAyaNote.ayaId)
+            bundle.putParcelable("selected_aya", selectedAyaNote)
+            val dialog = AddNoteDialog()
+            dialog.arguments = bundle
+            return dialog
+        }
     }
 }

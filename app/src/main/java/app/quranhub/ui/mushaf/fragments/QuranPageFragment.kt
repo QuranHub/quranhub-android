@@ -462,13 +462,13 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
         }
     }
 
-    override fun addCustomBookmark(type: BookmarkType) {
+    override fun addCustomBookmark(type: BookmarkType?) {
         if (currentAya != null) {
             presenter!!.insertCustomBookmark(currentAya, type)
         }
     }
 
-    override fun onTafserClick() {
+    override fun onTafseerClick() {
         val fragment = parentFragment
         if (fragment is MushafFragment) {
             fragment.openTranslationDialog(
@@ -489,7 +489,7 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
 
     private fun openAddNoteDialog() {
         val dialog: AddNoteDialog = if (selectedAyaNote != null) {
-            AddNoteDialog.getInstance(selectedAyaNote)
+            AddNoteDialog.getInstance(selectedAyaNote!!)
         } else {
             AddNoteDialog.getInstance(currentAya!!.id)
         }
@@ -634,7 +634,7 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
     val currentAyaId: Int
         get() = currentAya!!.id
 
-    override fun onAddNote(note: Note, isEditable: Boolean) {
+    override fun onAddNote(note: Note?, isEditable: Boolean) {
         requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         presenter!!.addNote(note)
         if (isEditable) {
