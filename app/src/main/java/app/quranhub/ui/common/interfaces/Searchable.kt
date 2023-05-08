@@ -1,7 +1,5 @@
-package app.quranhub.ui.common.interfaces;
+package app.quranhub.ui.common.interfaces
 
-public interface Searchable {
-
-    void search(String text);
-
+interface Searchable {
+    fun search(text: String?)
 }

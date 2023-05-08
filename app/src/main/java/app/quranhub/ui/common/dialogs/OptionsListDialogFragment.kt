@@ -1,191 +1,195 @@
-package app.quranhub.ui.common.dialogs;
+package app.quranhub.ui.common.dialogs
 
-import android.app.Dialog;
-import android.content.Context;
-import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
-import android.os.Bundle;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.view.Window;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.DialogFragment;
-import androidx.fragment.app.Fragment;
-import androidx.recyclerview.widget.DividerItemDecoration;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import app.quranhub.databinding.DialogOptionsListBinding;
-import app.quranhub.util.DialogUtils;
+import android.app.Dialog
+import android.content.Context
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.view.Window
+import androidx.fragment.app.DialogFragment
+import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.DividerItemDecoration
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import app.quranhub.databinding.DialogOptionsListBinding
+import app.quranhub.util.DialogUtils.adjustDialogSize
 
 /**
  * Display options as a list (single selection)
  */
-public class OptionsListDialogFragment extends DialogFragment implements OptionsListAdapter.ItemClickListener {
+class OptionsListDialogFragment : DialogFragment(), OptionsListAdapter.ItemClickListener {
 
-    private static final String TAG = OptionsListDialogFragment.class.getSimpleName();
+    private var dialogTitle: String? = null
+    private var options: List<String>? = null
+    private var optionsThumbnailsDrawableIds: IntArray? = null
+    private var selectedOptionIndex = 0
+    private var binding: DialogOptionsListBinding? = null
+    private var itemSelectionListener: ItemSelectionListener? = null
 
-    private static final String ARG_DIALOG_TITLE = "ARG_DIALOG_TITLE";
-    private static final String ARG_DIALOG_OPTIONS = "ARG_DIALOG_OPTIONS";
-    private static final String ARG_DIALOG_OPTIONS_THUMBNAILS = "ARG_DIALOG_OPTIONS_THUMBNAILS";
-    private static final String ARG_SELECTED_OPTION_INDEX = "ARG_SELECTED_OPTION_INDEX";
-
-    private String dialogTitle;
-    private List<String> options;
-    private int[] optionsThumbnailsDrawableIds;
-    private int selectedOptionIndex;
-
-    private DialogOptionsListBinding binding;
-
-    private ItemSelectionListener itemSelectionListener;
-
-    public OptionsListDialogFragment() {
-        // default constructor
-    }
-
-    public static OptionsListDialogFragment getInstance(@NonNull String dialogTitle
-            , @NonNull List<String> options, @NonNull Fragment targetFragment, int requestCode) {
-        return getInstance(dialogTitle, options, -1, targetFragment, requestCode);
-    }
-
-    public static OptionsListDialogFragment getInstance(@NonNull String dialogTitle
-            , int[] optionsResIds, @NonNull Fragment targetFragment, int requestCode) {
-        return getInstance(dialogTitle, optionsResIds, -1, targetFragment, requestCode);
-    }
-
-    public static OptionsListDialogFragment getInstance(@NonNull String dialogTitle
-            , int[] optionsResIds, int selectedOptionIndex, @NonNull Fragment targetFragment
-            , int requestCode) {
-        List<String> options = new ArrayList<>();
-        for (int stringResId : optionsResIds) {
-            options.add(targetFragment.getString(stringResId));
-        }
-
-        return getInstance(dialogTitle, options, selectedOptionIndex, targetFragment, requestCode);
-    }
-
-    public static OptionsListDialogFragment getInstance(@NonNull String dialogTitle
-            , @NonNull List<String> options, int selectedOptionIndex, @NonNull Fragment targetFragment
-            , int requestCode) {
-        OptionsListDialogFragment fragment = new OptionsListDialogFragment();
-        Bundle args = new Bundle();
-        args.putString(ARG_DIALOG_TITLE, dialogTitle);
-        args.putStringArrayList(ARG_DIALOG_OPTIONS, new ArrayList<>(options));
-        args.putInt(ARG_SELECTED_OPTION_INDEX, selectedOptionIndex);
-        fragment.setArguments(args);
-        fragment.setTargetFragment(targetFragment, requestCode);
-        return fragment;
-    }
-
-    public static OptionsListDialogFragment getInstance(@NonNull String dialogTitle
-            , int[] optionsResIds, int[] optionsThumbnailsDrawableIds, int selectedOptionIndex
-            , @NonNull Fragment targetFragment, int requestCode) {
-        List<String> options = new ArrayList<>();
-        for (int stringResId : optionsResIds) {
-            options.add(targetFragment.getString(stringResId));
-        }
-
-        OptionsListDialogFragment fragment = new OptionsListDialogFragment();
-        Bundle args = new Bundle();
-        args.putString(ARG_DIALOG_TITLE, dialogTitle);
-        args.putStringArrayList(ARG_DIALOG_OPTIONS, new ArrayList<>(options));
-        args.putIntArray(ARG_DIALOG_OPTIONS_THUMBNAILS, optionsThumbnailsDrawableIds);
-        args.putInt(ARG_SELECTED_OPTION_INDEX, selectedOptionIndex);
-        fragment.setArguments(args);
-        fragment.setTargetFragment(targetFragment, requestCode);
-        return fragment;
-    }
-
-    @Override
-    public void onAttach(@NonNull Context context) {
-        super.onAttach(context);
-
-        try {
-            itemSelectionListener = (ItemSelectionListener) getTargetFragment();
-        } catch (ClassCastException e) {
-            throw new ClassCastException(getTargetFragment().getClass().getSimpleName()
-                    + " must implement OptionsListDialogFragment#ItemSelectionListener");
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        itemSelectionListener = try {
+            targetFragment as ItemSelectionListener?
+        } catch (e: ClassCastException) {
+            throw ClassCastException(
+                targetFragment!!.javaClass.simpleName
+                        + " must implement OptionsListDialogFragment#ItemSelectionListener"
+            )
         }
     }
 
-    @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
-        if (getArguments() != null) {
-            dialogTitle = getArguments().getString(ARG_DIALOG_TITLE);
-            options = getArguments().getStringArrayList(ARG_DIALOG_OPTIONS);
-            optionsThumbnailsDrawableIds = getArguments().getIntArray(ARG_DIALOG_OPTIONS_THUMBNAILS);
-            selectedOptionIndex = getArguments().getInt(ARG_SELECTED_OPTION_INDEX);
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        arguments?.let {
+            dialogTitle = it.getString(ARG_DIALOG_TITLE)
+            options = it.getStringArrayList(ARG_DIALOG_OPTIONS)
+            optionsThumbnailsDrawableIds = it.getIntArray(ARG_DIALOG_OPTIONS_THUMBNAILS)
+            selectedOptionIndex = it.getInt(ARG_SELECTED_OPTION_INDEX)
         }
     }
 
-    @NonNull
-    @Override
-    public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
-        final Dialog dialog = super.onCreateDialog(savedInstanceState);
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-        return dialog;
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        val dialog = super.onCreateDialog(savedInstanceState)
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        dialog.window!!.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        return dialog
     }
 
-    @Nullable
-    @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container
-            , @Nullable Bundle savedInstanceState) {
-        binding = DialogOptionsListBinding.inflate(inflater, container, false);
-
-        initDialogView();
-
-        return binding.getRoot();
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
+    ): View {
+        binding = DialogOptionsListBinding.inflate(inflater, container, false)
+        initDialogView()
+        return binding!!.root
     }
 
-    private void initDialogView() {
-        binding.tvTitle.setText(dialogTitle);
-
-        binding.rvOptions.setHasFixedSize(true);
-        binding.rvOptions.setLayoutManager(new LinearLayoutManager(
-                getContext(), RecyclerView.VERTICAL, false));
-        binding.rvOptions.addItemDecoration(new DividerItemDecoration(
-                getContext(), DividerItemDecoration.VERTICAL));
-        OptionsListAdapter adapter = new OptionsListAdapter(options, optionsThumbnailsDrawableIds
-                , selectedOptionIndex, this);
-        binding.rvOptions.setAdapter(adapter);
+    private fun initDialogView() {
+        binding!!.tvTitle.text = dialogTitle
+        binding!!.rvOptions.setHasFixedSize(true)
+        binding!!.rvOptions.layoutManager = LinearLayoutManager(
+            context, RecyclerView.VERTICAL, false
+        )
+        binding!!.rvOptions.addItemDecoration(
+            DividerItemDecoration(
+                context, DividerItemDecoration.VERTICAL
+            )
+        )
+        val adapter = OptionsListAdapter(
+            options!!, optionsThumbnailsDrawableIds, selectedOptionIndex, this
+        )
+        binding!!.rvOptions.adapter = adapter
     }
 
-    @Override
-    public void onResume() {
-        super.onResume();
-
-        DialogUtils.adjustDialogSize(this);
+    override fun onResume() {
+        super.onResume()
+        adjustDialogSize(this)
     }
 
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        binding = null;
+    override fun onDestroyView() {
+        super.onDestroyView()
+        binding = null
     }
 
-    @Override
-    public void onDetach() {
-        super.onDetach();
-        itemSelectionListener = null;
+    override fun onDetach() {
+        super.onDetach()
+        itemSelectionListener = null
     }
 
-    @Override
-    public void onItemClick(int clickedItemIndex) {
-        itemSelectionListener.onItemSelected(getTargetRequestCode(), clickedItemIndex);
-        dismiss();
+    override fun onItemClick(clickedItemIndex: Int) {
+        itemSelectionListener!!.onItemSelected(targetRequestCode, clickedItemIndex)
+        dismiss()
     }
 
+    interface ItemSelectionListener {
+        fun onItemSelected(requestCode: Int, itemIndex: Int)
+    }
 
-    public interface ItemSelectionListener {
-        void onItemSelected(int requestCode, int itemIndex);
+    companion object {
+        private val TAG = OptionsListDialogFragment::class.java.simpleName
+
+        private const val ARG_DIALOG_TITLE = "ARG_DIALOG_TITLE"
+        private const val ARG_DIALOG_OPTIONS = "ARG_DIALOG_OPTIONS"
+        private const val ARG_DIALOG_OPTIONS_THUMBNAILS = "ARG_DIALOG_OPTIONS_THUMBNAILS"
+        private const val ARG_SELECTED_OPTION_INDEX = "ARG_SELECTED_OPTION_INDEX"
+
+        @JvmStatic
+        fun getInstance(
+            dialogTitle: String, options: List<String?>, targetFragment: Fragment, requestCode: Int
+        ): OptionsListDialogFragment {
+            return getInstance(dialogTitle, options, -1, targetFragment, requestCode)
+        }
+
+        @JvmStatic
+        fun getInstance(
+            dialogTitle: String, optionsResIds: IntArray, targetFragment: Fragment, requestCode: Int
+        ): OptionsListDialogFragment {
+            return getInstance(dialogTitle, optionsResIds, -1, targetFragment, requestCode)
+        }
+
+        @JvmStatic
+        fun getInstance(
+            dialogTitle: String,
+            optionsResIds: IntArray,
+            selectedOptionIndex: Int,
+            targetFragment: Fragment,
+            requestCode: Int
+        ): OptionsListDialogFragment {
+            val options: MutableList<String?> = ArrayList()
+            for (stringResId in optionsResIds) {
+                options.add(targetFragment.getString(stringResId))
+            }
+            return getInstance(
+                dialogTitle,
+                options,
+                selectedOptionIndex,
+                targetFragment,
+                requestCode
+            )
+        }
+
+        @JvmStatic
+        fun getInstance(
+            dialogTitle: String,
+            options: List<String?>,
+            selectedOptionIndex: Int,
+            targetFragment: Fragment,
+            requestCode: Int
+        ): OptionsListDialogFragment {
+            val fragment = OptionsListDialogFragment()
+            val args = Bundle()
+            args.putString(ARG_DIALOG_TITLE, dialogTitle)
+            args.putStringArrayList(ARG_DIALOG_OPTIONS, ArrayList(options))
+            args.putInt(ARG_SELECTED_OPTION_INDEX, selectedOptionIndex)
+            fragment.arguments = args
+            fragment.setTargetFragment(targetFragment, requestCode)
+            return fragment
+        }
+
+        @JvmStatic
+        fun getInstance(
+            dialogTitle: String,
+            optionsResIds: IntArray,
+            optionsThumbnailsDrawableIds: IntArray?,
+            selectedOptionIndex: Int,
+            targetFragment: Fragment,
+            requestCode: Int
+        ): OptionsListDialogFragment {
+            val options: MutableList<String> = ArrayList()
+            for (stringResId in optionsResIds) {
+                options.add(targetFragment.getString(stringResId))
+            }
+            val fragment = OptionsListDialogFragment()
+            val args = Bundle()
+            args.putString(ARG_DIALOG_TITLE, dialogTitle)
+            args.putStringArrayList(ARG_DIALOG_OPTIONS, ArrayList(options))
+            args.putIntArray(ARG_DIALOG_OPTIONS_THUMBNAILS, optionsThumbnailsDrawableIds)
+            args.putInt(ARG_SELECTED_OPTION_INDEX, selectedOptionIndex)
+            fragment.arguments = args
+            fragment.setTargetFragment(targetFragment, requestCode)
+            return fragment
+        }
     }
 }

@@ -1,15 +1,14 @@
-package app.quranhub.ui.common.interfaces;
+package app.quranhub.ui.common.interfaces
 
-public interface ToolbarActionsListener {
+interface ToolbarActionsListener {
 
-    void onNavDrawerClick();
+    fun onNavDrawerClick()
 
-    void onSuraClick();
+    fun onSuraClick()
 
-    void onGuz2Click();
+    fun onGuz2Click()
 
-    void onBookmarkClick();
+    fun onBookmarkClick()
 
-    void selectNavDrawerItem(long itemIdentifier, boolean fireOnClick);
-
+    fun selectNavDrawerItem(itemIdentifier: Long, fireOnClick: Boolean)
 }
