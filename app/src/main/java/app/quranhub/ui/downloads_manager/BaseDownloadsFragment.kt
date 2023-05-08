@@ -1,246 +1,201 @@
-package app.quranhub.ui.downloads_manager;
+package app.quranhub.ui.downloads_manager
 
-import android.annotation.SuppressLint;
-import android.content.Context;
-import android.os.AsyncTask;
-import android.os.Bundle;
-import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
-import androidx.recyclerview.widget.DividerItemDecoration;
-import androidx.recyclerview.widget.LinearLayoutManager;
-
-import org.greenrobot.eventbus.EventBus;
-import org.greenrobot.eventbus.Subscribe;
-import org.greenrobot.eventbus.ThreadMode;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import app.quranhub.data.service.QuranAudioDownloaderService;
-import app.quranhub.databinding.FragmentDownloadsBinding;
-import app.quranhub.ui.downloads_manager.adapters.DownloadsAdapter;
-import app.quranhub.ui.downloads_manager.model.DisplayableDownload;
+import android.annotation.SuppressLint
+import android.content.Context
+import android.os.AsyncTask
+import android.os.Bundle
+import android.util.Log
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.DividerItemDecoration
+import androidx.recyclerview.widget.LinearLayoutManager
+import app.quranhub.data.service.QuranAudioDownloaderService.DownloadFinishEvent
+import app.quranhub.databinding.FragmentDownloadsBinding
+import app.quranhub.ui.downloads_manager.BaseDownloadsFragment.DownloadsManagerNavigationCallbacks
+import app.quranhub.ui.downloads_manager.adapters.DownloadsAdapter
+import app.quranhub.ui.downloads_manager.model.DisplayableDownload
+import org.greenrobot.eventbus.EventBus
+import org.greenrobot.eventbus.Subscribe
+import org.greenrobot.eventbus.ThreadMode
 
 /**
  * Base for downloads screen fragments.
- * <p>
- * Args [optional]:  (ARG_DESCRIPTION -> String), (ARG_EDITABLE -> boolean)
- * </p>
- * <p>
- * Activities or parent fragments containing a subclass of {@link BaseDownloadsFragment}
- * must implement {@link DownloadsManagerNavigationCallbacks} interface.
- * </p>
+ *
+ *
+ * Args (optional):  (ARG_DESCRIPTION -> String), (ARG_EDITABLE -> boolean)
+ *
+ *
+ *
+ * Activities or parent fragments containing a subclass of [BaseDownloadsFragment]
+ * must implement [DownloadsManagerNavigationCallbacks] interface.
+ *
  */
-public abstract class BaseDownloadsFragment extends Fragment
-        implements Editable, DownloadsAdapter.ItemClickListener {
+abstract class BaseDownloadsFragment : Fragment(), Editable, DownloadsAdapter.ItemClickListener {
 
-    private static final String TAG = BaseDownloadsFragment.class.getSimpleName();
+    private var binding: FragmentDownloadsBinding? = null
 
-    protected static final String ARG_DESCRIPTION = "ARG_DESCRIPTION";
-    protected static final String ARG_EDITABLE = "ARG_EDITABLE";
+    protected var displayableDownloads: List<DisplayableDownload>? = null
+        private set
+    protected var downloadsAdapter: DownloadsAdapter? = null
+        private set
+    private var description: String? = null
+    private var editable = false
 
-    private static final String STATE_EDITABLE = "STATE_EDITABLE";
+    protected var navigationCallbacks: DownloadsManagerNavigationCallbacks? = null
 
-    private FragmentDownloadsBinding binding;
-
-    private List<DisplayableDownload> displayableDownloads;
-    private DownloadsAdapter downloadsAdapter;
-
-    @Nullable
-    private String description;
-    private boolean editable = false;
-
-    protected DownloadsManagerNavigationCallbacks navigationCallbacks;
-
-    public BaseDownloadsFragment() {
-        // Required empty public constructor
-    }
-
-    @Override
-    public void onAttach(@NonNull Context context) {
-        super.onAttach(context);
-
-        if (context instanceof DownloadsManagerNavigationCallbacks) {
-            navigationCallbacks = (DownloadsManagerNavigationCallbacks) context;
-        } else if (getParentFragment() instanceof DownloadsManagerNavigationCallbacks) {
-            navigationCallbacks = (DownloadsManagerNavigationCallbacks) getParentFragment();
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        navigationCallbacks = if (context is DownloadsManagerNavigationCallbacks) {
+            context
+        } else if (parentFragment is DownloadsManagerNavigationCallbacks) {
+            parentFragment as DownloadsManagerNavigationCallbacks?
         } else {
-            throw new RuntimeException("Activities or parent fragments containing a subclass of " +
-                    "BaseDownloadsFragment must implement DownloadsManagerNavigationCallbacks interface.");
+            throw RuntimeException(
+                "Activities or parent fragments containing a subclass of " +
+                        "BaseDownloadsFragment must implement DownloadsManagerNavigationCallbacks interface."
+            )
         }
     }
 
-    @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
-        if (getArguments() != null) {
-            description = getArguments().getString(ARG_DESCRIPTION);
-            editable = getArguments().getBoolean(ARG_EDITABLE, false);
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        arguments?.let {
+            description = it.getString(ARG_DESCRIPTION)
+            editable = it.getBoolean(ARG_EDITABLE, false)
         }
     }
 
-    @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        binding = FragmentDownloadsBinding.inflate(inflater, container, false);
-        return binding.getRoot();
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        binding = FragmentDownloadsBinding.inflate(inflater, container, false)
+        return binding!!.root
     }
 
-    @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
         if (savedInstanceState != null) {
-            editable = savedInstanceState.getBoolean(STATE_EDITABLE);
+            editable = savedInstanceState.getBoolean(STATE_EDITABLE)
         }
-
-        setupDescription();
-        setupDownloadsRecyclerView();
+        setupDescription()
+        setupDownloadsRecyclerView()
     }
 
-    private void setupDescription() {
+    private fun setupDescription() {
         if (description != null) {
-            binding.tvDescription.setText(description);
+            binding!!.tvDescription.text = description
         } else {
-            binding.tvDescription.setVisibility(View.GONE);
+            binding!!.tvDescription.visibility = View.GONE
         }
     }
 
-    private void setupDownloadsRecyclerView() {
-        binding.rvDownloads.setHasFixedSize(true);
-
-        LinearLayoutManager layoutManager = new LinearLayoutManager(requireContext());
-        binding.rvDownloads.setLayoutManager(layoutManager);
+    private fun setupDownloadsRecyclerView() {
+        binding!!.rvDownloads.setHasFixedSize(true)
+        val layoutManager = LinearLayoutManager(requireContext())
+        binding!!.rvDownloads.layoutManager = layoutManager
 
         // add dividers between RecyclerView items
-        DividerItemDecoration dividerItemDecoration = new DividerItemDecoration(requireContext(),
-                layoutManager.getOrientation());
-        binding.rvDownloads.addItemDecoration(dividerItemDecoration);
-
-        displayableDownloads = new ArrayList<>();
-        downloadsAdapter = new DownloadsAdapter(displayableDownloads, this, editable);
-        binding.rvDownloads.setAdapter(downloadsAdapter);
+        val dividerItemDecoration = DividerItemDecoration(
+            requireContext(),
+            layoutManager.orientation
+        )
+        binding!!.rvDownloads.addItemDecoration(dividerItemDecoration)
+        displayableDownloads = mutableListOf()
+        downloadsAdapter = DownloadsAdapter(displayableDownloads!!, this, editable)
+        binding!!.rvDownloads.adapter = downloadsAdapter
     }
 
-    @Override
-    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
-
-        displayDownloadItems();
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        super.onActivityCreated(savedInstanceState)
+        displayDownloadItems()
     }
 
     @SuppressLint("StaticFieldLeak")
-    private void displayDownloadItems() {
-        new AsyncTask<Void, Void, List<DisplayableDownload>>() {
+    private fun displayDownloadItems() {
+        object : AsyncTask<Void?, Void?, List<DisplayableDownload>>() {
 
-            @Override
-            protected void onPreExecute() {
-                binding.progressBar.setVisibility(View.VISIBLE);
+            override fun onPreExecute() {
+                binding!!.progressBar.visibility = View.VISIBLE
             }
 
-            @Override
-            protected List<DisplayableDownload> doInBackground(Void... voids) {
-                return provideDisplayableDownloads();
+            override fun doInBackground(vararg voids: Void?): List<DisplayableDownload> {
+                return provideDisplayableDownloads()
             }
 
-            @Override
-            protected void onPostExecute(List<DisplayableDownload> downloads) {
-                Log.d(TAG, "Provided displayableDownloads=" + downloads);
-                displayableDownloads = downloads;
-                downloadsAdapter.setDisplayableDownloads(displayableDownloads);
-                binding.progressBar.setVisibility(View.GONE);
+            override fun onPostExecute(downloads: List<DisplayableDownload>) {
+                Log.d(TAG, "Provided displayableDownloads=$downloads")
+                displayableDownloads = downloads
+                downloadsAdapter!!.setDisplayableDownloads(displayableDownloads!!)
+                binding!!.progressBar.visibility = View.GONE
             }
-        }.execute();
+        }.execute()
     }
 
-    protected void refresh() {
-        displayDownloadItems();
+    protected fun refresh() {
+        displayDownloadItems()
     }
 
-    public boolean getEditable() {
-        return editable;
+    fun getEditable(): Boolean {
+        return editable
     }
 
     /**
      * This method will be called from a background thread. You don't have to create a new one.
      */
-    @NonNull
-    protected abstract List<DisplayableDownload> provideDisplayableDownloads();
-
-    @Override
-    public void onStart() {
-        super.onStart();
-        EventBus.getDefault().register(this);
+    protected abstract fun provideDisplayableDownloads(): List<DisplayableDownload>
+    override fun onStart() {
+        super.onStart()
+        EventBus.getDefault().register(this)
     }
 
-    @Override
-    public void onSaveInstanceState(@NonNull Bundle outState) {
-        super.onSaveInstanceState(outState);
-        outState.putBoolean(STATE_EDITABLE, editable);
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean(STATE_EDITABLE, editable)
     }
 
-    @Override
-    public void onStop() {
-        super.onStop();
-        EventBus.getDefault().unregister(this);
+    override fun onStop() {
+        super.onStop()
+        EventBus.getDefault().unregister(this)
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onDownloadFinishEvent(QuranAudioDownloaderService.DownloadFinishEvent event) {
-        refresh();
+    fun onDownloadFinishEvent(event: DownloadFinishEvent?) {
+        refresh()
     }
 
-    ;
-
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        binding = null;
+    override fun onDestroyView() {
+        super.onDestroyView()
+        binding = null
     }
 
-    @Override
-    public void setEditable(boolean isEditable) {
-        editable = isEditable;
-        if (downloadsAdapter != null) {
-            downloadsAdapter.setEdit(editable);
+    override var isEditable: Boolean
+        get() = editable
+        set(value) {
+            editable = value
+            downloadsAdapter?.setEdit(editable)
         }
-    }
-
-    @Override
-    public boolean isEditable() {
-        return editable;
-    }
-
-    protected DownloadsAdapter getDownloadsAdapter() {
-        return downloadsAdapter;
-    }
-
-    protected List<DisplayableDownload> getDisplayableDownloads() {
-        return displayableDownloads;
-    }
 
     /**
-     * Activities or parent fragments containing a subclass of {@link BaseDownloadsFragment}
+     * Activities or parent fragments containing a subclass of [BaseDownloadsFragment]
      * must implement this interface.
      */
-    public interface DownloadsManagerNavigationCallbacks {
+    interface DownloadsManagerNavigationCallbacks {
+        fun gotoDownloadsRecitations()
+        fun gotoDownloadsReciters(recitationId: Int)
+        fun gotoDownloadsSuras(recitationId: Int, reciterId: String, reciterName: String)
+        fun openRecitersDialog(recitationId: Int)
+        fun openAudioDownloadAmountDialog(recitationId: Int, reciterId: String)
+    }
 
-        void gotoDownloadsRecitations();
+    companion object {
+        private val TAG = BaseDownloadsFragment::class.java.simpleName
 
-        void gotoDownloadsReciters(int recitationId);
+        const val ARG_DESCRIPTION = "ARG_DESCRIPTION"
+        const val ARG_EDITABLE = "ARG_EDITABLE"
 
-        void gotoDownloadsSuras(int recitationId, @NonNull String reciterId, @NonNull String reciterName);
-
-        void openRecitersDialog(int recitationId);
-
-        void openAudioDownloadAmountDialog(int recitationId, @NonNull String reciterId);
-
+        private const val STATE_EDITABLE = "STATE_EDITABLE"
     }
 }

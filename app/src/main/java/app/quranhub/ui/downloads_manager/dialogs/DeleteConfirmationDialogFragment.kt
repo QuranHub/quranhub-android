@@ -1,147 +1,135 @@
-package app.quranhub.ui.downloads_manager.dialogs;
+package app.quranhub.ui.downloads_manager.dialogs
 
-import android.app.Dialog;
-import android.content.Context;
-import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
-import android.os.Bundle;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.view.Window;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.DialogFragment;
-
-import app.quranhub.databinding.DialogConfirmationBinding;
-import app.quranhub.util.DialogUtils;
+import android.app.Dialog
+import android.content.Context
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.view.Window
+import androidx.fragment.app.DialogFragment
+import app.quranhub.databinding.DialogConfirmationBinding
+import app.quranhub.util.DialogUtils.wrapDialogHeight
 
 /**
- * A {@code DialogFragment} to confirm deletion action.
- * Use the {@link DeleteConfirmationDialogFragment#newInstance} factory method to
+ * A `DialogFragment` to confirm deletion action.
+ * Use the [DeleteConfirmationDialogFragment.newInstance] factory method to
  * create an instance of this fragment.
  */
-public class DeleteConfirmationDialogFragment extends DialogFragment {
+class DeleteConfirmationDialogFragment : DialogFragment() {
 
-    private static final String TAG = DeleteConfirmationDialogFragment.class.getSimpleName();
+    private var title: String? = null
+    private var description: String? = null
+    private var deletePosition = 0
+    private var binding: DialogConfirmationBinding? = null
+    private var callbacks: DeleteConfirmationCallbacks? = null
 
-    private static final String ARG_DIALOG_TITLE = "ARG_DIALOG_TITLE";
-    private static final String ARG_DIALOG_DESCRIPTION = "ARG_DIALOG_DESCRIPTION";
-    private static final String ARG_DELETE_POSITION = "ARG_DELETE_POSITION";
-
-    private String title;
-    private String description;
-    private int deletePosition;
-
-    private DialogConfirmationBinding binding;
-
-    private DeleteConfirmationCallbacks callbacks;
-
-    public DeleteConfirmationDialogFragment() {
-        // Required empty public constructor
-    }
-
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param title       Dialog title.
-     * @param description Dialog description.
-     * @return A new instance of fragment DeleteConfirmationDialogFragment.
-     */
-    public static DeleteConfirmationDialogFragment newInstance(String title, String description
-            , int deletePosition) {
-        DeleteConfirmationDialogFragment fragment = new DeleteConfirmationDialogFragment();
-        Bundle args = new Bundle();
-        args.putString(ARG_DIALOG_TITLE, title);
-        args.putString(ARG_DIALOG_DESCRIPTION, description);
-        args.putInt(ARG_DELETE_POSITION, deletePosition);
-        fragment.setArguments(args);
-        return fragment;
-    }
-
-    @Override
-    public void onAttach(@NonNull Context context) {
-        super.onAttach(context);
-        if (context instanceof DeleteConfirmationCallbacks) {
-            callbacks = (DeleteConfirmationCallbacks) context;
-        } else if (getParentFragment() instanceof DeleteConfirmationCallbacks) {
-            callbacks = (DeleteConfirmationCallbacks) getParentFragment();
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        callbacks = if (context is DeleteConfirmationCallbacks) {
+            context
+        } else if (parentFragment is DeleteConfirmationCallbacks) {
+            parentFragment as DeleteConfirmationCallbacks?
         } else {
-            throw new RuntimeException("The containing fragment or activity must implement" +
-                    " DeleteConfirmationDialogFragment#DeleteConfirmationCallbacks interface");
+            throw RuntimeException(
+                "The containing fragment or activity must implement" +
+                        " DeleteConfirmationDialogFragment#DeleteConfirmationCallbacks interface"
+            )
         }
     }
 
-    @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            title = getArguments().getString(ARG_DIALOG_TITLE);
-            description = getArguments().getString(ARG_DIALOG_DESCRIPTION);
-            deletePosition = getArguments().getInt(ARG_DELETE_POSITION);
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        arguments?.let {
+            title = it.getString(ARG_DIALOG_TITLE)
+            description = it.getString(ARG_DIALOG_DESCRIPTION)
+            deletePosition = it.getInt(ARG_DELETE_POSITION)
         }
     }
 
-    @NonNull
-    @Override
-    public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
-        final Dialog dialog = super.onCreateDialog(savedInstanceState);
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-        return dialog;
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        val dialog = super.onCreateDialog(savedInstanceState)
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        dialog.window!!.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        return dialog
     }
 
-    @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
         // Inflate the layout for this fragment
-        binding = DialogConfirmationBinding.inflate(inflater, container, false);
-        initDialogView();
-        return binding.getRoot();
+        binding = DialogConfirmationBinding.inflate(inflater, container, false)
+        initDialogView()
+        return binding!!.root
     }
 
-    private void initDialogView() {
-        binding.tvTitle.setText(title);
-        binding.tvDescription.setText(description);
+    private fun initDialogView() {
+        binding!!.tvTitle.text = title
+        binding!!.tvDescription.text = description
     }
 
-    @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-        attachListeners();
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        attachListeners()
     }
 
-    private void attachListeners() {
-        binding.btnCancel.setOnClickListener(v -> onCancelBtnClick());
-        binding.btnConfirm.setOnClickListener(v -> onConfirmBtnClick());
+    private fun attachListeners() {
+        binding!!.btnCancel.setOnClickListener { onCancelBtnClick() }
+        binding!!.btnConfirm.setOnClickListener { onConfirmBtnClick() }
     }
 
-    @Override
-    public void onResume() {
-        super.onResume();
-
-        DialogUtils.wrapDialogHeight(this);
+    override fun onResume() {
+        super.onResume()
+        wrapDialogHeight(this)
     }
 
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        binding = null;
+    override fun onDestroyView() {
+        super.onDestroyView()
+        binding = null
     }
 
-    private void onCancelBtnClick() {
-        dismiss();
+    private fun onCancelBtnClick() {
+        dismiss()
     }
 
-    private void onConfirmBtnClick() {
-        callbacks.onConfirmDelete(deletePosition);
-        dismiss();
+    private fun onConfirmBtnClick() {
+        callbacks!!.onConfirmDelete(deletePosition)
+        dismiss()
     }
 
-    public interface DeleteConfirmationCallbacks {
-        void onConfirmDelete(int deletePosition);
+    interface DeleteConfirmationCallbacks {
+        fun onConfirmDelete(deletePosition: Int)
     }
 
+    companion object {
+        private val TAG = DeleteConfirmationDialogFragment::class.java.simpleName
+
+        private const val ARG_DIALOG_TITLE = "ARG_DIALOG_TITLE"
+        private const val ARG_DIALOG_DESCRIPTION = "ARG_DIALOG_DESCRIPTION"
+        private const val ARG_DELETE_POSITION = "ARG_DELETE_POSITION"
+
+        /**
+         * Use this factory method to create a new instance of
+         * this fragment using the provided parameters.
+         *
+         * @param title       Dialog title.
+         * @param description Dialog description.
+         * @return A new instance of fragment DeleteConfirmationDialogFragment.
+         */
+        @JvmStatic
+        fun newInstance(
+            title: String?, description: String?, deletePosition: Int
+        ): DeleteConfirmationDialogFragment {
+            val fragment = DeleteConfirmationDialogFragment()
+            val args = Bundle()
+            args.putString(ARG_DIALOG_TITLE, title)
+            args.putString(ARG_DIALOG_DESCRIPTION, description)
+            args.putInt(ARG_DELETE_POSITION, deletePosition)
+            fragment.arguments = args
+            return fragment
+        }
+    }
 }

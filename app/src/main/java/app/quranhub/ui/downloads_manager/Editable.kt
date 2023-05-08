@@ -1,9 +1,5 @@
-package app.quranhub.ui.downloads_manager;
+package app.quranhub.ui.downloads_manager
 
-public interface Editable {
-
-    void setEditable(boolean isEditable);
-
-    boolean isEditable();
-
+interface Editable {
+    var isEditable: Boolean
 }

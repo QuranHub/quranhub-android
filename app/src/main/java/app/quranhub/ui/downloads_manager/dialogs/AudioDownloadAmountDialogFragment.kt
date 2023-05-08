@@ -1,257 +1,238 @@
-package app.quranhub.ui.downloads_manager.dialogs;
+package app.quranhub.ui.downloads_manager.dialogs
 
-
-import static app.quranhub.util.DialogUtils.DIALOG_STD_WIDTH_SCREEN_RATIO_LANDSCAPE;
-import static app.quranhub.util.DialogUtils.DIALOG_STD_WIDTH_SCREEN_RATIO_PORTRAIT;
-
-import android.annotation.SuppressLint;
-import android.app.Dialog;
-import android.content.Context;
-import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
-import android.os.AsyncTask;
-import android.os.Bundle;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.view.Window;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.TextView;
-import android.widget.Toast;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.DialogFragment;
-
-import app.quranhub.R;
-import app.quranhub.data.Constants;
-import app.quranhub.data.local.db.UserDatabase;
-import app.quranhub.data.local.entity.ReciterRecitation;
-import app.quranhub.data.service.QuranAudioDownloaderService;
-import app.quranhub.databinding.DialogAudioDownloadAmountBinding;
-import app.quranhub.util.DialogUtils;
-import app.quranhub.util.NetworkUtil;
+import android.annotation.SuppressLint
+import android.app.Dialog
+import android.content.Context
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
+import android.os.AsyncTask
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.view.Window
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
+import android.widget.TextView
+import android.widget.Toast
+import androidx.fragment.app.DialogFragment
+import app.quranhub.R
+import app.quranhub.data.local.db.UserDatabase
+import app.quranhub.data.local.entity.ReciterRecitation
+import app.quranhub.data.service.QuranAudioDownloaderService.Companion.downloadQuran
+import app.quranhub.data.service.QuranAudioDownloaderService.Companion.downloadSura
+import app.quranhub.databinding.DialogAudioDownloadAmountBinding
+import app.quranhub.util.DialogUtils.DIALOG_STD_WIDTH_SCREEN_RATIO_LANDSCAPE
+import app.quranhub.util.DialogUtils.DIALOG_STD_WIDTH_SCREEN_RATIO_PORTRAIT
+import app.quranhub.util.DialogUtils.adjustDialogSize
+import app.quranhub.util.NetworkUtil.isNetworkAvailable
 
 /**
- * A {@code DialogFragment} that allows the user to choose the Quran audio amount he wants to download.
- * Use the {@link AudioDownloadAmountDialogFragment#newInstance} factory method to
+ * A `DialogFragment` that allows the user to choose the Quran audio amount he wants to download.
+ * Use the [AudioDownloadAmountDialogFragment.newInstance] factory method to
  * create an instance of this fragment.
  */
-public class AudioDownloadAmountDialogFragment extends DialogFragment {
+class AudioDownloadAmountDialogFragment : DialogFragment() {
 
-    private static final String TAG = AudioDownloadAmountDialogFragment.class.getSimpleName();
+    private var recitationId = 0
+    private var reciterId: String? = null
+    private var suraId = 0 // [optional, defaults to 1]
+    private var selectedOption = 0
+    private var binding: DialogAudioDownloadAmountBinding? = null
+    private var listener: AudioDownloadListener? = null
 
-    private static final String ARG_RECITATION_ID = "ARG_RECITATION_ID";
-    private static final String ARG_RECITER_ID = "ARG_RECITER_ID";
-    private static final String ARG_SURA_ID = "ARG_SURA_ID";  // [optional]
-
-    private static final int OPTION_DOWNLOAD_SURA = 0;
-    private static final int OPTION_DOWNLOAD_ALL = 1;
-
-    private int recitationId;
-    private String reciterId;
-    private int suraId;  // [optional, defaults to 1]
-    private int selectedOption;
-
-    private DialogAudioDownloadAmountBinding binding;
-
-    private AudioDownloadListener listener;
-
-    public AudioDownloadAmountDialogFragment() {
-        // Required empty public constructor
-    }
-
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param recitationId Recitation ID as in {@link Constants.Recitation}
-     * @param reciterId    A reciter ID.
-     * @return A new instance of fragment AudioDownloadAmountDialogFragment.
-     */
-    public static AudioDownloadAmountDialogFragment newInstance(int recitationId, @NonNull String reciterId) {
-        return newInstance(recitationId, reciterId, 1);
-    }
-
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param recitationId Recitation ID as in {@link Constants.Recitation}
-     * @param reciterId    A reciter ID.
-     * @param suraId       A sura ID to be selected when opening the dialog.
-     * @return A new instance of fragment AudioDownloadAmountDialogFragment.
-     */
-    public static AudioDownloadAmountDialogFragment newInstance(int recitationId
-            , @NonNull String reciterId, int suraId) {
-        AudioDownloadAmountDialogFragment dialogFragment = new AudioDownloadAmountDialogFragment();
-        Bundle args = new Bundle();
-        args.putInt(ARG_RECITATION_ID, recitationId);
-        args.putString(ARG_RECITER_ID, reciterId);
-        args.putInt(ARG_SURA_ID, suraId);
-        dialogFragment.setArguments(args);
-        return dialogFragment;
-    }
-
-    @Override
-    public void onAttach(@NonNull Context context) {
-        super.onAttach(context);
-        if (context instanceof AudioDownloadListener) {
-            listener = (AudioDownloadListener) context;
-        } else if (getParentFragment() instanceof AudioDownloadListener) {
-            listener = (AudioDownloadListener) getParentFragment();
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        listener = if (context is AudioDownloadListener) {
+            context
+        } else if (parentFragment is AudioDownloadListener) {
+            parentFragment as AudioDownloadListener?
         } else {
-            throw new RuntimeException("The containing fragment or activity must implement" +
-                    " AudioDownloadAmountDialogFragment#AudioDownloadListener interface");
+            throw RuntimeException(
+                "The containing fragment or activity must implement" +
+                        " AudioDownloadAmountDialogFragment#AudioDownloadListener interface"
+            )
         }
     }
 
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            recitationId = getArguments().getInt(ARG_RECITATION_ID);
-            reciterId = getArguments().getString(ARG_RECITER_ID);
-            suraId = getArguments().getInt(ARG_SURA_ID, 1);
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        arguments?.let {
+            recitationId = it.getInt(ARG_RECITATION_ID)
+            reciterId = it.getString(ARG_RECITER_ID)
+            suraId = it.getInt(ARG_SURA_ID, 1)
         }
     }
 
-    @NonNull
-    @Override
-    public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
-        final Dialog dialog = super.onCreateDialog(savedInstanceState);
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-        return dialog;
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        val dialog = super.onCreateDialog(savedInstanceState)
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        dialog.window!!.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        return dialog
     }
 
-    @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
         // Inflate the layout for this fragment
-        binding = DialogAudioDownloadAmountBinding.inflate(inflater, container, false);
-        initDialogView();
-        return binding.getRoot();
+        binding = DialogAudioDownloadAmountBinding.inflate(inflater, container, false)
+        initDialogView()
+        return binding!!.root
     }
 
-    private void initDialogView() {
-        setSelectedOption(OPTION_DOWNLOAD_SURA);
+    private fun initDialogView() {
+        setSelectedOption(OPTION_DOWNLOAD_SURA)
 
         // init surasSpinner
-        String[] suras = getResources().getStringArray(R.array.sura_name);
-        ArrayAdapter<String> dataAdapter = new ArrayAdapter<>(requireContext(),
-                android.R.layout.simple_spinner_item, suras);
-        dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        binding.spinnerSuras.setAdapter(dataAdapter);
-        binding.spinnerSuras.setSelection(suraId - 1);
-        binding.spinnerSuras.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                if (parent != null && parent.getChildAt(0) != null) {
-                    ((TextView) parent.getChildAt(0)).setTextColor(
-                            getResources().getColor(R.color.white_color));
+        val suras = resources.getStringArray(R.array.sura_name)
+        val dataAdapter = ArrayAdapter(
+            requireContext(),
+            android.R.layout.simple_spinner_item, suras
+        )
+        dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        binding!!.spinnerSuras.adapter = dataAdapter
+        binding!!.spinnerSuras.setSelection(suraId - 1)
+        binding!!.spinnerSuras.onItemSelectedListener =
+            object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(
+                    parent: AdapterView<*>?,
+                    view: View,
+                    position: Int,
+                    id: Long
+                ) {
+                    if (parent?.getChildAt(0) != null) {
+                        (parent.getChildAt(0) as TextView).setTextColor(
+                            resources.getColor(R.color.white_color)
+                        )
+                    }
+                    setSelectedOption(OPTION_DOWNLOAD_SURA)
+                    suraId = position + 1
                 }
-                setSelectedOption(OPTION_DOWNLOAD_SURA);
-                suraId = position + 1;
-            }
 
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
+                override fun onNothingSelected(parent: AdapterView<*>?) {}
             }
-        });
-
-        attachListeners();
+        attachListeners()
     }
 
-    private void setSelectedOption(int option) {
-        selectedOption = option;
+    private fun setSelectedOption(option: Int) {
+        selectedOption = option
         if (selectedOption == OPTION_DOWNLOAD_SURA) {
-            binding.ivCheckOptionSuraDownload.setVisibility(View.VISIBLE);
-            binding.ivCheckOptionDownloadAll.setVisibility(View.INVISIBLE);
+            binding!!.ivCheckOptionSuraDownload.visibility = View.VISIBLE
+            binding!!.ivCheckOptionDownloadAll.visibility = View.INVISIBLE
         } else if (selectedOption == OPTION_DOWNLOAD_ALL) {
-            binding.ivCheckOptionSuraDownload.setVisibility(View.INVISIBLE);
-            binding.ivCheckOptionDownloadAll.setVisibility(View.VISIBLE);
+            binding!!.ivCheckOptionSuraDownload.visibility = View.INVISIBLE
+            binding!!.ivCheckOptionDownloadAll.visibility = View.VISIBLE
         }
     }
 
-    @Override
-    public void onResume() {
-        super.onResume();
-
-        DialogUtils.adjustDialogSize(this, DIALOG_STD_WIDTH_SCREEN_RATIO_PORTRAIT, 0.4f,
-                DIALOG_STD_WIDTH_SCREEN_RATIO_LANDSCAPE, 0.7f);
+    override fun onResume() {
+        super.onResume()
+        adjustDialogSize(
+            this, DIALOG_STD_WIDTH_SCREEN_RATIO_PORTRAIT, 0.4f,
+            DIALOG_STD_WIDTH_SCREEN_RATIO_LANDSCAPE, 0.7f
+        )
     }
 
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        binding = null;
+    override fun onDestroyView() {
+        super.onDestroyView()
+        binding = null
     }
 
-    private void attachListeners() {
-
-        binding.clOptionSuraDownload.setOnClickListener(v -> onSuraDownloadOptionClick());
-
-        binding.clOptionDownloadAll.setOnClickListener(v -> onDownloadAllOptionClick());
-
-        binding.btnCancel.setOnClickListener(v -> onCancelButtonClick());
-
-        binding.btnDownload.setOnClickListener(v -> onDownloadButtonClick());
-
+    private fun attachListeners() {
+        binding!!.clOptionSuraDownload.setOnClickListener { v: View? -> onSuraDownloadOptionClick() }
+        binding!!.clOptionDownloadAll.setOnClickListener { v: View? -> onDownloadAllOptionClick() }
+        binding!!.btnCancel.setOnClickListener { v: View? -> onCancelButtonClick() }
+        binding!!.btnDownload.setOnClickListener { v: View? -> onDownloadButtonClick() }
     }
 
-    private void onSuraDownloadOptionClick() {
-        setSelectedOption(OPTION_DOWNLOAD_SURA);
+    private fun onSuraDownloadOptionClick() {
+        setSelectedOption(OPTION_DOWNLOAD_SURA)
     }
 
-    private void onDownloadAllOptionClick() {
-        setSelectedOption(OPTION_DOWNLOAD_ALL);
+    private fun onDownloadAllOptionClick() {
+        setSelectedOption(OPTION_DOWNLOAD_ALL)
     }
 
-    private void onCancelButtonClick() {
-        dismiss();
+    private fun onCancelButtonClick() {
+        dismiss()
     }
 
     @SuppressLint("StaticFieldLeak")
-    private void onDownloadButtonClick() {
-        if (!NetworkUtil.isNetworkAvailable(requireContext())) {
-            Toast.makeText(getActivity(), getString(R.string.no_internet), Toast.LENGTH_LONG).show();
-            return;
+    private fun onDownloadButtonClick() {
+        if (!isNetworkAvailable(requireContext())) {
+            Toast.makeText(activity, getString(R.string.no_internet), Toast.LENGTH_LONG).show()
+            return
         }
-
-        new AsyncTask<Void, Void, Void>() {
-
-            @Override
-            protected Void doInBackground(Void... voids) {
+        object : AsyncTask<Void?, Void?, Void?>() {
+            override fun doInBackground(vararg voids: Void?): Void? {
                 // Store SheikhRecitation for the download recitation & reciter in DB
-                UserDatabase userDatabase = UserDatabase.getInstance(requireContext());
-                if (userDatabase.getReciterRecitationDao()
-                        .get(recitationId, reciterId) == null) {
-                    userDatabase.getReciterRecitationDao()
-                            .insert(new ReciterRecitation(recitationId, reciterId));
+                val userDatabase = UserDatabase.getInstance(requireContext())
+                if (userDatabase.reciterRecitationDao[recitationId, reciterId] == null) {
+                    userDatabase.reciterRecitationDao
+                        .insert(ReciterRecitation(recitationId, reciterId!!))
                 }
-
-                return null;
+                return null
             }
 
-            @Override
-            protected void onPostExecute(Void aVoid) {
+            override fun onPostExecute(aVoid: Void?) {
                 if (selectedOption == OPTION_DOWNLOAD_SURA) {
-                    QuranAudioDownloaderService.downloadSura(requireContext(), recitationId, reciterId, suraId);
+                    downloadSura(requireContext(), recitationId, reciterId, suraId)
                 } else if (selectedOption == OPTION_DOWNLOAD_ALL) {
-                    QuranAudioDownloaderService.downloadQuran(requireContext(), recitationId, reciterId);
+                    downloadQuran(requireContext(), recitationId, reciterId)
                 }
-
-                Toast.makeText(requireContext(), R.string.msg_quran_audio_download_started,
-                        Toast.LENGTH_SHORT).show();
-                listener.onClickDownload();
-                dismiss();
+                Toast.makeText(
+                    requireContext(), R.string.msg_quran_audio_download_started,
+                    Toast.LENGTH_SHORT
+                ).show()
+                listener!!.onClickDownload()
+                dismiss()
             }
-        }.execute();
+        }.execute()
     }
 
-    public interface AudioDownloadListener {
-        void onClickDownload();
+    interface AudioDownloadListener {
+        fun onClickDownload()
+    }
+
+    companion object {
+        private val TAG = AudioDownloadAmountDialogFragment::class.java.simpleName
+
+        private const val ARG_RECITATION_ID = "ARG_RECITATION_ID"
+        private const val ARG_RECITER_ID = "ARG_RECITER_ID"
+        private const val ARG_SURA_ID = "ARG_SURA_ID" // [optional]
+
+        private const val OPTION_DOWNLOAD_SURA = 0
+        private const val OPTION_DOWNLOAD_ALL = 1
+
+        /**
+         * Use this factory method to create a new instance of
+         * this fragment using the provided parameters.
+         *
+         * @param recitationId Recitation ID as in [Constants.Recitation]
+         * @param reciterId    A reciter ID.
+         * @param suraId       A sura ID to be selected when opening the dialog.
+         * @return A new instance of fragment AudioDownloadAmountDialogFragment.
+         */
+        /**
+         * Use this factory method to create a new instance of
+         * this fragment using the provided parameters.
+         *
+         * @param recitationId Recitation ID as in [Constants.Recitation]
+         * @param reciterId    A reciter ID.
+         * @return A new instance of fragment AudioDownloadAmountDialogFragment.
+         */
+        @JvmOverloads
+        fun newInstance(
+            recitationId: Int, reciterId: String, suraId: Int = 1
+        ): AudioDownloadAmountDialogFragment {
+            val dialogFragment = AudioDownloadAmountDialogFragment()
+            val args = Bundle()
+            args.putInt(ARG_RECITATION_ID, recitationId)
+            args.putString(ARG_RECITER_ID, reciterId)
+            args.putInt(ARG_SURA_ID, suraId)
+            dialogFragment.arguments = args
+            return dialogFragment
+        }
     }
 }

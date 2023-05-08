@@ -1,147 +1,131 @@
-package app.quranhub.ui.downloads_manager.adapters;
+package app.quranhub.ui.downloads_manager.adapters
 
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.recyclerview.widget.RecyclerView
+import app.quranhub.R
+import app.quranhub.databinding.ItemDownloadBinding
+import app.quranhub.ui.downloads_manager.adapters.DownloadsAdapter
+import app.quranhub.ui.downloads_manager.model.DisplayableDownload
 
-import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.RecyclerView;
+class DownloadsAdapter : RecyclerView.Adapter<DownloadsAdapter.ViewHolder> {
 
-import java.util.List;
+    private var displayableDownloads: List<DisplayableDownload>
+    private var clickListener: ItemClickListener
+    private var edit = false
 
-import app.quranhub.R;
-import app.quranhub.databinding.ItemDownloadBinding;
-import app.quranhub.ui.downloads_manager.model.DisplayableDownload;
-
-public class DownloadsAdapter extends RecyclerView.Adapter<DownloadsAdapter.ViewHolder> {
-
-    private static final String TAG = DownloadsAdapter.class.getSimpleName();
-
-    @NonNull
-    private List<DisplayableDownload> displayableDownloads;
-    @NonNull
-    private ItemClickListener clickListener;
-    private boolean edit = false;
-
-    public DownloadsAdapter(@NonNull List<DisplayableDownload> displayableDownloads,
-                            @NonNull ItemClickListener clickListener) {
-        this.displayableDownloads = displayableDownloads;
-        this.clickListener = clickListener;
+    constructor(
+        displayableDownloads: List<DisplayableDownload>,
+        clickListener: ItemClickListener
+    ) {
+        this.displayableDownloads = displayableDownloads
+        this.clickListener = clickListener
     }
 
-    public DownloadsAdapter(@NonNull List<DisplayableDownload> displayableDownloads,
-                            @NonNull ItemClickListener clickListener, boolean edit) {
-        this.displayableDownloads = displayableDownloads;
-        this.clickListener = clickListener;
-        this.edit = edit;
+    constructor(
+        displayableDownloads: List<DisplayableDownload>,
+        clickListener: ItemClickListener, edit: Boolean
+    ) {
+        this.displayableDownloads = displayableDownloads
+        this.clickListener = clickListener
+        this.edit = edit
     }
 
-    @NonNull
-    @Override
-    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View itemView = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_download, parent, false);
-
-        ViewHolder vh = new ViewHolder(itemView);
-        return vh;
+    override fun onCreateViewHolder(
+        parent: ViewGroup,
+        viewType: Int
+    ): ViewHolder {
+        val itemView = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_download, parent, false)
+        return ViewHolder(itemView)
     }
 
-    @Override
-    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        holder.bind(displayableDownloads.get(position));
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        holder.bind(displayableDownloads[position])
     }
 
-    @Override
-    public int getItemCount() {
-        return displayableDownloads.size();
+    override fun getItemCount(): Int {
+        return displayableDownloads.size
     }
 
-    @NonNull
-    public List<DisplayableDownload> getDisplayableDownloads() {
-        return displayableDownloads;
+    fun getDisplayableDownloads(): List<DisplayableDownload> {
+        return displayableDownloads
     }
 
-    public void setDisplayableDownloads(@NonNull List<DisplayableDownload> displayableDownloads) {
-        this.displayableDownloads = displayableDownloads;
-        notifyDataSetChanged();
+    fun setDisplayableDownloads(displayableDownloads: List<DisplayableDownload>) {
+        this.displayableDownloads = displayableDownloads
+        notifyDataSetChanged()
     }
 
-    public boolean isEdit() {
-        return edit;
+    fun isEdit(): Boolean {
+        return edit
     }
 
-    public void setEdit(boolean edit) {
-        this.edit = edit;
-        notifyDataSetChanged();
+    fun setEdit(edit: Boolean) {
+        this.edit = edit
+        notifyDataSetChanged()
     }
 
-    public class ViewHolder extends RecyclerView.ViewHolder {
+    inner class ViewHolder(itemView: View?) : RecyclerView.ViewHolder(
+        itemView!!
+    ) {
+        var binding: ItemDownloadBinding
 
-        ItemDownloadBinding binding;
-
-        public ViewHolder(View itemView) {
-            super(itemView);
-            binding = ItemDownloadBinding.bind(itemView);
-
-            attachClickListeners();
+        init {
+            binding = ItemDownloadBinding.bind(itemView!!)
+            attachClickListeners()
         }
 
-        public void bind(@NonNull DisplayableDownload displayableDownload) {
-            binding.tvName.setText(displayableDownload.getName());
-            if (displayableDownload.getDownloadedAmount() != null) {
-                binding.tvDownloadedAmount.setText(displayableDownload.getDownloadedAmount());
+        fun bind(displayableDownload: DisplayableDownload) {
+            binding.tvName.text = displayableDownload.name
+            if (displayableDownload.downloadedAmount != null) {
+                binding.tvDownloadedAmount.text = displayableDownload.downloadedAmount
             }
             if (edit) {  // edit mode
-                if (displayableDownload.isDeletable()) {
-                    binding.ibAction.setImageResource(R.drawable.ic_delete);
-                    binding.ibAction.setVisibility(View.VISIBLE);
+                if (displayableDownload.isDeletable) {
+                    binding.ibAction.setImageResource(R.drawable.ic_delete)
+                    binding.ibAction.visibility = View.VISIBLE
                 } else {
-                    binding.ibAction.setVisibility(View.INVISIBLE);
+                    binding.ibAction.visibility = View.INVISIBLE
                 }
             } else {  // download mode
-                if (displayableDownload.isDownloadable()) {
-                    binding.ibAction.setImageResource(R.drawable.ic_download);
-                    binding.ibAction.setVisibility(View.VISIBLE);
+                if (displayableDownload.isDownloadable) {
+                    binding.ibAction.setImageResource(R.drawable.ic_download)
+                    binding.ibAction.visibility = View.VISIBLE
                 } else {
-                    binding.ibAction.setVisibility(View.INVISIBLE);
+                    binding.ibAction.visibility = View.INVISIBLE
                 }
             }
         }
 
-        private void attachClickListeners() {
-
-            binding.llContent.setOnClickListener(v -> {
-                onContentClick();
-            });
-
-            binding.ibAction.setOnClickListener(v -> {
-                onActionButtonClick();
-            });
-
+        private fun attachClickListeners() {
+            binding.llContent.setOnClickListener { v: View? -> onContentClick() }
+            binding.ibAction.setOnClickListener { v: View? -> onActionButtonClick() }
         }
 
-        private void onContentClick() {
-            DisplayableDownload clickedDisplayableDownload = displayableDownloads.get(getAdapterPosition());
-            clickListener.onClickItem(clickedDisplayableDownload, getAdapterPosition());
+        private fun onContentClick() {
+            val clickedDisplayableDownload = displayableDownloads[adapterPosition]
+            clickListener.onClickItem(clickedDisplayableDownload, adapterPosition)
         }
 
-        private void onActionButtonClick() {
-            DisplayableDownload clickedDisplayableDownload = displayableDownloads.get(getAdapterPosition());
+        private fun onActionButtonClick() {
+            val clickedDisplayableDownload = displayableDownloads[adapterPosition]
             if (edit) {
-                clickListener.onDeleteItem(clickedDisplayableDownload, getAdapterPosition());
+                clickListener.onDeleteItem(clickedDisplayableDownload, adapterPosition)
             } else {
-                clickListener.onDownloadItem(clickedDisplayableDownload, getAdapterPosition());
+                clickListener.onDownloadItem(clickedDisplayableDownload, adapterPosition)
             }
         }
     }
 
-    public interface ItemClickListener {
+    interface ItemClickListener {
+        fun onClickItem(displayableDownload: DisplayableDownload?, position: Int)
+        fun onDeleteItem(displayableDownload: DisplayableDownload?, position: Int)
+        fun onDownloadItem(displayableDownload: DisplayableDownload?, position: Int)
+    }
 
-        void onClickItem(DisplayableDownload displayableDownload, int position);
-
-        void onDeleteItem(DisplayableDownload displayableDownload, int position);
-
-        void onDownloadItem(DisplayableDownload displayableDownload, int position);
-
+    companion object {
+        private val TAG = DownloadsAdapter::class.java.simpleName
     }
 }

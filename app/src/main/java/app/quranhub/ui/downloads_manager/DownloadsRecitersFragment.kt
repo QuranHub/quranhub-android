@@ -1,64 +1,33 @@
-package app.quranhub.ui.downloads_manager;
+package app.quranhub.ui.downloads_manager
 
-import android.annotation.SuppressLint;
-import android.content.Context;
-import android.os.AsyncTask;
-import android.os.Bundle;
+import android.annotation.SuppressLint
+import android.content.Context
+import android.os.AsyncTask
+import android.os.Bundle
+import app.quranhub.R
+import app.quranhub.data.local.db.UserDatabase
+import app.quranhub.data.local.entity.Reciter
+import app.quranhub.data.local.entity.ReciterRecitation
+import app.quranhub.ui.downloads_manager.dialogs.DeleteConfirmationDialogFragment.Companion.newInstance
+import app.quranhub.ui.downloads_manager.dialogs.DeleteConfirmationDialogFragment.DeleteConfirmationCallbacks
+import app.quranhub.ui.downloads_manager.model.DisplayableDownload
+import app.quranhub.util.QuranAudioDeleteUtils.DeleteFinishListener
+import app.quranhub.util.QuranAudioDeleteUtils.deleteReciterAudio
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+class DownloadsRecitersFragment : BaseDownloadsFragment(), DeleteConfirmationCallbacks {
 
-import java.util.ArrayList;
-import java.util.List;
+    private var recitationId = 0
+    private val reciters: List<Reciter>? = null
 
-import app.quranhub.R;
-import app.quranhub.data.local.db.UserDatabase;
-import app.quranhub.data.local.entity.Reciter;
-import app.quranhub.data.local.entity.ReciterRecitation;
-import app.quranhub.ui.downloads_manager.dialogs.DeleteConfirmationDialogFragment;
-import app.quranhub.ui.downloads_manager.model.DisplayableDownload;
-import app.quranhub.util.QuranAudioDeleteUtils;
-
-public class DownloadsRecitersFragment extends BaseDownloadsFragment
-        implements DeleteConfirmationDialogFragment.DeleteConfirmationCallbacks {
-
-    private static final String TAG = DownloadsRecitersFragment.class.getSimpleName();
-
-    private static final String ARG_RECITATION_ID = "ARG_RECITATION_ID";
-
-    private int recitationId;
-
-    private List<Reciter> reciters;
-
-    public static DownloadsRecitersFragment newInstance(@NonNull Context context, int recitationId) {
-        return newInstance(context, recitationId, false);
-    }
-
-    public static DownloadsRecitersFragment newInstance(@NonNull Context context, int recitationId
-            , boolean isEditable) {
-        DownloadsRecitersFragment recitersFragment = new DownloadsRecitersFragment();
-        Bundle args = new Bundle();
-        args.putInt(ARG_RECITATION_ID, recitationId);
-        args.putString(ARG_DESCRIPTION, context.getString(R.string.description_manage_reciters_downloads));
-        args.putBoolean(ARG_EDITABLE, isEditable);
-        recitersFragment.setArguments(args);
-        return recitersFragment;
-    }
-
-    @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
-        if (getArguments() != null) {
-            recitationId = getArguments().getInt(ARG_RECITATION_ID);
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        arguments?.let {
+            recitationId = it.getInt(ARG_RECITATION_ID)
         }
     }
 
-    @NonNull
-    @Override
-    protected List<DisplayableDownload> provideDisplayableDownloads() {
-
-        List<DisplayableDownload> displayableDownloadsList = new ArrayList<>();
+    override fun provideDisplayableDownloads(): List<DisplayableDownload> {
+        val displayableDownloadsList: MutableList<DisplayableDownload> = ArrayList()
 
 //        RecitersApi recitersApi = ApiClient.getClient().create(RecitersApi.class);
 //        Call<RecitersResponse> recitersCall = recitersApi.getQuranReciters(recitationId);
@@ -77,74 +46,94 @@ public class DownloadsRecitersFragment extends BaseDownloadsFragment
 //        }
 
         // process reciters list
-        for (Reciter r : reciters) {
-            UserDatabase userDatabase = UserDatabase.getInstance(requireContext());
-
-            DisplayableDownload displayableDownload = new DisplayableDownload(
-                    r.getName());
-
-            List<Integer> downloadedSurasIds = userDatabase.getReciterRecitationDao()
-                    .getSurasIdsForReciterInRecitation(recitationId, r.getId());
-            displayableDownload.setDownloadedAmount(
-                    getString(R.string.downloaded_amount_suras, downloadedSurasIds.size()));
-
-            displayableDownload.setDownloadable(downloadedSurasIds.size() < 114);
-            displayableDownload.setDeletable(downloadedSurasIds.size() > 0);
-
-            displayableDownloadsList.add(displayableDownload);
+        for (r in reciters!!) {
+            val userDatabase = UserDatabase.getInstance(requireContext())
+            val displayableDownload = DisplayableDownload(
+                r.name
+            )
+            val downloadedSurasIds = userDatabase.reciterRecitationDao
+                .getSurasIdsForReciterInRecitation(recitationId, r.id)
+            displayableDownload.downloadedAmount =
+                getString(R.string.downloaded_amount_suras, downloadedSurasIds.size)
+            displayableDownload.isDownloadable = downloadedSurasIds.size < 114
+            displayableDownload.isDeletable = downloadedSurasIds.size > 0
+            displayableDownloadsList.add(displayableDownload)
         }
-
-        return displayableDownloadsList;
+        return displayableDownloadsList
     }
 
-    private List<Reciter> retrieveLocalReciters() {
+    private fun retrieveLocalReciters(): List<Reciter> {
         return UserDatabase.getInstance(requireContext())
-                .getReciterDao().getAllForRecitation(recitationId);
+            .reciterDao.getAllForRecitation(recitationId)
     }
 
-    @Override
-    public void onClickItem(DisplayableDownload displayableDownload, int position) {
-        Reciter reciter = reciters.get(position);
-        navigationCallbacks.gotoDownloadsSuras(recitationId, reciter.getId(), reciter.getName());
+    override fun onClickItem(displayableDownload: DisplayableDownload?, position: Int) {
+        val reciter = reciters!![position]
+        navigationCallbacks!!.gotoDownloadsSuras(recitationId, reciter.id, reciter.name)
     }
 
-    @Override
-    public void onDeleteItem(DisplayableDownload displayableDownload, int position) {
-        DeleteConfirmationDialogFragment confirmationDialog = DeleteConfirmationDialogFragment.newInstance(
-                getString(R.string.confirm_delete_title),
-                getString(R.string.confirm_delete_description_reciters), position);
-        confirmationDialog.show(getChildFragmentManager(), "DeleteConfirmationDialogFragment");
+    override fun onDeleteItem(displayableDownload: DisplayableDownload?, position: Int) {
+        val confirmationDialog = newInstance(
+            getString(R.string.confirm_delete_title),
+            getString(R.string.confirm_delete_description_reciters), position
+        )
+        confirmationDialog.show(childFragmentManager, "DeleteConfirmationDialogFragment")
     }
 
-    @Override
-    public void onConfirmDelete(int deletePosition) {
-        QuranAudioDeleteUtils.deleteReciterAudio(requireContext(), recitationId
-                , reciters.get(deletePosition).getId(), this::refresh);
+    override fun onConfirmDelete(deletePosition: Int) {
+        deleteReciterAudio(requireContext(),
+            recitationId,
+            reciters!![deletePosition].id,
+            object : DeleteFinishListener {
+                override fun onDeleteFinish() {
+                    refresh()
+                }
+            })
     }
 
     @SuppressLint("StaticFieldLeak")
-    @Override
-    public void onDownloadItem(DisplayableDownload displayableDownload, int position) {
-        Reciter reciter = reciters.get(position);
-        new AsyncTask<Void, Void, Void>() {
-
-            @Override
-            protected Void doInBackground(Void... voids) {
-                UserDatabase userDatabase = UserDatabase.getInstance(requireContext());
-                if (userDatabase.getReciterDao().getById(reciter.getId()) == null) {
-                    userDatabase.getReciterDao().insert(reciter);
+    override fun onDownloadItem(displayableDownload: DisplayableDownload?, position: Int) {
+        val reciter = reciters!![position]
+        object : AsyncTask<Void?, Void?, Void?>() {
+            override fun doInBackground(vararg voids: Void?): Void? {
+                val userDatabase = UserDatabase.getInstance(requireContext())
+                if (userDatabase.reciterDao.getById(reciter.id) == null) {
+                    userDatabase.reciterDao.insert(reciter)
                 }
-                if (userDatabase.getReciterRecitationDao().get(recitationId, reciter.getId()) == null) {
-                    userDatabase.getReciterRecitationDao().insert(
-                            new ReciterRecitation(recitationId, reciter.getId()));
+                if (userDatabase.reciterRecitationDao[recitationId, reciter.id] == null) {
+                    userDatabase.reciterRecitationDao.insert(
+                        ReciterRecitation(recitationId, reciter.id)
+                    )
                 }
-                return null;
+                return null
             }
 
-            @Override
-            protected void onPostExecute(Void aVoid) {
-                navigationCallbacks.openAudioDownloadAmountDialog(recitationId, reciter.getId());
+            override fun onPostExecute(aVoid: Void?) {
+                navigationCallbacks!!.openAudioDownloadAmountDialog(recitationId, reciter.id)
             }
-        }.execute();
+        }.execute()
+    }
+
+    companion object {
+
+        private val TAG = DownloadsRecitersFragment::class.java.simpleName
+
+        private const val ARG_RECITATION_ID = "ARG_RECITATION_ID"
+
+        @JvmOverloads
+        fun newInstance(
+            context: Context, recitationId: Int, isEditable: Boolean = false
+        ): DownloadsRecitersFragment {
+            val recitersFragment = DownloadsRecitersFragment()
+            val args = Bundle()
+            args.putInt(ARG_RECITATION_ID, recitationId)
+            args.putString(
+                ARG_DESCRIPTION,
+                context.getString(R.string.description_manage_reciters_downloads)
+            )
+            args.putBoolean(ARG_EDITABLE, isEditable)
+            recitersFragment.arguments = args
+            return recitersFragment
+        }
     }
 }

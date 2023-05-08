@@ -1,72 +1,32 @@
-package app.quranhub.ui.downloads_manager.model;
+package app.quranhub.ui.downloads_manager.model
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+class DisplayableDownload {
 
-public class DisplayableDownload {
+    var name: String
+    var downloadedAmount: String? = null
+    var isDownloadable = true
+    var isDeletable = false
 
-    @NonNull
-    private String name;
-    @Nullable
-    private String downloadedAmount;
-    private boolean downloadable = true;
-    private boolean deletable = false;
-
-
-    public DisplayableDownload(@NonNull String name) {
-        this.name = name;
+    constructor(name: String) {
+        this.name = name
     }
 
-    public DisplayableDownload(@NonNull String name, @Nullable String downloadedAmount,
-                               boolean downloadable, boolean deletable) {
-        this.name = name;
-        this.downloadedAmount = downloadedAmount;
-        this.downloadable = downloadable;
-        this.deletable = deletable;
+    constructor(
+        name: String, downloadedAmount: String?,
+        downloadable: Boolean, deletable: Boolean
+    ) {
+        this.name = name
+        this.downloadedAmount = downloadedAmount
+        isDownloadable = downloadable
+        isDeletable = deletable
     }
 
-    @NonNull
-    public String getName() {
-        return name;
-    }
-
-    public void setName(@NonNull String name) {
-        this.name = name;
-    }
-
-    @Nullable
-    public String getDownloadedAmount() {
-        return downloadedAmount;
-    }
-
-    public void setDownloadedAmount(@Nullable String downloadedAmount) {
-        this.downloadedAmount = downloadedAmount;
-    }
-
-    public boolean isDownloadable() {
-        return downloadable;
-    }
-
-    public void setDownloadable(boolean downloadable) {
-        this.downloadable = downloadable;
-    }
-
-    public boolean isDeletable() {
-        return deletable;
-    }
-
-    public void setDeletable(boolean deletable) {
-        this.deletable = deletable;
-    }
-
-    @NonNull
-    @Override
-    public String toString() {
+    override fun toString(): String {
         return "DisplayableDownload{" +
                 "name='" + name + '\'' +
                 ", downloadedAmount='" + downloadedAmount + '\'' +
-                ", downloadable=" + downloadable +
-                ", deletable=" + deletable +
-                '}';
+                ", downloadable=" + isDownloadable +
+                ", deletable=" + isDeletable +
+                '}'
     }
 }

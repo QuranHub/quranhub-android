@@ -1,355 +1,293 @@
-package app.quranhub.ui.downloads_manager.dialogs;
+package app.quranhub.ui.downloads_manager.dialogs
 
-import android.annotation.SuppressLint;
-import android.app.Dialog;
-import android.content.Context;
-import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
-import android.os.AsyncTask;
-import android.os.Bundle;
-import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.view.Window;
-import android.widget.Toast;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.DialogFragment;
-import androidx.recyclerview.widget.DividerItemDecoration;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import app.quranhub.R;
-import app.quranhub.data.Constants;
-import app.quranhub.data.local.dao.ReciterDao;
-import app.quranhub.data.local.db.UserDatabase;
-import app.quranhub.data.local.entity.Reciter;
-import app.quranhub.data.local.prefs.AppPreferencesManager;
-import app.quranhub.data.model.ReciterModel;
-import app.quranhub.data.repository.RecitationsRepository;
-import app.quranhub.databinding.DialogQuranRecitersBinding;
-import app.quranhub.ui.common.dialogs.OptionsListAdapter;
-import app.quranhub.util.DialogUtils;
-import app.quranhub.util.FragmentUtils;
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.disposables.CompositeDisposable;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.observers.DisposableSingleObserver;
+import android.annotation.SuppressLint
+import android.app.Dialog
+import android.content.Context
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
+import android.os.AsyncTask
+import android.os.Bundle
+import android.util.Log
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.view.Window
+import android.widget.Toast
+import androidx.fragment.app.DialogFragment
+import androidx.recyclerview.widget.DividerItemDecoration
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import app.quranhub.R
+import app.quranhub.data.Constants
+import app.quranhub.data.local.db.UserDatabase
+import app.quranhub.data.local.entity.Reciter
+import app.quranhub.data.local.prefs.AppPreferencesManager
+import app.quranhub.data.model.ReciterModel
+import app.quranhub.data.repository.RecitationsRepository
+import app.quranhub.databinding.DialogQuranRecitersBinding
+import app.quranhub.ui.common.dialogs.OptionsListAdapter
+import app.quranhub.ui.downloads_manager.dialogs.QuranRecitersDialogFragment.ReciterSelectionListener
+import app.quranhub.util.DialogUtils.adjustDialogSize
+import app.quranhub.util.FragmentUtils.isSafeFragment
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.disposables.Disposable
+import io.reactivex.observers.DisposableSingleObserver
 
 /**
- * A {@code DialogFragment} that displays the available Quran reciters for the user to choose from.
- * <p>
+ * A `DialogFragment` that displays the available Quran reciters for the user to choose from.
+ *
+ *
  * Activities or parent fragments that shows this DialogFragment must implement the
- * {@link ReciterSelectionListener} interface to handle interaction events.
- * Use the {@link QuranRecitersDialogFragment#newInstance} factory method to
+ * [ReciterSelectionListener] interface to handle interaction events.
+ * Use the [QuranRecitersDialogFragment.newInstance] factory method to
  * create an instance of this fragment.
  */
-public class QuranRecitersDialogFragment extends DialogFragment
-        implements OptionsListAdapter.ItemClickListener {
+class QuranRecitersDialogFragment : DialogFragment(), OptionsListAdapter.ItemClickListener {
 
-    private static final String TAG = QuranRecitersDialogFragment.class.getSimpleName();
+    private var recitationId = 0
+    private var selectedReciterId: String? = null
+    private var selectedReciterIndex = -1
+    private var binding: DialogQuranRecitersBinding? = null
+    private var adapter: OptionsListAdapter? = null
+    private var reciterSelectionListener: ReciterSelectionListener? = null
+    private val recitationsRepository = RecitationsRepository()
+    private var reciterModels: List<ReciterModel>? = null
+    private val compositeDisposable = CompositeDisposable()
 
-    private static final String ARG_RECITATION_ID = "ARG_RECITATION_ID";
-    private static final String ARG_SELECTED_RECITER_ID = "ARG_SELECTED_RECITER_ID";
-
-    private int recitationId;
-    @Nullable
-    private String selectedReciterId;
-
-    private int selectedReciterIndex = -1;
-
-    private DialogQuranRecitersBinding binding;
-
-    private OptionsListAdapter adapter;
-
-    private ReciterSelectionListener reciterSelectionListener;
-
-    private final RecitationsRepository recitationsRepository = new RecitationsRepository();
-    private List<ReciterModel> reciterModels;
-
-    private final CompositeDisposable compositeDisposable = new CompositeDisposable();
-
-    public QuranRecitersDialogFragment() {
-        // Required empty public constructor
-    }
-
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param recitationId A recitation ID as in {@link Constants.Recitation}.
-     * @return A new instance of fragment QuranRecitersDialogFragment.
-     */
-    public static QuranRecitersDialogFragment newInstance(int recitationId) {
-        return newInstance(recitationId, null);
-    }
-
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param recitationId      A recitation ID as in {@link Constants.Recitation}.
-     * @param selectedReciterId The current selected reciter ID.
-     * @return A new instance of fragment QuranRecitersDialogFragment.
-     */
-    public static QuranRecitersDialogFragment newInstance(int recitationId,
-                                                          @Nullable String selectedReciterId) {
-        QuranRecitersDialogFragment recitersDialogFragment = new QuranRecitersDialogFragment();
-        Bundle args = new Bundle();
-        args.putInt(ARG_RECITATION_ID, recitationId);
-        args.putString(ARG_SELECTED_RECITER_ID, selectedReciterId);
-        recitersDialogFragment.setArguments(args);
-        return recitersDialogFragment;
-    }
-
-    @Override
-    public void onAttach(@NonNull Context context) {
-        super.onAttach(context);
-        if (context instanceof ReciterSelectionListener) {
-            reciterSelectionListener = (ReciterSelectionListener) context;
-        } else if (getParentFragment() instanceof ReciterSelectionListener) {
-            reciterSelectionListener = (ReciterSelectionListener) getParentFragment();
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        reciterSelectionListener = if (context is ReciterSelectionListener) {
+            context
+        } else if (parentFragment is ReciterSelectionListener) {
+            parentFragment as ReciterSelectionListener?
         } else {
-            throw new RuntimeException("Activities or parent fragments that shows this DialogFragment"
-                    + " must implement ReciterSelectionListener");
+            throw RuntimeException(
+                "Activities or parent fragments that shows this DialogFragment"
+                        + " must implement ReciterSelectionListener"
+            )
         }
     }
 
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
-        if (getArguments() != null) {
-            recitationId = getArguments().getInt(ARG_RECITATION_ID);
-            selectedReciterId = getArguments().getString(ARG_SELECTED_RECITER_ID);
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        arguments?.let {
+            recitationId = it.getInt(ARG_RECITATION_ID)
+            selectedReciterId = it.getString(ARG_SELECTED_RECITER_ID)
         }
     }
 
-    @NonNull
-    @Override
-    public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
-        final Dialog dialog = super.onCreateDialog(savedInstanceState);
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-        return dialog;
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        val dialog = super.onCreateDialog(savedInstanceState)
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        dialog.window!!.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        return dialog
     }
 
-    @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        binding = DialogQuranRecitersBinding.inflate(inflater, container, false);
-        initDialogView();
-        return binding.getRoot();
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        binding = DialogQuranRecitersBinding.inflate(inflater, container, false)
+        initDialogView()
+        return binding!!.root
     }
 
-    private void initDialogView() {
-        binding.tvMsgDownloadedRecitersOnly.setVisibility(View.GONE);
-        binding.tvMsgInternetConnectionFailed.setVisibility(View.GONE);
-        binding.progressBar.setVisibility(View.VISIBLE);
-        binding.btnSelect.setEnabled(false);
-        attachListeners();
+    private fun initDialogView() {
+        binding!!.tvMsgDownloadedRecitersOnly.visibility = View.GONE
+        binding!!.tvMsgInternetConnectionFailed.visibility = View.GONE
+        binding!!.progressBar.visibility = View.VISIBLE
+        binding!!.btnSelect.isEnabled = false
+        attachListeners()
     }
 
-    private void attachListeners() {
-        binding.btnSelect.setOnClickListener(v -> onSelectClick());
-        binding.btnBack.setOnClickListener(v -> onBackClick());
+    private fun attachListeners() {
+        binding!!.btnSelect.setOnClickListener { onSelectClick() }
+        binding!!.btnBack.setOnClickListener { onBackClick() }
     }
 
-    private void setupRecitersRecyclerView() {
+    private fun setupRecitersRecyclerView() {
         if (reciterModels != null) {
-            List<String> recitersNames = new ArrayList<>();
-            for (int i = 0; i < reciterModels.size(); i++) {
-                ReciterModel r = reciterModels.get(i);
-                recitersNames.add(r.getLocalizedName(requireContext()));
-                if (r.getId().equals(selectedReciterId)) {
-                    selectedReciterIndex = i;
-                    binding.btnSelect.setEnabled(true);
+            val recitersNames: MutableList<String> = ArrayList()
+            for (i in reciterModels!!.indices) {
+                val r = reciterModels!![i]
+                recitersNames.add(r.getLocalizedName(requireContext()))
+                if (r.id == selectedReciterId) {
+                    selectedReciterIndex = i
+                    binding!!.btnSelect.isEnabled = true
                 }
             }
-
-            binding.rvReciters.setHasFixedSize(true);
-            binding.rvReciters.setLayoutManager(new LinearLayoutManager(
-                    getContext(), RecyclerView.VERTICAL, false));
-            binding.rvReciters.addItemDecoration(new DividerItemDecoration(
-                    getContext(), DividerItemDecoration.VERTICAL));
-            adapter = new OptionsListAdapter(recitersNames, selectedReciterIndex, this);
-            binding.rvReciters.setAdapter(adapter);
+            binding!!.rvReciters.setHasFixedSize(true)
+            binding!!.rvReciters.layoutManager = LinearLayoutManager(
+                context, RecyclerView.VERTICAL, false
+            )
+            binding!!.rvReciters.addItemDecoration(
+                DividerItemDecoration(
+                    context, DividerItemDecoration.VERTICAL
+                )
+            )
+            adapter = OptionsListAdapter(recitersNames, selectedReciterIndex, this)
+            binding!!.rvReciters.adapter = adapter
         }
     }
 
-    @Override
-    public void onResume() {
-        super.onResume();
-
-        DialogUtils.adjustDialogSize(this);
+    override fun onResume() {
+        super.onResume()
+        adjustDialogSize(this)
     }
 
-    @Override
-    public void onStart() {
-        super.onStart();
+    override fun onStart() {
+        super.onStart()
+        var recitationKey: String? = null
+        if (recitationId == Constants.Recitation.HAFS_ID) recitationKey =
+            Constants.Recitation.HAFS_KEY else if (recitationId == Constants.Recitation.WARSH_ID) recitationKey =
+            Constants.Recitation.WARSH_KEY
+        val disposable: Disposable = recitationsRepository.getRecitersForRecitation(recitationKey!!)
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .subscribeWith(object : DisposableSingleObserver<List<ReciterModel>>() {
 
-        String recitationKey = null;
-        if (recitationId == Constants.Recitation.HAFS_ID)
-            recitationKey = Constants.Recitation.HAFS_KEY;
-        else if (recitationId == Constants.Recitation.WARSH_ID)
-            recitationKey = Constants.Recitation.WARSH_KEY;
-
-        Disposable disposable = recitationsRepository.getRecitersForRecitation(recitationKey)
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .subscribeWith(new DisposableSingleObserver<List<ReciterModel>>() {
-                    @Override
-                    public void onSuccess(@NonNull List<ReciterModel> reciters) {
-                        Log.d(TAG, "reciters: " + reciters);
-
-                        if (FragmentUtils.isSafeFragment(QuranRecitersDialogFragment.this)) {
-                            if (reciters.size() > 0) {
-                                QuranRecitersDialogFragment.this.reciterModels = reciters;
-                                setupRecitersRecyclerView();
-                            } else {
-                                Log.e(TAG, "The fetched reciters list is empty!");
-                                Toast.makeText(requireContext(), R.string.no_reciters,
-                                        Toast.LENGTH_SHORT).show();
-                            }
-
-                            binding.progressBar.setVisibility(View.GONE);
+                override fun onSuccess(reciters: List<ReciterModel>) {
+                    Log.d(TAG, "reciters: $reciters")
+                    if (isSafeFragment(this@QuranRecitersDialogFragment)) {
+                        if (reciters.isNotEmpty()) {
+                            reciterModels = reciters
+                            setupRecitersRecyclerView()
+                        } else {
+                            Log.e(TAG, "The fetched reciters list is empty!")
+                            Toast.makeText(
+                                requireContext(), R.string.no_reciters,
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
+                        binding!!.progressBar.visibility = View.GONE
                     }
+                }
 
-                    @Override
-                    public void onError(@NonNull Throwable e) {
-                        Log.e(TAG, "Error fetching reciters", e);
+                override fun onError(e: Throwable) {
+                    Log.e(TAG, "Error fetching reciters", e)
+                    if (isSafeFragment(this@QuranRecitersDialogFragment)) {
 
-                        if (FragmentUtils.isSafeFragment(QuranRecitersDialogFragment.this)) {
-
-                            // try to display the downloaded reciters
-                            loadRecitersFromDb();
-
-                        }
+                        // try to display the downloaded reciters
+                        loadRecitersFromDb()
                     }
-                });
-        compositeDisposable.add(disposable);
+                }
+            })
+        compositeDisposable.add(disposable)
     }
 
     @SuppressLint("StaticFieldLeak")
-    private void loadRecitersFromDb() {
+    private fun loadRecitersFromDb() {
         // TODO load from DB only for a selected aya, or page or sura, to guarantee reciter is downloaded
-        new AsyncTask<Void, Void, List<ReciterModel>>() {
+        object : AsyncTask<Void?, Void?, List<ReciterModel>?>() {
 
-            @Override
-            protected List<ReciterModel> doInBackground(Void... voids) {
-                if (getContext() != null) {
-                    ReciterDao reciterDao = UserDatabase.getInstance(getContext()).getReciterDao();
-                    final List<Reciter> recitersList = reciterDao.getAllForRecitation(recitationId);
+            override fun doInBackground(vararg voids: Void?): List<ReciterModel>? {
+                if (context != null) {
+                    val reciterDao = UserDatabase.getInstance(context!!).reciterDao
+                    val recitersList = reciterDao.getAllForRecitation(recitationId)
 
                     // Convert from Reciter to ReciterModel
-                    final List<ReciterModel> reciterModelsList = new ArrayList<>(recitersList.size());
-                    for (Reciter r : recitersList) {
-                        reciterModelsList.add(new ReciterModel(
-                                r.getId(),
-                                r.getName(),
-                                r.getNationality(),
-                                r.getAudioBaseUrl()
-                        ));
+                    val reciterModelsList: MutableList<ReciterModel> = ArrayList(recitersList.size)
+                    for (r in recitersList) {
+                        reciterModelsList.add(
+                            ReciterModel(
+                                r.id,
+                                r.name,
+                                r.nationality,
+                                r.audioBaseUrl
+                            )
+                        )
                     }
-                    return reciterModelsList;
+                    return reciterModelsList
                 }
-                return null;
+                return null
             }
 
-            @Override
-            protected void onPostExecute(List<ReciterModel> recitersList) {
+            override fun onPostExecute(recitersList: List<ReciterModel>?) {
                 if (recitersList != null &&
-                        FragmentUtils.isSafeFragment(QuranRecitersDialogFragment.this)) {
-                    reciterModels = recitersList;
-                    if (reciterModels.size() > 0) {
-                        binding.tvMsgDownloadedRecitersOnly.setVisibility(View.VISIBLE);
-                        setupRecitersRecyclerView();
+                    isSafeFragment(this@QuranRecitersDialogFragment)
+                ) {
+                    reciterModels = recitersList
+                    if (reciterModels!!.isNotEmpty()) {
+                        binding!!.tvMsgDownloadedRecitersOnly.visibility = View.VISIBLE
+                        setupRecitersRecyclerView()
                     } else {
                         // User hasn't downloaded any Quran audio before
-                        binding.tvMsgInternetConnectionFailed.setVisibility(View.VISIBLE);
+                        binding!!.tvMsgInternetConnectionFailed.visibility = View.VISIBLE
                     }
-
-                    binding.progressBar.setVisibility(View.GONE);
+                    binding!!.progressBar.visibility = View.GONE
                 }
             }
-        }.execute();
+        }.execute()
     }
 
-    @Override
-    public void onItemClick(int clickedItemIndex) {
-        selectedReciterIndex = clickedItemIndex;
-        if (!binding.btnSelect.isEnabled()) binding.btnSelect.setEnabled(true);
+    override fun onItemClick(clickedItemIndex: Int) {
+        selectedReciterIndex = clickedItemIndex
+        if (!binding!!.btnSelect.isEnabled) binding!!.btnSelect.isEnabled = true
     }
 
-    private void onBackClick() {
-        dismiss();
+    private fun onBackClick() {
+        dismiss()
     }
 
     @SuppressLint("StaticFieldLeak")
-    private void onSelectClick() {
-        ReciterModel selectedReciterModel = reciterModels.get(selectedReciterIndex);
+    private fun onSelectClick() {
+        val selectedReciterModel = reciterModels!![selectedReciterIndex]
 
-        new AsyncTask<Void, Void, Void>() {
-
-            @Override
-            protected void onPreExecute() {
-                binding.btnSelect.setEnabled(false);
+        object : AsyncTask<Void?, Void?, Void?>() {
+            override fun onPreExecute() {
+                binding!!.btnSelect.isEnabled = false
             }
 
-            @Override
-            protected Void doInBackground(Void... voids) {
-                if (FragmentUtils.isSafeFragment(QuranRecitersDialogFragment.this)) {
+            override fun doInBackground(vararg voids: Void?): Void? {
+                if (isSafeFragment(this@QuranRecitersDialogFragment)) {
 
                     // Store selected reciter in DB
-                    UserDatabase userDatabase = UserDatabase.getInstance(requireContext());
-                    if (userDatabase.getReciterDao().getById(selectedReciterModel.getId()) == null) {
-                        userDatabase.getReciterDao().insert(
-                                new Reciter(selectedReciterModel.getId(),
-                                        selectedReciterModel.getLocalizedName(requireContext()),
-                                        selectedReciterModel.getLocalizedNationality(requireContext()),
-                                        selectedReciterModel.getAudioBaseUrl())
-                        );
+                    val userDatabase = UserDatabase.getInstance(requireContext())
+                    if (userDatabase.reciterDao.getById(selectedReciterModel.id) == null) {
+                        userDatabase.reciterDao.insert(
+                            Reciter(
+                                selectedReciterModel.id,
+                                selectedReciterModel.getLocalizedName(requireContext()),
+                                selectedReciterModel.getLocalizedNationality(requireContext()),
+                                selectedReciterModel.audioBaseUrl
+                            )
+                        )
                     }
 
                     // persist selected reciter as preference if recitation id matches the one in preferences
-                    int recitationIdPreference = AppPreferencesManager.getRecitationSetting(requireContext());
+                    val recitationIdPreference =
+                        AppPreferencesManager.getRecitationSetting(requireContext())
                     if (recitationIdPreference == recitationId) {
-                        AppPreferencesManager.persistReciterSheikhSetting(requireContext(), selectedReciterModel.getId());
+                        AppPreferencesManager.persistReciterSheikhSetting(
+                            requireContext(),
+                            selectedReciterModel.id
+                        )
                     }
                 }
-                return null;
+                return null
             }
 
-            @Override
-            protected void onPostExecute(Void aVoid) {
-                reciterSelectionListener.onReciterSelected(recitationId, selectedReciterModel);
-                dismiss();
+            override fun onPostExecute(aVoid: Void?) {
+                reciterSelectionListener!!.onReciterSelected(recitationId, selectedReciterModel)
+                dismiss()
             }
-        }.execute();
+        }.execute()
     }
 
-    @Override
-    public void onStop() {
-        super.onStop();
-        compositeDisposable.dispose();
+    override fun onStop() {
+        super.onStop()
+        compositeDisposable.dispose()
     }
 
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        binding = null;
+    override fun onDestroyView() {
+        super.onDestroyView()
+        binding = null
     }
 
-    @Override
-    public void onDetach() {
-        super.onDetach();
-        reciterSelectionListener = null;
+    override fun onDetach() {
+        super.onDetach()
+        reciterSelectionListener = null
     }
 
     /**
@@ -357,7 +295,44 @@ public class QuranRecitersDialogFragment extends DialogFragment
      * dialog fragment to allow an interaction in this fragment to be communicated
      * to the activity or parent fragment.
      */
-    public interface ReciterSelectionListener {
-        void onReciterSelected(int recitationId, @NonNull ReciterModel reciterModel);
+    interface ReciterSelectionListener {
+        fun onReciterSelected(recitationId: Int, reciterModel: ReciterModel)
+    }
+
+    companion object {
+
+        private val TAG = QuranRecitersDialogFragment::class.java.simpleName
+
+        private const val ARG_RECITATION_ID = "ARG_RECITATION_ID"
+        private const val ARG_SELECTED_RECITER_ID = "ARG_SELECTED_RECITER_ID"
+
+        /**
+         * Use this factory method to create a new instance of
+         * this fragment using the provided parameters.
+         *
+         * @param recitationId      A recitation ID as in [Constants.Recitation].
+         * @param selectedReciterId The current selected reciter ID.
+         * @return A new instance of fragment QuranRecitersDialogFragment.
+         */
+        /**
+         * Use this factory method to create a new instance of
+         * this fragment using the provided parameters.
+         *
+         * @param recitationId A recitation ID as in [Constants.Recitation].
+         * @return A new instance of fragment QuranRecitersDialogFragment.
+         */
+        @JvmStatic
+        @JvmOverloads
+        fun newInstance(
+            recitationId: Int,
+            selectedReciterId: String? = null
+        ): QuranRecitersDialogFragment {
+            val recitersDialogFragment = QuranRecitersDialogFragment()
+            val args = Bundle()
+            args.putInt(ARG_RECITATION_ID, recitationId)
+            args.putString(ARG_SELECTED_RECITER_ID, selectedReciterId)
+            recitersDialogFragment.arguments = args
+            return recitersDialogFragment
+        }
     }
 }
