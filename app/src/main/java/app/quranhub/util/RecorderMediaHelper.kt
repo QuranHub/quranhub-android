@@ -1,174 +1,166 @@
-package app.quranhub.util;
+package app.quranhub.util
 
+import android.media.MediaPlayer
+import android.os.Handler
+import app.quranhub.util.AyaAudioHelper.AudioStateCallback
+import java.io.IOException
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit
 
-import android.media.MediaPlayer;
-import android.os.Handler;
+class RecorderMediaHelper {
 
-import java.io.IOException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+    private var mediaPlayer: MediaPlayer?
+    private var mediaPlayerCallback: MediaPlayerCallback? = null
+    private var progressExecutor: ScheduledExecutorService? = null
+    private var seekbarPositionUpdateTask: Runnable? = null
+    private var audioTimeRunnable: Runnable? = null
+    private var audioUpdatedTimeTask: Handler? = null
 
-public class RecorderMediaHelper {
-
-    public static final int PLAYBACK_POSITION_REFRESH_INTERVAL_MS = 150;
-    public static final int TIMER_INTERVAL_MS = 1;
-
-    private MediaPlayer mediaPlayer;
-    private MediaPlayerCallback mediaPlayerCallback;
-    private ScheduledExecutorService progressExecutor;
-    private Runnable seekbarPositionUpdateTask, audioTimeRunnable;
-    private Handler audioUpdatedTimeTask;
-
-    public RecorderMediaHelper() {
-        mediaPlayer = new MediaPlayer();
-        mediaPlayer.setOnCompletionListener(mp -> {
-            stopUpdatingCallbackWithPosition();
+    init {
+        mediaPlayer = MediaPlayer()
+        mediaPlayer!!.setOnCompletionListener { mp: MediaPlayer? ->
+            stopUpdatingCallbackWithPosition()
             if (mediaPlayerCallback != null) {
-                mediaPlayerCallback.onStateChanged(MediaPlayerCallback.State.COMPLETED);
+                mediaPlayerCallback!!.onStateChanged(AudioStateCallback.State.COMPLETED)
             }
-        });
+        }
     }
 
-    public void setMediaPlayerCallback(MediaPlayerCallback mediaPlayerCallback) {
-        this.mediaPlayerCallback = mediaPlayerCallback;
+    fun setMediaPlayerCallback(mediaPlayerCallback: MediaPlayerCallback?) {
+        this.mediaPlayerCallback = mediaPlayerCallback
     }
 
-    public void setAudioPath(String path) {
+    fun setAudioPath(path: String?) {
         try {
-            mediaPlayer.setDataSource(path);
-            mediaPlayer.prepare();
-        } catch (IOException e) {
-            e.printStackTrace();
+            mediaPlayer!!.setDataSource(path)
+            mediaPlayer!!.prepare()
+        } catch (e: IOException) {
+            e.printStackTrace()
         }
-        initProgressCallback();
+        initProgressCallback()
     }
 
-    private void initProgressCallback() {
-        int duration = mediaPlayer.getDuration();
+    private fun initProgressCallback() {
+        val duration = mediaPlayer!!.duration
         if (mediaPlayerCallback != null) {
-            mediaPlayerCallback.onGetMaxDuration(duration);
-            mediaPlayerCallback.onPositionChanged(0);
-
+            mediaPlayerCallback!!.onGetMaxDuration(duration)
+            mediaPlayerCallback!!.onPositionChanged(0)
         }
     }
 
-    private void stopUpdatingCallbackWithPosition() {
+    private fun stopUpdatingCallbackWithPosition() {
         if (progressExecutor != null) {
-            progressExecutor.shutdown();
-            progressExecutor = null;
-            seekbarPositionUpdateTask = null;
-            stopAudioUpdatedTime();
+            progressExecutor!!.shutdown()
+            progressExecutor = null
+            seekbarPositionUpdateTask = null
+            stopAudioUpdatedTime()
             if (mediaPlayerCallback != null) {
-                mediaPlayerCallback.onPositionChanged(0);
+                mediaPlayerCallback!!.onPositionChanged(0)
             }
         }
     }
 
-    private void stopAudioUpdatedTime() {
+    private fun stopAudioUpdatedTime() {
         if (audioUpdatedTimeTask != null) {
-            audioUpdatedTimeTask.removeCallbacks(audioTimeRunnable);
+            audioUpdatedTimeTask!!.removeCallbacks(audioTimeRunnable!!)
         }
     }
 
-    public void release() {
+    fun release() {
         if (mediaPlayer != null) {
-            mediaPlayer.release();
-            mediaPlayer = null;
+            mediaPlayer!!.release()
+            mediaPlayer = null
         }
-        stopAudioUpdatedTime();
+        stopAudioUpdatedTime()
     }
 
-
-    public void play() {
-        if (mediaPlayer != null && !mediaPlayer.isPlaying()) {
-            mediaPlayer.start();
+    fun play() {
+        if (mediaPlayer != null && !mediaPlayer!!.isPlaying) {
+            mediaPlayer!!.start()
             if (mediaPlayerCallback != null) {
-                mediaPlayerCallback.onStateChanged(MediaPlayerCallback.State.PLAYING);
+                mediaPlayerCallback!!.onStateChanged(AudioStateCallback.State.PLAYING)
             }
-            startUpdatingCallbackWithPosition();
+            startUpdatingCallbackWithPosition()
         }
     }
 
-
-    public void pause() {
-        if (mediaPlayer != null && mediaPlayer.isPlaying()) {
-            mediaPlayer.pause();
+    fun pause() {
+        if (mediaPlayer != null && mediaPlayer!!.isPlaying) {
+            mediaPlayer!!.pause()
             if (mediaPlayerCallback != null) {
-                mediaPlayerCallback.onStateChanged(MediaPlayerCallback.State.PAUSED);
+                mediaPlayerCallback!!.onStateChanged(AudioStateCallback.State.PAUSED)
             }
         }
     }
 
-    public void seekTo(int position) {
+    fun seekTo(position: Int) {
         if (mediaPlayer != null) {
-            mediaPlayer.seekTo(position);
+            mediaPlayer!!.seekTo(position)
         }
     }
 
     /**
      * Syncs the mMediaPlayer position with Seekbar progress.
      */
-    private void startUpdatingCallbackWithPosition() {
-
+    private fun startUpdatingCallbackWithPosition() {
         if (progressExecutor == null) {
-            progressExecutor = Executors.newSingleThreadScheduledExecutor();
+            progressExecutor = Executors.newSingleThreadScheduledExecutor()
         }
         if (seekbarPositionUpdateTask == null) {
-            seekbarPositionUpdateTask = () -> {
-                if (mediaPlayer != null && mediaPlayerCallback != null && mediaPlayer.isPlaying()) {
-                    int currentPosition = mediaPlayer.getCurrentPosition();
-                    mediaPlayerCallback.onPositionChanged(currentPosition);
+            seekbarPositionUpdateTask = Runnable {
+                if (mediaPlayer != null && mediaPlayerCallback != null && mediaPlayer!!.isPlaying) {
+                    val currentPosition = mediaPlayer!!.currentPosition
+                    mediaPlayerCallback!!.onPositionChanged(currentPosition)
                 }
-            };
+            }
         }
 
-        //Run a Runnable task every 1 second to update SeekBar with current recorder postion
-        progressExecutor.scheduleAtFixedRate(seekbarPositionUpdateTask, 0, PLAYBACK_POSITION_REFRESH_INTERVAL_MS, TimeUnit.MILLISECONDS);
+        //Run a Runnable task every 1 second to update SeekBar with current recorder position
+        progressExecutor!!.scheduleAtFixedRate(
+            seekbarPositionUpdateTask,
+            0,
+            PLAYBACK_POSITION_REFRESH_INTERVAL_MS.toLong(),
+            TimeUnit.MILLISECONDS
+        )
     }
 
-
-    public void startUpdatingAudioTime() {
+    fun startUpdatingAudioTime() {
         if (audioUpdatedTimeTask == null) {
-            audioUpdatedTimeTask = new Handler();
-            audioTimeRunnable = () -> milliSecondsToTimer(mediaPlayer.getCurrentPosition());
+            audioUpdatedTimeTask = Handler()
+            audioTimeRunnable = Runnable { milliSecondsToTimer(mediaPlayer!!.currentPosition) }
         }
-        audioUpdatedTimeTask.postDelayed(audioTimeRunnable, 1000);
+        audioUpdatedTimeTask!!.postDelayed(audioTimeRunnable!!, 1000)
     }
 
-    private void milliSecondsToTimer(int milliseconds) {
-        String timerString = "";
-        String secondsString = "";
-        int minutes = (milliseconds % (1000 * 60 * 60)) / (1000 * 60);
-        int seconds = ((milliseconds % (1000 * 60 * 60)) % (1000 * 60) / 1000) + 1;
-        if (seconds < 10) {
-            secondsString = "0" + seconds;
+    private fun milliSecondsToTimer(milliseconds: Int) {
+        var timerString = ""
+        var secondsString = ""
+        val minutes = milliseconds % (1000 * 60 * 60) / (1000 * 60)
+        val seconds = milliseconds % (1000 * 60 * 60) % (1000 * 60) / 1000 + 1
+        secondsString = if (seconds < 10) {
+            "0$seconds"
         } else {
-            secondsString = "" + seconds;
+            "" + seconds
         }
-
-        timerString += minutes + ":" + secondsString;
-
+        timerString += "$minutes:$secondsString"
         if (mediaPlayerCallback != null) {
-            mediaPlayerCallback.onUpdatedTime(timerString);
+            mediaPlayerCallback!!.onUpdatedTime(timerString)
         }
-        audioUpdatedTimeTask.postDelayed(audioTimeRunnable, 1000);
+        audioUpdatedTimeTask!!.postDelayed(audioTimeRunnable!!, 1000)
     }
 
-    public int getCurrentPosition() {
-        return mediaPlayer.getCurrentPosition();
+    val currentPosition: Int
+        get() = mediaPlayer!!.currentPosition
+
+    interface MediaPlayerCallback : AudioStateCallback {
+        fun onGetMaxDuration(duration: Int)
+        fun onPositionChanged(position: Int)
+        fun onUpdatedTime(time: String?)
     }
 
-
-    public interface MediaPlayerCallback extends AyaAudioHelper.AudioStateCallback {
-
-        void onGetMaxDuration(int duration);
-
-        void onPositionChanged(int position);
-
-        void onUpdatedTime(String time);
-
+    companion object {
+        const val PLAYBACK_POSITION_REFRESH_INTERVAL_MS = 150
+        const val TIMER_INTERVAL_MS = 1
     }
-
 }
-

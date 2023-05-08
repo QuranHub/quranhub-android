@@ -1,104 +1,62 @@
-package app.quranhub.util;
+package app.quranhub.util
 
-import android.content.Context;
-import android.content.SharedPreferences;
-import android.util.Log;
+import android.content.Context
+import android.content.SharedPreferences
 
-import androidx.annotation.NonNull;
+object SharedPrefsUtils {
 
-public final class SharedPrefsUtils {
+    private val TAG = SharedPrefsUtils::class.java.simpleName
 
-    private static final String TAG = SharedPrefsUtils.class.getSimpleName();
+    private const val PREF_FILE_NAME = "mushaf_prefs"
 
-    private SharedPrefsUtils() { /* prevent instantiation */ }
-
-    private static final String PREF_FILE_NAME = "mushaf_prefs";
-
-    public static void saveString(@NonNull Context context, @NonNull String key, @NonNull String value) {
-        if (context != null) {
-            getSharedPreference(context).edit().putString(key, value).apply();
-        } else {
-            Log.e(TAG, "Couldn't save string; Passed context is null.");
-        }
+    @JvmStatic
+    fun saveString(context: Context, key: String, value: String) {
+        getSharedPreference(context).edit().putString(key, value).apply()
     }
 
-    public static void saveDouble(@NonNull Context context, @NonNull String key, float value) {
-        if (context != null) {
-            getSharedPreference(context).edit().putFloat(key, value).apply();
-        } else {
-            Log.e(TAG, "Couldn't save double; Passed context is null.");
-        }
+    fun saveDouble(context: Context, key: String, value: Float) {
+        getSharedPreference(context).edit().putFloat(key, value).apply()
     }
 
-    public static void saveInteger(@NonNull Context context, @NonNull String key, int value) {
-        if (context != null) {
-            getSharedPreference(context).edit().putInt(key, value).apply();
-        } else {
-            Log.e(TAG, "Couldn't save integer; Passed context is null.");
-        }
+    @JvmStatic
+    fun saveInteger(context: Context, key: String, value: Int) {
+        getSharedPreference(context).edit().putInt(key, value).apply()
     }
 
-    public static void saveBoolean(@NonNull Context context, @NonNull String key, boolean value) {
-        if (context != null) {
-            getSharedPreference(context).edit().putBoolean(key, value).apply();
-        } else {
-            Log.e(TAG, "Couldn't save boolean; Passed context is null.");
-        }
+    @JvmStatic
+    fun saveBoolean(context: Context, key: String, value: Boolean) {
+        getSharedPreference(context).edit().putBoolean(key, value).apply()
     }
 
-    public static int getInteger(@NonNull Context context, @NonNull String key, int defValue) {
-        if (context != null) {
-            return getSharedPreference(context).getInt(key, defValue);
-        } else {
-            Log.e(TAG, "Couldn't get integer; Passed context is null. Returning default value.");
-            return defValue;
-        }
+    @JvmStatic
+    fun getInteger(context: Context, key: String, defValue: Int): Int {
+        return getSharedPreference(context).getInt(key, defValue)
     }
 
-    public static boolean getBoolean(@NonNull Context context, @NonNull String key, boolean defValue) {
-        if (context != null) {
-            return getSharedPreference(context).getBoolean(key, defValue);
-        } else {
-            Log.e(TAG, "Couldn't get boolean; Passed context is null. Returning default value.");
-            return defValue;
-        }
+    @JvmStatic
+    fun getBoolean(context: Context, key: String, defValue: Boolean): Boolean {
+        return getSharedPreference(context).getBoolean(key, defValue)
     }
 
-    public static float getFloat(@NonNull Context context, @NonNull String key, float defValue) {
-        if (context != null) {
-            return getSharedPreference(context).getFloat(key, defValue);
-        } else {
-            Log.e(TAG, "Couldn't get float; Passed context is null. Returning default value.");
-            return defValue;
-        }
+    fun getFloat(context: Context, key: String, defValue: Float): Float {
+        return getSharedPreference(context).getFloat(key, defValue)
     }
 
-    public static String getString(@NonNull Context context, @NonNull String key, String defValue) {
-        if (context != null) {
-            return getSharedPreference(context).getString(key, defValue);
-        } else {
-            Log.e(TAG, "Couldn't get string; Passed context is null. Returning default value.");
-            return defValue;
-        }
+    @JvmStatic
+    fun getString(context: Context, key: String, defValue: String?): String? {
+        return getSharedPreference(context).getString(key, defValue)
     }
 
-    public static void clearPreference(@NonNull Context context, @NonNull String key) {
-        if (context != null) {
-            getSharedPreference(context).edit().remove(key).apply();
-        } else {
-            Log.e(TAG, "Couldn't clear preference; Passed context is null.");
-        }
+    @JvmStatic
+    fun clearPreference(context: Context, key: String) {
+        getSharedPreference(context).edit().remove(key).apply()
     }
 
-    public static void clearAll(@NonNull Context context) {
-        if (context != null) {
-            getSharedPreference(context).edit().clear().apply();
-        } else {
-            Log.e(TAG, "Couldn't clear all saved values; Passed context is null.");
-        }
+    fun clearAll(context: Context) {
+        getSharedPreference(context).edit().clear().apply()
     }
 
-    private static SharedPreferences getSharedPreference(@NonNull Context context) {
-        return context.getSharedPreferences(PREF_FILE_NAME, Context.MODE_PRIVATE);
+    private fun getSharedPreference(context: Context): SharedPreferences {
+        return context.getSharedPreferences(PREF_FILE_NAME, Context.MODE_PRIVATE)
     }
 }

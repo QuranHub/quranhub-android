@@ -1,31 +1,29 @@
-package app.quranhub.util;
+package app.quranhub.util
 
-import android.graphics.ColorMatrixColorFilter;
-import android.graphics.drawable.Drawable;
+import android.graphics.ColorMatrixColorFilter
+import android.graphics.drawable.Drawable
 
-public class ImageUtil {
-
-    private ImageUtil() {/* prevent instantiation */}
+object ImageUtil {
 
     /**
-     * Color matrix that flips the components (<code>-1.0f * c + 255 = 255 - c</code>)
+     * Color matrix that flips the components (`-1.0f * c + 255 = 255 - c`)
      * and keeps the alpha intact.
      */
-    private static final float[] NEGATIVE = {
-            -1.0f, 0, 0, 0, 255, // red
-            0, -1.0f, 0, 0, 255, // green
-            0, 0, -1.0f, 0, 255, // blue
-            0, 0, 0, 1.0f, 0  // alpha
-    };
-
+    private val NEGATIVE by lazy {
+        floatArrayOf(
+            -1.0f, 0f, 0f, 0f, 255f,  // red
+            0f, -1.0f, 0f, 0f, 255f,  // green
+            0f, 0f, -1.0f, 0f, 255f,  // blue
+            0f, 0f, 0f, 1.0f, 0f      // alpha
+        )
+    }
 
     /**
      * Invert the colors for the given drawable.
      *
      * @param drawable
      */
-    public static void invertDrawable(Drawable drawable) {
-        drawable.setColorFilter(new ColorMatrixColorFilter(NEGATIVE));
+    fun invertDrawable(drawable: Drawable) {
+        drawable.colorFilter = ColorMatrixColorFilter(NEGATIVE)
     }
-
 }

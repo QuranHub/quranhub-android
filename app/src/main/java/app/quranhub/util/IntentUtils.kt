@@ -1,18 +1,24 @@
-package app.quranhub.util;
+package app.quranhub.util
 
-import android.content.Context;
-import android.content.Intent;
+import android.content.Context
+import android.content.Intent
+import app.quranhub.R
 
-import app.quranhub.R;
+object IntentUtils {
 
-public class IntentUtils {
-
-    public static Intent getShareIntent(String ayaText, Context context) {
-        String shareBody = ayaText + "\n\n" + context.getString(R.string.app_name) + ".";
-        Intent sharingIntent = new Intent(android.content.Intent.ACTION_SEND);
-        sharingIntent.setType("text/plain");
-        sharingIntent.putExtra(android.content.Intent.EXTRA_SUBJECT, context.getString(R.string.aya));
-        sharingIntent.putExtra(android.content.Intent.EXTRA_TEXT, shareBody);
-        return Intent.createChooser(sharingIntent, context.getResources().getString(R.string.share_using));
+    fun getShareIntent(ayaText: String, context: Context): Intent {
+        val shareBody = """
+               $ayaText
+               
+               ${context.getString(R.string.app_name)}.
+               """.trimIndent()
+        val sharingIntent = Intent(Intent.ACTION_SEND)
+        sharingIntent.type = "text/plain"
+        sharingIntent.putExtra(Intent.EXTRA_SUBJECT, context.getString(R.string.aya))
+        sharingIntent.putExtra(Intent.EXTRA_TEXT, shareBody)
+        return Intent.createChooser(
+            sharingIntent,
+            context.resources.getString(R.string.share_using)
+        )
     }
 }

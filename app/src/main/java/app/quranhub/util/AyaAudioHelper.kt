@@ -1,75 +1,69 @@
-package app.quranhub.util;
+package app.quranhub.util
 
-import android.media.MediaPlayer;
+import android.media.MediaPlayer
+import java.io.IOException
 
-import java.io.IOException;
+class AyaAudioHelper(private val callback: AudioStateCallback? = null) {
 
-public class AyaAudioHelper {
+    private var mediaPlayer: MediaPlayer?
 
-    private MediaPlayer mediaPlayer;
-    private AudioStateCallback callback;
-
-    public AyaAudioHelper(AudioStateCallback callback) {
-        this.callback = callback;
-        mediaPlayer = new MediaPlayer();
-        mediaPlayer.setOnCompletionListener(mp -> {
-            mediaPlayer.reset();
-            if (callback != null) {
-                callback.onStateChanged(AudioStateCallback.State.COMPLETED);
-            }
-        });
+    init {
+        mediaPlayer = MediaPlayer()
+        mediaPlayer!!.setOnCompletionListener {
+            mediaPlayer!!.reset()
+            callback?.onStateChanged(AudioStateCallback.State.COMPLETED)
+        }
     }
 
-    public void setAudioPath(String path) {
+    fun setAudioPath(path: String?) {
         try {
-            mediaPlayer.setDataSource(path);
-            mediaPlayer.prepare();
-        } catch (IOException e) {
-            e.printStackTrace();
+            mediaPlayer!!.setDataSource(path)
+            mediaPlayer!!.prepare()
+        } catch (e: IOException) {
+            e.printStackTrace()
         }
     }
 
-    public void release() {
-        if (mediaPlayer != null) {
-            mediaPlayer.release();
-            mediaPlayer = null;
+    fun release() {
+        mediaPlayer?.let {
+            mediaPlayer!!.release()
+            mediaPlayer = null
         }
     }
 
-    public boolean isPlaying() {
-        if (mediaPlayer != null) {
-            return mediaPlayer.isPlaying();
-        }
-        return false;
-    }
+    val isPlaying: Boolean
+        get() = if (mediaPlayer != null) {
+            mediaPlayer!!.isPlaying
+        } else false
 
-    public void stopAudio() {
-        if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+    fun stopAudio() {
+        if (mediaPlayer != null && mediaPlayer!!.isPlaying) {
             //mediaPlayer.stop();
-            mediaPlayer.reset();
+            mediaPlayer!!.reset()
         }
     }
 
-    public void play() {
-        if (mediaPlayer != null && !mediaPlayer.isPlaying()) {
-            mediaPlayer.start();
+    fun play() {
+        if (mediaPlayer != null && !mediaPlayer!!.isPlaying) {
+            mediaPlayer!!.start()
         }
     }
 
-    public void pause() {
-        if (mediaPlayer != null && mediaPlayer.isPlaying()) {
-            mediaPlayer.pause();
+    fun pause() {
+        if (mediaPlayer != null && mediaPlayer!!.isPlaying) {
+            mediaPlayer!!.pause()
         }
     }
 
-    public interface AudioStateCallback {
+    interface AudioStateCallback {
         interface State {
-            int PLAYING = 0;
-            int PAUSED = 1;
-            int COMPLETED = 3;
+            companion object {
+                const val PLAYING = 0
+                const val PAUSED = 1
+                const val COMPLETED = 3
+            }
         }
 
-        void onStateChanged(int state);
+        fun onStateChanged(state: Int)
     }
-
 }

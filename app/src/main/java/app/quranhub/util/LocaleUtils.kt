@@ -1,76 +1,68 @@
-package app.quranhub.util;
+package app.quranhub.util
 
-import android.annotation.SuppressLint;
-import android.content.Context;
-import android.content.res.Configuration;
-import android.content.res.Resources;
-import android.os.Build;
-import android.util.Log;
+import android.annotation.SuppressLint
+import android.content.Context
+import android.content.res.Configuration
+import android.os.Build
+import android.util.Log
+import androidx.core.view.ViewCompat
+import app.quranhub.data.local.prefs.AppPreferencesManager
+import java.util.Locale
 
-import androidx.annotation.NonNull;
-import androidx.core.view.ViewCompat;
+object LocaleUtils {
 
-import java.util.Locale;
+    private val TAG = LocaleUtils::class.java.simpleName
 
-import app.quranhub.data.local.prefs.AppPreferencesManager;
+    @JvmStatic
+    val appLanguage: String
+        get() = Locale.getDefault().language
 
-public final class LocaleUtils {
-
-    private static final String TAG = LocaleUtils.class.getSimpleName();
-
-    private LocaleUtils() { /* prevent instantiation */}
-
-    public static String getAppLanguage() {
-        return Locale.getDefault().getLanguage();
-    }
-
+    @JvmStatic
     @SuppressLint("ObsoleteSdkInt")
-    @NonNull
-    public static Context setAppLanguage(@NonNull Context context, @NonNull String langCode) {
-        Log.d(TAG, "Setting app language: " + langCode);
-
-        Locale locale = new Locale(langCode);
-        Locale.setDefault(locale);
-
-        Resources res = context.getResources();
-        Configuration config = new Configuration(res.getConfiguration());
+    fun setAppLanguage(ctx: Context, langCode: String): Context {
+        var context = ctx
+        Log.d(TAG, "Setting app language: $langCode")
+        val locale = Locale(langCode)
+        Locale.setDefault(locale)
+        val res = context.resources
+        val config = Configuration(res.configuration)
         if (Build.VERSION.SDK_INT >= 17) {
-            config.setLocale(locale);
-            context = context.createConfigurationContext(config);
+            config.setLocale(locale)
+            context = context.createConfigurationContext(config)
         } else {
-            config.locale = locale;
-            res.updateConfiguration(config, res.getDisplayMetrics());
+            config.locale = locale
+            res.updateConfiguration(config, res.displayMetrics)
         }
-
-        return context;
+        return context
     }
 
-    @NonNull
-    public static Context initAppLanguage(@NonNull Context context) {
-        return setAppLanguage(context, AppPreferencesManager.getAppLangSetting(context));
+    @JvmStatic
+    fun initAppLanguage(context: Context): Context {
+        return setAppLanguage(context, AppPreferencesManager.getAppLangSetting(context))
     }
 
-    public static String formatNumber(@NonNull String num) {
-        if (LocaleUtils.getAppLanguage().equals("ar")) {
-            StringBuilder arabicNumber = new StringBuilder();
-            char[] numMapper = new char[]{
-                    '٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'};
-
-            for (int i = 0; i < num.length(); i++) {
-                arabicNumber.append(numMapper[Integer.parseInt(String.valueOf(num.charAt(i)))]);
+    fun formatNumber(num: String): String {
+        return if (appLanguage == "ar") {
+            val arabicNumber = StringBuilder()
+            val numMapper = charArrayOf(
+                '٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'
+            )
+            for (element in num) {
+                arabicNumber.append(numMapper[element.toString().toInt()])
             }
-            return arabicNumber.toString();
+            arabicNumber.toString()
         } else {
-            return num;
+            num
         }
     }
 
-    public static String formatNumber(int num) {
-        return formatNumber(Integer.toString(num));
+    @JvmStatic
+    fun formatNumber(num: Int): String {
+        return formatNumber(num.toString())
     }
 
-    public static boolean isRTL(Context context) {
-        return context.getResources().getConfiguration().getLayoutDirection() == ViewCompat.LAYOUT_DIRECTION_RTL;
+    @JvmStatic
+    fun isRTL(context: Context): Boolean {
+        return context.resources.configuration.layoutDirection == ViewCompat.LAYOUT_DIRECTION_RTL
     }
-
 }

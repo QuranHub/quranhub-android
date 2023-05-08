@@ -1,20 +1,19 @@
-package app.quranhub.util;
+package app.quranhub.util
 
-import android.content.Context;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
+import android.content.Context
+import android.net.ConnectivityManager
 
-public class NetworkUtil {
+object NetworkUtil {
 
-    public static final int STATUS_NOT_DOWNLOADED = 0;
-    public static final int STATUS_DOWNLOADING = 1;
-    public static final int STATUS_DOWNLOADED = 2;
+    const val STATUS_NOT_DOWNLOADED = 0
+    const val STATUS_DOWNLOADING = 1
+    const val STATUS_DOWNLOADED = 2
 
-
-    public static boolean isNetworkAvailable(Context context) {
-        ConnectivityManager connectivityManager
-                = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
-        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
+    @JvmStatic
+    fun isNetworkAvailable(context: Context): Boolean {
+        val connectivityManager =
+            context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val activeNetworkInfo = connectivityManager.activeNetworkInfo
+        return activeNetworkInfo != null && activeNetworkInfo.isConnected
     }
 }
