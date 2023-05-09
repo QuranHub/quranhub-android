@@ -259,7 +259,7 @@ class AyaRepeatDialog : DialogFragment() {
 
         @JvmStatic
         fun getInstance(
-            suraVersesNumberArrayList: ArrayList<SuraVersesNumber?>?,
+            suraVersesNumberArrayList: ArrayList<SuraVersesNumber>?,
             selectedAya: Aya?
         ): AyaRepeatDialog {
             val bundle = Bundle()

@@ -105,19 +105,10 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
     private var recitationId = 0
 
     private var margin = 0
-
-    private var start = 0.0
-
     private var lineHeight = 0.0
-
     private var top = 0.0
-
+    private var start = 0.0
     private var end = 0.0
-
-    private var xfactor = 0.0
-    private var xoffset = 0.0
-    private var yfactor = 0.0
-    private var yoffset = 0.0
 
     private var isAyaBookmark = false
 
@@ -253,11 +244,6 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
                 start = (if (quranPageNum in 1..2) 218 else 79) * imageScaleFactor
                 top = (if (quranPageNum in 1..2) 390 else 75) * imageScaleFactor
                 margin = if (quranPageNum in 1..2) 5 else 10
-
-                xfactor = 1.0
-                xoffset = 0.0
-                yfactor = 1.0
-                yoffset = 0.0
             }
 
             Constants.Recitation.WARSH_ID -> {
@@ -267,11 +253,6 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
                     (if (quranPageNum == 1) 170 else if (quranPageNum == 2) 148 else 41) * imageScaleFactor
                 top = (if (quranPageNum in 1..2) 378 else 42) * imageScaleFactor
                 margin = if (quranPageNum in 1..2) 8 else 5
-
-                xfactor = if (quranPageNum == 1 || quranPageNum == 2) 1.377 else 1.367
-                xoffset = if (quranPageNum == 1 || quranPageNum == 2) 13.424 else 18.921
-                yfactor = if (quranPageNum == 1 || quranPageNum == 2) 1.365 else 1.359
-                yoffset = if (quranPageNum == 1 || quranPageNum == 2) 15.462 else 25.375
             }
 
             else -> {
@@ -281,9 +262,9 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
     }
 
     private fun getScaledY(y: Int, withHeight: Boolean) =
-        (yfactor * y - yoffset - margin) * imageScaleFactor + if (withHeight) lineHeight else 0.0
+        (y - margin) * imageScaleFactor + if (withHeight) lineHeight else 0.0
 
-    private fun getScaledX(x: Int) = (xfactor * x - xoffset) * imageScaleFactor
+    private fun getScaledX(x: Int) = x * imageScaleFactor
 
     private val currentPageAyas: Unit
         get() {
@@ -480,7 +461,7 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
         val fragment = parentFragment
         if (fragment is MushafFragment) {
             fragment.openTranslationDialog(
-                currentAya
+                currentAya!!
             )
         }
     }
