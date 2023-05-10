@@ -119,11 +119,11 @@ public class Mus7fInteractorImp implements Mus7fInteractor {
                     if (result != null) {
                         resultListener.onGetPageInfo(result);
                     } else {
-                        resultListener.onErroOccured();
+                        resultListener.onErrorOccurred();
                     }
                 }, error -> {
                     Log.d(TAG, "getPageInfo: " + error.toString());
-                    resultListener.onErroOccured();
+                    resultListener.onErrorOccurred();
                 });
     }
 
@@ -154,7 +154,7 @@ public class Mus7fInteractorImp implements Mus7fInteractor {
                     .subscribe(res -> {
                         resultListener.onGetAyaTafseer(res);
                     }, error -> {
-                        resultListener.onErroOccured();
+                        resultListener.onErrorOccurred();
                     });
 
         }

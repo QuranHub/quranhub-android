@@ -14,8 +14,12 @@ object SharedPrefsUtils {
         getSharedPreference(context).edit().putString(key, value).apply()
     }
 
-    fun saveDouble(context: Context, key: String, value: Float) {
+    fun saveFloat(context: Context, key: String, value: Float) {
         getSharedPreference(context).edit().putFloat(key, value).apply()
+    }
+
+    fun getFloat(context: Context, key: String, defValue: Float): Float {
+        return getSharedPreference(context).getFloat(key, defValue)
     }
 
     @JvmStatic
@@ -36,10 +40,6 @@ object SharedPrefsUtils {
     @JvmStatic
     fun getBoolean(context: Context, key: String, defValue: Boolean): Boolean {
         return getSharedPreference(context).getBoolean(key, defValue)
-    }
-
-    fun getFloat(context: Context, key: String, defValue: Float): Float {
-        return getSharedPreference(context).getFloat(key, defValue)
     }
 
     @JvmStatic

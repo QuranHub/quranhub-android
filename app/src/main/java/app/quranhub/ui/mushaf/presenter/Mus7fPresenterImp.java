@@ -56,6 +56,10 @@ public class Mus7fPresenterImp extends BasePresenterImp<MushafView>
         return nightMode;
     }
 
+    @Override
+    public float getQuranPageZoomScaleFactor() {
+        return AppPreferencesManager.getQuranPageZoomScaleSetting(context);
+    }
 
     @Override
     public void getAyaTafseer(int ayaId) {
@@ -103,7 +107,7 @@ public class Mus7fPresenterImp extends BasePresenterImp<MushafView>
     }
 
     @Override
-    public void onErroOccured() {
+    public void onErrorOccurred() {
         if (isViewAttached()) {
             baseView.showMessage(context.getString(R.string.page_info_failed));
         }

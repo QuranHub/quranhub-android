@@ -65,6 +65,8 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
 
     private var nightMode = false
 
+    private var zoomScaleFactor = 1f
+
     var numOfAyaInPage = 0
         private set
 
@@ -131,6 +133,7 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
             quranPageNum = requireArguments().getInt(ARG_QURAN_PAGE_NUM)
             initSelectedAyaId = requireArguments().getInt(ARG_INIT_SELECTED_AYA_ID, -1)
             nightMode = requireArguments().getBoolean(ARG_NIGHT_MODE, false)
+            zoomScaleFactor = requireArguments().getFloat(ARG_ZOOM_SCALE_FACTOR, 1f)
         }
     }
 
@@ -146,6 +149,7 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
         if (nightMode) {
             binding.root.setBackgroundColor(Color.BLACK)
         }
+        setZoomScale()
         setParentFragment()
         recitationId = AppPreferencesManager.getRecitationSetting(requireContext())
         currentPageAyas
@@ -176,6 +180,11 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
             }
         })
         binding.pageIv.setOnClickListener { v: View? -> onQuranPageClick() }
+    }
+
+    private fun setZoomScale() {
+        binding.quranPageContainer.scaleX = zoomScaleFactor
+        binding.quranPageContainer.scaleY = zoomScaleFactor
     }
 
     private fun setParentFragment() {
@@ -817,6 +826,7 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
         private const val ARG_QURAN_IMAGE_URL = "ARG_QURAN_IMAGE_URL"
         private const val ARG_INIT_SELECTED_AYA_ID = "ARG_INIT_SELECTED_AYA_ID"
         private const val ARG_NIGHT_MODE = "ARG_NIGHT_MODE"
+        private const val ARG_ZOOM_SCALE_FACTOR = "ARG_ZOOM_SCALE_FACTOR"
 
         /**
          * Use this factory method to create a new instance of
@@ -830,7 +840,11 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
          */
         @JvmStatic
         fun getInstance(
-            quranImageUrl: String, quranPageNum: Int, initSelectedAyaId: Int, nightMode: Boolean
+            quranImageUrl: String,
+            quranPageNum: Int,
+            initSelectedAyaId: Int,
+            nightMode: Boolean,
+            zoomScaleFactor: Float
         ): QuranPageFragment {
             Log.d(TAG, "Loading page number: $quranPageNum")
             val fragment = QuranPageFragment()
@@ -839,6 +853,7 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
             bundle.putInt(ARG_QURAN_PAGE_NUM, quranPageNum)
             bundle.putInt(ARG_INIT_SELECTED_AYA_ID, initSelectedAyaId)
             bundle.putBoolean(ARG_NIGHT_MODE, nightMode)
+            bundle.putFloat(ARG_ZOOM_SCALE_FACTOR, zoomScaleFactor)
             fragment.arguments = bundle
             return fragment
         }

@@ -4,23 +4,25 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentStatePagerAdapter
 import app.quranhub.data.Constants
-import app.quranhub.ui.mushaf.fragments.QuranPageFragment.Companion.getInstance
+import app.quranhub.ui.mushaf.fragments.QuranPageFragment
 
 class QuranViewPagerAdapter(
     fm: FragmentManager?,
     private val imagesUrl: List<String>,
     private var nightMode: Boolean,
+    private var zoomScaleFactor: Float,
     private var initSelectedAyaId: Int
 ) : FragmentStatePagerAdapter(
     fm!!
 ) {
 
     override fun getItem(position: Int): Fragment {
-        val pageFragment = getInstance(
+        val pageFragment = QuranPageFragment.getInstance(
             imagesUrl[position],
             Constants.Quran.NUM_OF_PAGES - position,
             initSelectedAyaId,
-            nightMode
+            nightMode,
+            zoomScaleFactor
         )
         initSelectedAyaId =
             -1 // reset it back to default (no selection) after returning the first item
@@ -37,6 +39,11 @@ class QuranViewPagerAdapter(
 
     fun setNightMode(nightMode: Boolean) {
         this.nightMode = nightMode
+        notifyDataSetChanged()
+    }
+
+    fun setZoomScaleFactor(zoomScaleFactor: Float) {
+        this.zoomScaleFactor = zoomScaleFactor
         notifyDataSetChanged()
     }
 }

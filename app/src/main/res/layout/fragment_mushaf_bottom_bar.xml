@@ -18,20 +18,35 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/white_color"
-        android:paddingTop="@dimen/_4sdp"
-        android:paddingBottom="@dimen/_4sdp"
         android:paddingStart="@dimen/_12sdp"
-        android:paddingEnd="@dimen/_12sdp">
+        android:paddingTop="@dimen/_4sdp"
+        android:paddingEnd="@dimen/_12sdp"
+        android:paddingBottom="@dimen/_4sdp">
 
         <ImageButton
-            android:id="@+id/quran_night_mode_ib"
+            android:id="@+id/ib_zoom_in"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:background="?selectableItemBackgroundBorderless"
+            android:scaleType="fitCenter"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/ic_nightmode_off" />
+            app:srcCompat="@drawable/ic_zoom_in"
+            app:tint="@color/bottom_bar_button" />
+
+        <ImageButton
+            android:id="@+id/ib_zoom_out"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="16dp"
+            android:background="?selectableItemBackgroundBorderless"
+            android:scaleType="fitCenter"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toEndOf="@id/ib_zoom_in"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/ic_zoom_out"
+            app:tint="@color/bottom_bar_button" />
 
         <TextView
             android:id="@+id/quran_page_tv"
@@ -41,10 +56,22 @@
             android:textColor="@color/primary"
             android:textSize="@dimen/text_18"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/quran_search_ib"
-            app:layout_constraintStart_toEndOf="@+id/quran_night_mode_ib"
+            app:layout_constraintEnd_toStartOf="@+id/quran_night_mode_ib"
+            app:layout_constraintStart_toEndOf="@+id/ib_zoom_out"
             app:layout_constraintTop_toTopOf="parent"
             tools:text="1" />
+
+        <ImageButton
+            android:id="@+id/quran_night_mode_ib"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginEnd="16dp"
+            android:background="?selectableItemBackgroundBorderless"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/quran_search_ib"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/ic_nightmode_off"
+            app:tint="@color/bottom_bar_button" />
 
         <ImageButton
             android:id="@+id/quran_search_ib"
@@ -54,7 +81,8 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/advanced_search_grey_ic" />
+            app:srcCompat="@drawable/advanced_search_grey_ic"
+            app:tint="@color/bottom_bar_button" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

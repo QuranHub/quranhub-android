@@ -12,6 +12,8 @@ public interface Mus7fPresenter<T extends BaseView> extends BasePresenter<T> {
 
     boolean getNightMode();
 
+    float getQuranPageZoomScaleFactor();
+
     boolean toggleNightMode();
 
     void getAyaTafseer(int ayaId);

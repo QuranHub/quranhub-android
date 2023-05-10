@@ -83,8 +83,8 @@ class MushafFragment : Fragment(), MushafView, QuranFooterCallbacks, Translation
     private var currentTafseerLang: String? = null
     private var seekbarPageHandler: Handler? = null
     private var seekbarPageRunnable: Runnable? = null
-    private var pageSuras // 2D list include suras numbers in each page
-            : ArrayList<ArrayList<Int>>? = null
+    private var pageSuras: ArrayList<ArrayList<Int>>? =
+        null // 2D list include suras numbers in each page
     private var surasName: Array<String> = arrayOf()
     private var ayaAudioPopup: AyaAudioPopup? = null
     private var quranPageFragment: QuranPageFragment? = null
@@ -450,7 +450,11 @@ class MushafFragment : Fragment(), MushafView, QuranFooterCallbacks, Translation
             quranPageImages.add(quranImageBaseUrl + imageName)
         }
         pagerAdapter = QuranViewPagerAdapter(
-            childFragmentManager, quranPageImages, presenter!!.nightMode, initAyaId
+            childFragmentManager,
+            quranPageImages,
+            presenter!!.nightMode,
+            presenter!!.quranPageZoomScaleFactor,
+            initAyaId
         )
         binding!!.quranViewpager.adapter = pagerAdapter
         if (!isInstanceSaved) {
@@ -505,6 +509,11 @@ class MushafFragment : Fragment(), MushafView, QuranFooterCallbacks, Translation
         val newNightMode = presenter!!.toggleNightMode()
         pagerAdapter!!.setNightMode(newNightMode) // update current session
         return newNightMode
+    }
+
+    override fun updateQuranPageZoomScale(zoomScaleFactor: Float) {
+        AppPreferencesManager.persistQuranPageZoomScaleSetting(requireActivity(), zoomScaleFactor)
+        pagerAdapter!!.setZoomScaleFactor(zoomScaleFactor)
     }
 
     private fun attachListeners() {

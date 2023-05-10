@@ -41,7 +41,7 @@ public interface Mus7fInteractor {
 
         void onGetSuraPage(ArrayList<ArrayList<Integer>> suras);
 
-        void onErroOccured();
+        void onErrorOccurred();
 
         void onNoBooks();
 
