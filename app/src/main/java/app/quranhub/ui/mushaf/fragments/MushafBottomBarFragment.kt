@@ -102,6 +102,14 @@ class MushafBottomBarFragment : Fragment(), QuranFooterView {
 
     private fun setupButtonsTooltips() {
         TooltipCompat.setTooltipText(
+            binding!!.ibZoomIn,
+            getString(R.string.tooltip_zoom_in_quran_page)
+        )
+        TooltipCompat.setTooltipText(
+            binding!!.ibZoomOut,
+            getString(R.string.tooltip_zoom_out_quran_page)
+        )
+        TooltipCompat.setTooltipText(
             binding!!.quranNightModeIb,
             getString(R.string.tooltip_quran_night_mode)
         )

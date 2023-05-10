@@ -70,8 +70,7 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@id/quran_search_ib"
             app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/ic_nightmode_off"
-            app:tint="@color/bottom_bar_button" />
+            app:srcCompat="@drawable/ic_nightmode_off" />
 
         <ImageButton
             android:id="@+id/quran_search_ib"

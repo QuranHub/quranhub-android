@@ -566,5 +566,7 @@
     <string name="tooltip_page_dir">Whether the current Quran page is left or right in the Mushaf.</string>
 
     <string name="fcm_notification_channel_id" translatable="false">FCM_NOTIFS</string>
+    <string name="tooltip_zoom_in_quran_page">Zoom in Quran page</string>
+    <string name="tooltip_zoom_out_quran_page">Zoom out Quran page</string>
 
 </resources>
