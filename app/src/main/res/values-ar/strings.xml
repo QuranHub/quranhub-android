@@ -554,5 +554,7 @@
     <string name="confirm_delete_description_suras">سيتم حذف ملفات الصوتيات الخاصة بهذه السورة</string>
     <string name="delete">حذف</string>
     <string name="tooltip_page_dir">ما إذا كانت صفحة القرآن الحالية في اليسار أو اليمين في المصحف.</string>
+    <string name="tooltip_zoom_in_quran_page">تكبير صفحة القرآن</string>
+    <string name="tooltip_zoom_out_quran_page">تصغير صفحة القرآن</string>
 
 </resources>
