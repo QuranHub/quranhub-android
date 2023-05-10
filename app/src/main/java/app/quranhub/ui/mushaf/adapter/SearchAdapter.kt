@@ -1,91 +1,81 @@
-package app.quranhub.ui.mushaf.adapter;
+package app.quranhub.ui.mushaf.adapter
 
-import android.content.Context;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
+import android.content.Context
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.recyclerview.widget.RecyclerView
+import app.quranhub.R
+import app.quranhub.databinding.AyaSearchItemBinding
+import app.quranhub.ui.mushaf.listener.ItemSelectionListener
+import app.quranhub.ui.mushaf.model.SearchModel
+import java.util.Locale
 
-import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.RecyclerView;
+class SearchAdapter(
+    private val context: Context, listener: ItemSelectionListener<SearchModel>
+) : RecyclerView.Adapter<SearchAdapter.ViewHolder>() {
 
-import java.util.ArrayList;
-import java.util.List;
+    private val listener: ItemSelectionListener<SearchModel>
+    private var searchModels: List<SearchModel>
+    private var filterSearchModels: List<SearchModel>
 
-import app.quranhub.R;
-import app.quranhub.databinding.AyaSearchItemBinding;
-import app.quranhub.ui.mushaf.listener.ItemSelectionListener;
-import app.quranhub.ui.mushaf.model.SearchModel;
-
-public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.ViewHolder> {
-
-    private Context context;
-    private ItemSelectionListener<SearchModel> listener;
-    private List<SearchModel> searchModels;
-    private List<SearchModel> filterSearchModels;
-
-    public SearchAdapter(@NonNull Context context
-            , @NonNull ItemSelectionListener listener) {
-        this.context = context;
-        this.listener = listener;
-        searchModels = new ArrayList<>();
-        filterSearchModels = new ArrayList<>();
+    init {
+        this.listener = listener
+        searchModels = ArrayList()
+        filterSearchModels = ArrayList()
     }
 
-    @NonNull
-    @Override
-    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(context)
-                .inflate(R.layout.aya_search_item, parent, false);
-        return new ViewHolder(view);
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val view = LayoutInflater.from(context)
+            .inflate(R.layout.aya_search_item, parent, false)
+        return ViewHolder(view)
     }
 
-    @Override
-    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        SearchModel model = filterSearchModels.get(position);
-        String suraName = context.getResources().getStringArray(R.array.sura_name)[model.getSura() - 1];
-        holder.binding.tvAyaContent.setText(model.getPure_text());
-        holder.binding.tvAyaNum.setText(String.valueOf(model.getSura_aya()));
-        holder.binding.tvGuz2Num.setText(String.valueOf(model.getJuz()));
-        holder.binding.tvSuraName.setText(suraName);
-        holder.binding.tvPageNum.setText(String.valueOf(model.getPage()));
-        holder.binding.tvHizbNum.setText(String.valueOf(model.getHezb()));
-        holder.binding.tvRub3Num.setText(String.valueOf(model.getQuarter()));
-        holder.itemView.setOnClickListener(v -> listener.onSelectItem(model));
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        val model = filterSearchModels[position]
+        val suraName = context.resources.getStringArray(R.array.sura_name)[model.sura - 1]
+        holder.binding.tvAyaContent.text = model.pure_text
+        holder.binding.tvAyaNum.text = model.sura_aya.toString()
+        holder.binding.tvGuz2Num.text = model.juz.toString()
+        holder.binding.tvSuraName.text = suraName
+        holder.binding.tvPageNum.text = model.page.toString()
+        holder.binding.tvHizbNum.text = model.hezb.toString()
+        holder.binding.tvRub3Num.text = model.quarter.toString()
+        holder.itemView.setOnClickListener { v: View? -> listener.onSelectItem(model) }
     }
 
-    @Override
-    public int getItemCount() {
-        return filterSearchModels.size();
+    override fun getItemCount(): Int {
+        return filterSearchModels.size
     }
 
-    public void setSearchModels(List<SearchModel> searchModels) {
-        this.searchModels = searchModels;
-        this.filterSearchModels = searchModels;
-        notifyDataSetChanged();
+    fun setSearchModels(searchModels: List<SearchModel>) {
+        this.searchModels = searchModels
+        filterSearchModels = searchModels
+        notifyDataSetChanged()
     }
 
-    public void filter(String inputQuery) {
-        if (inputQuery.isEmpty()) {
-            filterSearchModels = searchModels;
+    fun filter(inputQuery: String) {
+        filterSearchModels = if (inputQuery.isEmpty()) {
+            searchModels
         } else {
-            List<SearchModel> filteredList = new ArrayList<>();
-            for (SearchModel row : searchModels) {
-                if (row.getPure_text().toLowerCase().contains(inputQuery.toLowerCase())) {
-                    filteredList.add(row);
+            val filteredList: MutableList<SearchModel> = ArrayList()
+            for (row in searchModels) {
+                if (row.pure_text.lowercase(Locale.getDefault())
+                        .contains(inputQuery.lowercase(Locale.getDefault()))
+                ) {
+                    filteredList.add(row)
                 }
             }
-            filterSearchModels = filteredList;
+            filteredList
         }
-        notifyDataSetChanged();
+        notifyDataSetChanged()
     }
 
-    public static class ViewHolder extends RecyclerView.ViewHolder {
+    class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        var binding: AyaSearchItemBinding
 
-        AyaSearchItemBinding binding;
-
-        public ViewHolder(@NonNull View itemView) {
-            super(itemView);
-            binding = AyaSearchItemBinding.bind(itemView);
+        init {
+            binding = AyaSearchItemBinding.bind(itemView)
         }
     }
 }

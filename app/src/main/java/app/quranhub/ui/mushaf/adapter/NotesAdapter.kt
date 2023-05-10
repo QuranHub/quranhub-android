@@ -1,173 +1,167 @@
-package app.quranhub.ui.mushaf.adapter;
+package app.quranhub.ui.mushaf.adapter
 
-import android.content.Context;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
+import android.content.Context
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.recyclerview.widget.RecyclerView
+import app.quranhub.R
+import app.quranhub.data.local.entity.Note
+import app.quranhub.databinding.NoteItemBinding
+import app.quranhub.ui.mushaf.model.DisplayedNote
+import java.util.Locale
 
-import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.RecyclerView;
+class NotesAdapter(context: Context, listener: NoteCallback) :
+    RecyclerView.Adapter<NotesAdapter.ViewHolder?>() {
 
-import java.util.ArrayList;
-import java.util.List;
+    private var noteList: MutableList<DisplayedNote>
+    private var filteredNoteList: MutableList<DisplayedNote>
 
-import app.quranhub.R;
-import app.quranhub.data.local.entity.Note;
-import app.quranhub.databinding.NoteItemBinding;
-import app.quranhub.ui.mushaf.model.DisplayedNote;
+    private val noteTypes: Array<String>
+    private val suraText: Array<String>
+    private val context: Context
+    private val listener: NoteCallback
+    private var isEditable: Boolean
 
-public class NotesAdapter extends RecyclerView.Adapter<NotesAdapter.ViewHolder> {
-
-    private List<DisplayedNote> noteList;
-    private List<DisplayedNote> filteredNoteList;
-    private String[] noteTypes, suraText;
-    private Context context;
-    private NoteCallback listener;
-    private boolean isEditable;
-
-    public NotesAdapter(Context context, NoteCallback listener) {
-        noteList = new ArrayList<>();
-        filteredNoteList = new ArrayList<>();
-        this.context = context;
-        this.listener = listener;
-        noteTypes = new String[]{
-                context.getString(R.string.general_comment),
-                context.getString(R.string.momerize_mistake),
-                context.getString(R.string.tajweed_mistake)
-        };
-        suraText = context.getResources().getStringArray(R.array.sura_name);
-        isEditable = false;
+    init {
+        noteList = ArrayList()
+        filteredNoteList = ArrayList()
+        this.context = context
+        this.listener = listener
+        noteTypes = arrayOf(
+            context.getString(R.string.general_comment),
+            context.getString(R.string.momerize_mistake),
+            context.getString(R.string.tajweed_mistake)
+        )
+        suraText = context.resources.getStringArray(R.array.sura_name)
+        isEditable = false
     }
 
-    public void setEditable(boolean editable) {
-        isEditable = editable;
-        notifyDataSetChanged();
+    fun setEditable(editable: Boolean) {
+        isEditable = editable
+        notifyDataSetChanged()
     }
 
-    public void setNoteList(List<DisplayedNote> noteList) {
-        this.noteList = noteList;
-        this.filteredNoteList = noteList;
-        notifyDataSetChanged();
+    fun setNoteList(noteList: MutableList<DisplayedNote>) {
+        this.noteList = noteList
+        filteredNoteList = noteList
+        notifyDataSetChanged()
     }
 
-
-    public void filter(String inputQuery) {
-        if (inputQuery.isEmpty()) {
-            filteredNoteList = noteList;
+    fun filter(inputQuery: String) {
+        filteredNoteList = if (inputQuery.isEmpty()) {
+            noteList
         } else {
-            List<DisplayedNote> filteredList = new ArrayList<>();
-            for (DisplayedNote row : noteList) {
-                if (row.getPure_text().toLowerCase().contains(inputQuery.toLowerCase())) {
-                    filteredList.add(row);
+            val filteredList: MutableList<DisplayedNote> = ArrayList()
+            for (row in noteList) {
+                if (row.pure_text.lowercase(Locale.getDefault())
+                        .contains(inputQuery.lowercase(Locale.getDefault()))
+                ) {
+                    filteredList.add(row)
                 }
             }
-            filteredNoteList = filteredList;
+            filteredList
         }
-        notifyDataSetChanged();
+        notifyDataSetChanged()
     }
 
-    @NonNull
-    @Override
-    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.note_item, parent, false);
-        return new ViewHolder(view);
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val view = LayoutInflater.from(parent.context).inflate(R.layout.note_item, parent, false)
+        return ViewHolder(view)
     }
 
-    @Override
-    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        DisplayedNote note = filteredNoteList.get(position);
-        holder.binding.ayaNumTv.setText(context.getString(R.string.ayas_num, String.valueOf(note.getSura_aya())));
-        holder.binding.ayaTv.setText(note.getText());
-        holder.binding.noteTypeTv.setText(noteTypes[note.getNoteType()]);
-        holder.binding.tvSuraName.setText(suraText[note.getSura() - 1]);
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        val note = filteredNoteList[position]
+        holder.binding.ayaNumTv.text =
+            context.getString(R.string.ayas_num, note.sura_aya.toString())
+        holder.binding.ayaTv.text = note.text
+        holder.binding.noteTypeTv.text = noteTypes[note.noteType]
+        holder.binding.tvSuraName.text = suraText[note.sura - 1]
         //holder.ayaTv.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         //holder.detailsIv.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         if (isEditable) {
-            holder.binding.deleteIv.setVisibility(View.VISIBLE);
-            holder.binding.detailsIv.setVisibility(View.INVISIBLE);
+            holder.binding.deleteIv.visibility = View.VISIBLE
+            holder.binding.detailsIv.visibility = View.INVISIBLE
         } else {
-            holder.binding.deleteIv.setVisibility(View.GONE);
-            holder.binding.detailsIv.setVisibility(View.VISIBLE);
+            holder.binding.deleteIv.visibility = View.GONE
+            holder.binding.detailsIv.visibility = View.VISIBLE
         }
     }
 
-    @Override
-    public int getItemCount() {
-        return filteredNoteList.size();
+    override fun getItemCount(): Int {
+        return filteredNoteList.size
     }
 
-    public void updateNoteType(Note note) {
-        for (DisplayedNote displayedNote : filteredNoteList) {
-            if (displayedNote.getAyaId() == note.getAyaId()) {
-                displayedNote.setNoteType(note.getNoteType());
-                displayedNote.setNoteRecorderPath(note.getNoteRecorderPath());
-                displayedNote.setNoteText(note.getNoteText());
-                notifyDataSetChanged();
-                break;
+    fun updateNoteType(note: Note) {
+        for (displayedNote in filteredNoteList) {
+            if (displayedNote.ayaId == note.ayaId) {
+                displayedNote.noteType = note.noteType
+                displayedNote.noteRecorderPath = note.noteRecorderPath
+                displayedNote.noteText = note.noteText
+                notifyDataSetChanged()
+                break
             }
         }
     }
 
-    public void setAllNotes() {
-        filteredNoteList = noteList;
-        notifyDataSetChanged();
+    fun setAllNotes() {
+        filteredNoteList = noteList
+        notifyDataSetChanged()
     }
 
-    public void setFilteredNotes(int noteType) {
-        List<DisplayedNote> filteredList = new ArrayList<>();
-        for (DisplayedNote displayedNote : noteList) {
-            if (displayedNote.getNoteType() == noteType) {
-                filteredList.add(displayedNote);
+    fun setFilteredNotes(noteType: Int) {
+        val filteredList: MutableList<DisplayedNote> = ArrayList()
+        for (displayedNote in noteList) {
+            if (displayedNote.noteType == noteType) {
+                filteredList.add(displayedNote)
             }
         }
-        filteredNoteList = filteredList;
-        notifyDataSetChanged();
+        filteredNoteList = filteredList
+        notifyDataSetChanged()
     }
 
-    public class ViewHolder extends RecyclerView.ViewHolder {
+    inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        var binding: NoteItemBinding
 
-        NoteItemBinding binding;
-
-        public ViewHolder(@NonNull View itemView) {
-            super(itemView);
-            binding = NoteItemBinding.bind(itemView);
-            attachListeners();
+        init {
+            binding = NoteItemBinding.bind(itemView)
+            attachListeners()
         }
 
-        private void attachListeners() {
-            binding.detailsIv.setOnClickListener(v -> onClickNoteDetails());
-            binding.deleteIv.setOnClickListener(v -> onClickDeleteNote());
-            binding.ayaTv.setOnClickListener(v -> onNavigateToAya());
+        private fun attachListeners() {
+            binding.detailsIv.setOnClickListener { v: View? -> onClickNoteDetails() }
+            binding.deleteIv.setOnClickListener { v: View? -> onClickDeleteNote() }
+            binding.ayaTv.setOnClickListener { v: View? -> onNavigateToAya() }
         }
 
-        private void onClickNoteDetails() {
-            listener.onGetNoteDetails(filteredNoteList.get(getAdapterPosition()));
+        private fun onClickNoteDetails() {
+            listener.onGetNoteDetails(filteredNoteList[adapterPosition])
         }
 
-        private void onClickDeleteNote() {
-            listener.onDeleteNote(filteredNoteList.get(getAdapterPosition()).getAyaId());
-            DisplayedNote removedNote = filteredNoteList.get(getAdapterPosition());
-            filteredNoteList.remove(getAdapterPosition());
-            notifyItemRemoved(getAdapterPosition());
-            for (DisplayedNote note : noteList) {
-                if (note.getAyaId() == removedNote.getAyaId()) {
-                    noteList.remove(note);
-                    break;
+        private fun onClickDeleteNote() {
+            listener.onDeleteNote(filteredNoteList[adapterPosition].ayaId)
+            val removedNote = filteredNoteList[adapterPosition]
+            filteredNoteList.removeAt(adapterPosition)
+            notifyItemRemoved(adapterPosition)
+            for (note in noteList) {
+                if (note.ayaId == removedNote.ayaId) {
+                    noteList.remove(note)
+                    break
                 }
             }
         }
 
-        private void onNavigateToAya() {
-            listener.onNavigateToAya(filteredNoteList.get(getAdapterPosition()).getAyaId(), filteredNoteList.get(getAdapterPosition()).getPage());
+        private fun onNavigateToAya() {
+            listener.onNavigateToAya(
+                filteredNoteList[adapterPosition].ayaId,
+                filteredNoteList[adapterPosition].page
+            )
         }
-
     }
 
-    public interface NoteCallback {
-        void onNavigateToAya(int ayaId, int pageNum);
-
-        void onGetNoteDetails(DisplayedNote note);
-
-        void onDeleteNote(int ayaId);
+    interface NoteCallback {
+        fun onNavigateToAya(ayaId: Int, pageNum: Int)
+        fun onGetNoteDetails(note: DisplayedNote?)
+        fun onDeleteNote(ayaId: Int)
     }
 }

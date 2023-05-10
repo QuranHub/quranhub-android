@@ -1,103 +1,99 @@
-package app.quranhub.ui.mushaf.adapter;
+package app.quranhub.ui.mushaf.adapter
 
-import android.content.Context;
-import android.graphics.Typeface;
-import android.view.LayoutInflater;
-import android.view.ViewGroup;
+import android.content.Context
+import android.graphics.Typeface
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.core.content.res.ResourcesCompat
+import androidx.core.text.TextUtilsCompat
+import androidx.core.view.ViewCompat
+import androidx.databinding.DataBindingUtil
+import androidx.recyclerview.widget.RecyclerView
+import app.quranhub.R
+import app.quranhub.databinding.SuraIndexRowBinding
+import app.quranhub.ui.mushaf.listener.ItemSelectionListener
+import app.quranhub.ui.mushaf.model.SuraIndexModelMapper
+import java.util.Locale
 
-import androidx.annotation.NonNull;
-import androidx.core.content.res.ResourcesCompat;
-import androidx.core.text.TextUtilsCompat;
-import androidx.core.view.ViewCompat;
-import androidx.databinding.DataBindingUtil;
-import androidx.recyclerview.widget.RecyclerView;
+class SuraIndexAdapter(
+    private val context: Context,
+    itemSelectionListener: ItemSelectionListener<Int>
+) : RecyclerView.Adapter<SuraIndexAdapter.ViewHolder>() {
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
+    private var suraIndexModelList: List<SuraIndexModelMapper>
+    private var suraIndexFilterList: List<SuraIndexModelMapper>
 
-import app.quranhub.R;
-import app.quranhub.databinding.SuraIndexRowBinding;
-import app.quranhub.ui.mushaf.listener.ItemSelectionListener;
-import app.quranhub.ui.mushaf.model.SuraIndexModelMapper;
+    private val itemSelectionListener: ItemSelectionListener<Int>
 
-public class SuraIndexAdapter extends RecyclerView.Adapter<SuraIndexAdapter.ViewHolder> {
-
-
-    private List<SuraIndexModelMapper> suraIndexModelList;
-    private List<SuraIndexModelMapper> suraIndexFiliterList;
-    private Context context;
-    private ItemSelectionListener<Integer> itemSelectionListener;
-
-    public SuraIndexAdapter(Context context, ItemSelectionListener<Integer> itemSelectionListener) {
-        this.context = context;
-        suraIndexModelList = new ArrayList<>();
-        suraIndexFiliterList = new ArrayList<>();
-        this.itemSelectionListener = itemSelectionListener;
+    init {
+        suraIndexModelList = ArrayList()
+        suraIndexFilterList = ArrayList()
+        this.itemSelectionListener = itemSelectionListener
     }
 
-    @NonNull
-    @Override
-    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        SuraIndexRowBinding binding = DataBindingUtil.inflate(LayoutInflater.from(parent.getContext()), R.layout.sura_index_row, parent, false);
-        return new ViewHolder(binding);
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val binding = DataBindingUtil.inflate<SuraIndexRowBinding>(
+            LayoutInflater.from(parent.context),
+            R.layout.sura_index_row,
+            parent,
+            false
+        )
+        return ViewHolder(binding)
     }
 
-    @Override
-    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-
-        if (position >= suraIndexFiliterList.size())
-            return;
-        SuraIndexModelMapper suraIndexModel = suraIndexFiliterList.get(position);
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        if (position >= suraIndexFilterList.size) return
+        val suraIndexModel = suraIndexFilterList[position]
         if (TextUtilsCompat.getLayoutDirectionFromLocale(Locale.getDefault()) == ViewCompat.LAYOUT_DIRECTION_RTL) {
-            holder.binding.leftSuraBorder.setImageResource(R.drawable.gold_ornament_surah_ic);
-            holder.binding.rightSuraBorder.setImageResource(R.drawable.gold_ornament_surah_mirror_ic);
-            holder.binding.suraNameTv.setTypeface(ResourcesCompat.getFont(context, R.font.secondary_font), Typeface.BOLD);
+            holder.binding.leftSuraBorder.setImageResource(R.drawable.gold_ornament_surah_ic)
+            holder.binding.rightSuraBorder.setImageResource(R.drawable.gold_ornament_surah_mirror_ic)
+            holder.binding.suraNameTv.setTypeface(
+                ResourcesCompat.getFont(
+                    context,
+                    R.font.secondary_font
+                ), Typeface.BOLD
+            )
             //holder.suraName.setTextSize(TypedValue.COMPLEX_UNIT_SP,context.getResources().getDimension(R.dimen.text_size_18));
         }
-
-        holder.binding.setSuraIndex(suraIndexModel);
-        holder.itemView.setOnClickListener(v -> {
-            itemSelectionListener.onSelectItem(Integer.valueOf(suraIndexModel.getPage()));
-        });
-
+        holder.binding.suraIndex = suraIndexModel
+        holder.itemView.setOnClickListener { v: View? ->
+            itemSelectionListener.onSelectItem(
+                Integer.valueOf(
+                    suraIndexModel.page
+                )
+            )
+        }
     }
 
-
-    @Override
-    public int getItemCount() {
-        return suraIndexFiliterList.size();
+    override fun getItemCount(): Int {
+        return suraIndexFilterList.size
     }
 
-    public void setSuraIndexModelList(List<SuraIndexModelMapper> suraIndexModelList) {
-        this.suraIndexModelList = suraIndexModelList;
-        this.suraIndexFiliterList = suraIndexModelList;
-        notifyDataSetChanged();
+    fun setSuraIndexModelList(suraIndexModelList: List<SuraIndexModelMapper>) {
+        this.suraIndexModelList = suraIndexModelList
+        suraIndexFilterList = suraIndexModelList
+        notifyDataSetChanged()
     }
 
-    public void filter(String inputQuery) {
-        if (inputQuery.isEmpty()) {
-            suraIndexFiliterList = suraIndexModelList;
+    fun filter(inputQuery: String) {
+        suraIndexFilterList = if (inputQuery.isEmpty()) {
+            suraIndexModelList
         } else {
-            List<SuraIndexModelMapper> filteredList = new ArrayList<>();
-            for (SuraIndexModelMapper row : suraIndexModelList) {
-
-                if (row.getName().toLowerCase().contains(inputQuery.toLowerCase())) {
-                    filteredList.add(row);
+            val filteredList: MutableList<SuraIndexModelMapper> = ArrayList()
+            for (row in suraIndexModelList) {
+                if (row.name.lowercase(Locale.getDefault())
+                        .contains(inputQuery.lowercase(Locale.getDefault()))
+                ) {
+                    filteredList.add(row)
                 }
             }
-            suraIndexFiliterList = filteredList;
+            filteredList
         }
-        notifyDataSetChanged();
+        notifyDataSetChanged()
     }
 
-    public static class ViewHolder extends RecyclerView.ViewHolder {
-
-        SuraIndexRowBinding binding;
-
-        public ViewHolder(SuraIndexRowBinding binding) {
-            super(binding.getRoot());
-            this.binding = binding;
-        }
-    }
+    class ViewHolder(var binding: SuraIndexRowBinding) : RecyclerView.ViewHolder(
+        binding.root
+    )
 }

@@ -61,7 +61,7 @@ class OptionDialog : DialogFragment(), OptionClickListener {
     }
 
     private fun setRecyclerList() {
-        adapter = FilterAdapter(options!!, suraName, this, requestCode)
+        adapter = FilterAdapter(options!!, suraName!!, this, requestCode)
         binding!!.suraRv.layoutManager = LinearLayoutManager(activity)
         binding!!.suraRv.addItemDecoration(
             DividerItemDecoration(

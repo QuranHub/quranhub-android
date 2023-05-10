@@ -1,120 +1,104 @@
-package app.quranhub.ui.mushaf.adapter;
+package app.quranhub.ui.mushaf.adapter
 
-import android.content.Context;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
+import android.content.Context
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.recyclerview.widget.RecyclerView
+import app.quranhub.R
+import app.quranhub.data.local.entity.BookmarkType
+import app.quranhub.databinding.BookmarkTypeItemBinding
+import app.quranhub.ui.mushaf.listener.ItemSelectionListener
 
-import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.RecyclerView;
+class BookmarkTypeAdapter(
+    private val bookmarkTypes: List<BookmarkType>?,
+    private val context: Context,
+    private val listener: ItemSelectionListener<Int>
+) : RecyclerView.Adapter<BookmarkTypeAdapter.ViewHolder>() {
 
-import java.util.List;
+    private var selectedType = 0
 
-import app.quranhub.R;
-import app.quranhub.data.local.entity.BookmarkType;
-import app.quranhub.databinding.BookmarkTypeItemBinding;
-import app.quranhub.ui.mushaf.listener.ItemSelectionListener;
+    private val bookmarkColors: IntArray = context.resources.getIntArray(R.array.bookmark_colors)
 
-public class BookmarkTypeAdapter extends RecyclerView.Adapter<BookmarkTypeAdapter.ViewHolder> {
-
-    private List<BookmarkType> bookmarkTypes;
-    private Context context;
-    private ItemSelectionListener<Integer> listener;
-    private int selectedType;
-    private int[] bookmarkColors;
-
-    public BookmarkTypeAdapter(List<BookmarkType> bookmarkTypes, Context context, ItemSelectionListener<Integer> listener) {
-        this.bookmarkTypes = bookmarkTypes;
-        this.context = context;
-        this.listener = listener;
-        selectedType = 0;
-        bookmarkColors = context.getResources().getIntArray(R.array.bookmark_colors);
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.bookmark_type_item, parent, false)
+        return ViewHolder(view)
     }
 
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        val type = bookmarkTypes!![position]
+        when (position) {
+            0 -> {
+                holder.binding.typeIv.colorFilter = null
+                holder.binding.typeIv.setImageResource(R.drawable.fav_gold_sidemenu_ic)
+                holder.binding.typeTv.text = context.getString(R.string.fasil_favorite)
+                holder.binding.seperator1.visibility = View.VISIBLE
+            }
 
-    @NonNull
-    @Override
-    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.bookmark_type_item, parent, false);
-        return new BookmarkTypeAdapter.ViewHolder(view);
-    }
+            1 -> {
+                holder.binding.typeIv.colorFilter = null
+                holder.binding.typeIv.setImageResource(R.drawable.bookmark_gold)
+                holder.binding.typeTv.text = context.getString(R.string.fasil_read)
+            }
 
-    @Override
-    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+            2 -> {
+                holder.binding.typeIv.colorFilter = null
+                holder.binding.typeIv.setImageResource(R.drawable.bookmark_green)
+                holder.binding.typeTv.text = context.getString(R.string.fasil_note)
+            }
 
-        BookmarkType type = bookmarkTypes.get(position);
+            3 -> {
+                holder.binding.typeIv.colorFilter = null
+                holder.binding.typeIv.setImageResource(R.drawable.bookmark_red)
+                holder.binding.typeTv.text = context.getString(R.string.fasil_memorize)
+            }
 
-        if (position == 0) {
-            holder.binding.typeIv.setColorFilter(null);
-            holder.binding.typeIv.setImageResource(R.drawable.fav_gold_sidemenu_ic);
-            holder.binding.typeTv.setText(context.getString(R.string.fasil_favorite));
-            holder.binding.seperator1.setVisibility(View.VISIBLE);
-
-        } else if (position == 1) {
-            holder.binding.typeIv.setColorFilter(null);
-            holder.binding.typeIv.setImageResource(R.drawable.bookmark_gold);
-            holder.binding.typeTv.setText(context.getString(R.string.fasil_read));
-        } else if (position == 2) {
-            holder.binding.typeIv.setColorFilter(null);
-            holder.binding.typeIv.setImageResource(R.drawable.bookmark_green);
-            holder.binding.typeTv.setText(context.getString(R.string.fasil_note));
-        } else if (position == 3) {
-            holder.binding.typeIv.setColorFilter(null);
-            holder.binding.typeIv.setImageResource(R.drawable.bookmark_red);
-            holder.binding.typeTv.setText(context.getString(R.string.fasil_memorize));
-        } else {  // CUSTOM BOOKMARK
-            holder.binding.typeIv.setColorFilter(bookmarkColors[type.getColorIndex()]);
-            holder.binding.typeTv.setText(type.getBookmarkTypeName());
+            else -> {  // CUSTOM BOOKMARK
+                holder.binding.typeIv.setColorFilter(bookmarkColors[type.colorIndex])
+                holder.binding.typeTv.text = type.bookmarkTypeName
+            }
         }
-
         if (position > 0) {
-            holder.binding.seperator1.setVisibility(View.INVISIBLE);
+            holder.binding.seperator1.visibility = View.INVISIBLE
         }
-
         if (position == selectedType) {
-            holder.binding.checkIv.setVisibility(View.VISIBLE);
+            holder.binding.checkIv.visibility = View.VISIBLE
         } else {
-            holder.binding.checkIv.setVisibility(View.GONE);
-        }
-
-    }
-
-    @Override
-    public int getItemCount() {
-        return bookmarkTypes.size();
-    }
-
-    public void hideCheck() {
-        selectedType = -1;
-        notifyDataSetChanged();
-    }
-
-    public void setTypeCheck(int selectedFilter) {
-        selectedType = selectedFilter - 1;
-        notifyDataSetChanged();
-    }
-
-
-    public class ViewHolder extends RecyclerView.ViewHolder {
-
-        BookmarkTypeItemBinding binding;
-
-        public ViewHolder(@NonNull View itemView) {
-            super(itemView);
-            binding = BookmarkTypeItemBinding.bind(itemView);
-            attachListeners();
-        }
-
-        private void attachListeners() {
-            binding.itemContainer.setOnClickListener(v -> onClickItem());
-        }
-
-        private void onClickItem() {
-            selectedType = getAdapterPosition();
-            notifyDataSetChanged();
-            listener.onSelectItem(selectedType + 1);
+            holder.binding.checkIv.visibility = View.GONE
         }
     }
 
+    override fun getItemCount(): Int {
+        return bookmarkTypes?.size ?: 0
+    }
+
+    fun hideCheck() {
+        selectedType = -1
+        notifyDataSetChanged()
+    }
+
+    fun setTypeCheck(selectedFilter: Int) {
+        selectedType = selectedFilter - 1
+        notifyDataSetChanged()
+    }
+
+    inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        var binding: BookmarkTypeItemBinding
+
+        init {
+            binding = BookmarkTypeItemBinding.bind(itemView)
+            attachListeners()
+        }
+
+        private fun attachListeners() {
+            binding.itemContainer.setOnClickListener { v: View? -> onClickItem() }
+        }
+
+        private fun onClickItem() {
+            selectedType = adapterPosition
+            notifyDataSetChanged()
+            listener.onSelectItem(selectedType + 1)
+        }
+    }
 }

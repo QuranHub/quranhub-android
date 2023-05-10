@@ -1,115 +1,101 @@
-package app.quranhub.ui.mushaf.adapter;
+package app.quranhub.ui.mushaf.adapter
 
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.recyclerview.widget.RecyclerView
+import app.quranhub.R
+import app.quranhub.databinding.ItemOptionBinding
+import java.util.Locale
 
-import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.RecyclerView;
+class FilterAdapter(
+    private val optionsList: List<String>,
+    selectedOption: String,
+    listener: OptionClickListener,
+    requestCode: Int
+) : RecyclerView.Adapter<FilterAdapter.ViewHolder>() {
 
-import java.util.ArrayList;
-import java.util.List;
+    private var filteredOptionsList: List<String>
+    private var selectedOption: String
+    private val itemClickListener: OptionClickListener
+    private val requestCode: Int
 
-import app.quranhub.R;
-import app.quranhub.databinding.ItemOptionBinding;
-
-public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder> {
-
-    private List<String> optionsList;
-    private List<String> filteredOptionsList;
-
-    private String selectedOption;
-    @NonNull
-    private OptionClickListener itemClickListener;
-    private int requestCode;
-
-    public FilterAdapter(@NonNull List<String> optionsList, String selectedOption
-            , @NonNull OptionClickListener listener, int requestCode) {
-        this.optionsList = optionsList;
-        this.filteredOptionsList = optionsList;
-        this.selectedOption = selectedOption;
-        this.itemClickListener = listener;
-        this.requestCode = requestCode;
+    init {
+        filteredOptionsList = optionsList
+        this.selectedOption = selectedOption
+        itemClickListener = listener
+        this.requestCode = requestCode
     }
 
-    @NonNull
-    @Override
-    public FilterAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View itemView = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_option, parent, false);
-
-        return new ViewHolder(itemView);
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val itemView = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_option, parent, false)
+        return ViewHolder(itemView)
     }
 
-    @Override
-    public void onBindViewHolder(@NonNull FilterAdapter.ViewHolder holder, int position) {
-        String option = filteredOptionsList.get(position);
-        holder.binding.tvOptionName.setText(option);
-        if (option.equals(selectedOption)) {
-            holder.binding.ivCheckBox.setVisibility(View.VISIBLE);
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        val option = filteredOptionsList[position]
+        holder.binding.tvOptionName.text = option
+        if (option == selectedOption) {
+            holder.binding.ivCheckBox.visibility = View.VISIBLE
         } else {
-            holder.binding.ivCheckBox.setVisibility(View.INVISIBLE);
+            holder.binding.ivCheckBox.visibility = View.INVISIBLE
         }
     }
 
-    @Override
-    public int getItemCount() {
-        return filteredOptionsList.size();
+    override fun getItemCount(): Int {
+        return filteredOptionsList.size
     }
 
-    public void filter(String inputQuery) {
-        if (inputQuery.isEmpty()) {
-            filteredOptionsList = optionsList;
+    fun filter(inputQuery: String) {
+        filteredOptionsList = if (inputQuery.isEmpty()) {
+            optionsList
         } else {
-            List<String> filteredList = new ArrayList<>();
-            for (String row : optionsList) {
-                if (row.toLowerCase().contains(inputQuery.toLowerCase())) {
-                    filteredList.add(row);
+            val filteredList: MutableList<String> = ArrayList()
+            for (row in optionsList) {
+                if (row.lowercase(Locale.getDefault())
+                        .contains(inputQuery.lowercase(Locale.getDefault()))
+                ) {
+                    filteredList.add(row)
                 }
             }
-            filteredOptionsList = filteredList;
+            filteredList
         }
-        notifyDataSetChanged();
+        notifyDataSetChanged()
     }
 
+    inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        var binding: ItemOptionBinding
 
-    class ViewHolder extends RecyclerView.ViewHolder {
-
-        ItemOptionBinding binding;
-
-        public ViewHolder(@NonNull View itemView) {
-            super(itemView);
-            binding = ItemOptionBinding.bind(itemView);
-            attachListeners();
+        init {
+            binding = ItemOptionBinding.bind(itemView)
+            attachListeners()
         }
 
-        private void attachListeners() {
-            binding.tvOptionName.setOnClickListener(v -> onClickSura());
+        private fun attachListeners() {
+            binding.tvOptionName.setOnClickListener { v: View? -> onClickSura() }
         }
 
-        private void onClickSura() {
-            selectedOption = binding.tvOptionName.getText().toString();
-            notifyDataSetChanged();
-            getSelectedOptionIndex(binding.tvOptionName.getText().toString());
+        private fun onClickSura() {
+            selectedOption = binding.tvOptionName.text.toString()
+            notifyDataSetChanged()
+            getSelectedOptionIndex(binding.tvOptionName.text.toString())
         }
-
     }
 
     // get selected sura index in original list (not filtered list)
-    private void getSelectedOptionIndex(String option) {
-        int selectedIndex = 0;
-        for (int i = 0; i < optionsList.size(); i++) {
-            if (optionsList.get(i).equals(option)) {
-                selectedIndex = i;
-                break;
+    private fun getSelectedOptionIndex(option: String) {
+        var selectedIndex = 0
+        for (i in optionsList.indices) {
+            if (optionsList[i] == option) {
+                selectedIndex = i
+                break
             }
         }
-        itemClickListener.onOptionClick(option, selectedIndex);
+        itemClickListener.onOptionClick(option, selectedIndex)
     }
 
-    public interface OptionClickListener {
-        void onOptionClick(String optionName, int optionIndex);
+    interface OptionClickListener {
+        fun onOptionClick(optionName: String, optionIndex: Int)
     }
-
-
 }

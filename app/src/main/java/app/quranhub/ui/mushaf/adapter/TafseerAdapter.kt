@@ -1,120 +1,102 @@
-package app.quranhub.ui.mushaf.adapter;
+package app.quranhub.ui.mushaf.adapter
 
-import android.content.Context;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
+import android.content.Context
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.recyclerview.widget.RecyclerView
+import app.quranhub.R
+import app.quranhub.data.local.prefs.AppPreferencesManager
+import app.quranhub.databinding.TafseerRowBinding
+import app.quranhub.ui.mushaf.model.TafseerModel
+import java.util.Locale
 
-import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.RecyclerView;
+class TafseerAdapter(private val context: Context) :
+    RecyclerView.Adapter<TafseerAdapter.ViewHolder>() {
 
-import java.util.ArrayList;
-import java.util.List;
+    private var tafseerModelList: List<TafseerModel>
+    private var tafseerFilteredModelList: List<TafseerModel>
 
-import app.quranhub.R;
-import app.quranhub.data.local.prefs.AppPreferencesManager;
-import app.quranhub.databinding.TafseerRowBinding;
-import app.quranhub.ui.mushaf.model.TafseerModel;
-
-public class TafseerAdapter extends RecyclerView.Adapter<TafseerAdapter.ViewHolder> {
-
-    private Context context;
-    private List<TafseerModel> tafseerModelList;
-    private List<TafseerModel> tafseerFilteredModelList;
-
-
-    public TafseerAdapter(Context context) {
-        this.context = context;
-        tafseerModelList = new ArrayList<>();
-        tafseerFilteredModelList = new ArrayList<>();
+    init {
+        tafseerModelList = ArrayList()
+        tafseerFilteredModelList = ArrayList()
     }
 
-    public void setTafseerModelList(List<TafseerModel> tafseerModelList) {
-        this.tafseerModelList = tafseerModelList;
-        this.tafseerFilteredModelList = tafseerModelList;
-        notifyDataSetChanged();
+    fun setTafseerModelList(tafseerModelList: List<TafseerModel>) {
+        this.tafseerModelList = tafseerModelList
+        tafseerFilteredModelList = tafseerModelList
+        notifyDataSetChanged()
     }
 
-    @NonNull
-    @Override
-    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.tafseer_row, parent, false);
-        return new ViewHolder(view);
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val view = LayoutInflater.from(parent.context).inflate(R.layout.tafseer_row, parent, false)
+        return ViewHolder(view)
     }
 
-    @Override
-    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-
-        TafseerModel model = tafseerFilteredModelList.get(position);
-        holder.binding.ayaTv.setText(model.getText());
-        holder.binding.tafseerTv.setText(model.getTafseer());
-        holder.binding.numlinesTv.setText(model.getTafseer());
-
-        if (model.isExpandable()) {
-            holder.binding.tafseerTv.expand();
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        val model = tafseerFilteredModelList[position]
+        holder.binding.ayaTv.text = model.text
+        holder.binding.tafseerTv.text = model.tafseer
+        holder.binding.numlinesTv.text = model.tafseer
+        if (model.isExpandable) {
+            holder.binding.tafseerTv.expand()
         } else {
-            holder.binding.tafseerTv.collapse();
+            holder.binding.tafseerTv.collapse()
         }
-
-
-        holder.binding.numlinesTv.post(() -> {
-            final int lineCount = holder.binding.numlinesTv.getLineCount();
-            holder.binding.numlinesTv.setVisibility(View.GONE);
+        holder.binding.numlinesTv.post {
+            val lineCount = holder.binding.numlinesTv.lineCount
+            holder.binding.numlinesTv.visibility = View.GONE
             if (lineCount < 5) {
-                holder.binding.numlinesTv.setVisibility(View.GONE);
+                holder.binding.numlinesTv.visibility = View.GONE
             } else {
-                holder.binding.numlinesTv.setVisibility(View.VISIBLE);
+                holder.binding.numlinesTv.visibility = View.VISIBLE
             }
-        });
-
-
-        if (!AppPreferencesManager.getAppLangSetting(context).equals("ar") && !AppPreferencesManager.getQuranTranslationLanguage(context).equals("ar")) {             // !LocaleUtils.getTranslationLanguage().equals("ar")
-            holder.binding.parentLayout.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
         }
-
-        holder.binding.moreTv.setOnClickListener(v -> {
-            if (holder.binding.tafseerTv.isExpanded()) {
-                holder.binding.moreTv.setText(context.getString(R.string.more));
-                holder.binding.tafseerTv.collapse();
-                tafseerFilteredModelList.get(position).setExpandable(false);
+        if (AppPreferencesManager.getAppLangSetting(context) != "ar" && AppPreferencesManager.getQuranTranslationLanguage(
+                context
+            ) != "ar"
+        ) {             // !LocaleUtils.getTranslationLanguage().equals("ar")
+            holder.binding.parentLayout.layoutDirection = View.LAYOUT_DIRECTION_LTR
+        }
+        holder.binding.moreTv.setOnClickListener { v: View? ->
+            if (holder.binding.tafseerTv.isExpanded) {
+                holder.binding.moreTv.text = context.getString(R.string.more)
+                holder.binding.tafseerTv.collapse()
+                tafseerFilteredModelList[position].isExpandable = false
             } else {
-                holder.binding.moreTv.setText(context.getString(R.string.collapse));
-                holder.binding.tafseerTv.expand();
-                tafseerFilteredModelList.get(position).setExpandable(true);
+                holder.binding.moreTv.text = context.getString(R.string.collapse)
+                holder.binding.tafseerTv.expand()
+                tafseerFilteredModelList[position].isExpandable = true
             }
-        });
-
+        }
     }
 
-    @Override
-    public int getItemCount() {
-        return tafseerFilteredModelList.size();
+    override fun getItemCount(): Int {
+        return tafseerFilteredModelList.size
     }
 
-    public void filter(String inputQuery) {
-        if (inputQuery.isEmpty()) {
-            tafseerFilteredModelList = tafseerModelList;
+    fun filter(inputQuery: String) {
+        tafseerFilteredModelList = if (inputQuery.isEmpty()) {
+            tafseerModelList
         } else {
-            List<TafseerModel> filteredList = new ArrayList<>();
-            for (TafseerModel row : tafseerModelList) {
-                if (row.getPure_text().toLowerCase().contains(inputQuery.toLowerCase())) {
-                    filteredList.add(row);
+            val filteredList: MutableList<TafseerModel> = ArrayList()
+            for (row in tafseerModelList) {
+                if (row.pure_text.lowercase(Locale.getDefault())
+                        .contains(inputQuery.lowercase(Locale.getDefault()))
+                ) {
+                    filteredList.add(row)
                 }
             }
-            tafseerFilteredModelList = filteredList;
+            filteredList
         }
-        notifyDataSetChanged();
+        notifyDataSetChanged()
     }
 
-    public static class ViewHolder extends RecyclerView.ViewHolder {
+    class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        var binding: TafseerRowBinding
 
-        TafseerRowBinding binding;
-
-        public ViewHolder(@NonNull View itemView) {
-            super(itemView);
-            binding = TafseerRowBinding.bind(itemView);
+        init {
+            binding = TafseerRowBinding.bind(itemView)
         }
-
-
     }
 }

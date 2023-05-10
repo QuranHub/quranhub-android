@@ -71,7 +71,7 @@ class BookmarkEditDialog : DialogFragment(), ItemSelectionListener<Int> {
         dialog!!.window!!.requestFeature(Window.FEATURE_NO_TITLE)
         dialog!!.setContentView(binding!!.root)
         dialog!!.window?.setBackgroundDrawableResource(android.R.color.transparent)
-        adapter = BookmarkTypeAdapter(bookmarkTypes, activity, this)
+        adapter = BookmarkTypeAdapter(bookmarkTypes, requireContext(), this)
         binding!!.bookmarkTypesRv.layoutManager = LinearLayoutManager(activity)
         binding!!.bookmarkTypesRv.adapter = adapter
         if (selectedFilter == 0) {

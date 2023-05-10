@@ -1,188 +1,182 @@
-package app.quranhub.ui.mushaf.adapter;
+package app.quranhub.ui.mushaf.adapter
 
-import android.os.Build;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.Filter;
-import android.widget.Filterable;
+import android.os.Build
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.Filter
+import android.widget.Filterable
+import androidx.recyclerview.widget.RecyclerView
+import app.quranhub.R
+import app.quranhub.data.local.entity.TranslationBook
+import app.quranhub.databinding.ItemTranslationBinding
+import app.quranhub.ui.mushaf.model.DisplayableTranslation
+import app.quranhub.util.NetworkUtil
+import java.util.Locale
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.recyclerview.widget.RecyclerView;
+class TranslationsAdapter(
+    translations: MutableList<DisplayableTranslation>?,
+    selectedBookId: String?,
+    listener: ItemClickListener
+) : RecyclerView.Adapter<TranslationsAdapter.ViewHolder>(), Filterable {
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+    private var originalTranslations: MutableList<DisplayableTranslation>?
+    private var filteredTranslations: List<DisplayableTranslation>?
 
-import app.quranhub.R;
-import app.quranhub.data.local.entity.TranslationBook;
-import app.quranhub.databinding.ItemTranslationBinding;
-import app.quranhub.ui.mushaf.model.DisplayableTranslation;
-import app.quranhub.util.NetworkUtil;
+    private var searchText = ""
+    private val selectedBookId: String?
+    private val listener: ItemClickListener
 
-public class TranslationsAdapter extends RecyclerView.Adapter<TranslationsAdapter.ViewHolder>
-        implements Filterable {
-
-    private static final String TAG = TranslationsAdapter.class.getSimpleName();
-
-    @Nullable
-    private List<DisplayableTranslation> originalTranslations;
-    @Nullable
-    private List<DisplayableTranslation> filteredTranslations;
-    private String searchText = "";
-    @Nullable
-    private String selectedBookId;
-    private ItemClickListener listener;
-
-
-    public TranslationsAdapter(@Nullable List<DisplayableTranslation> translations, @Nullable String selectedBookId
-            , ItemClickListener listener) {
-        sortTranslationList(translations);
-        this.originalTranslations = translations;
-        this.filteredTranslations = translations;
-        this.selectedBookId = selectedBookId;
-        this.listener = listener;
+    init {
+        sortTranslationList(translations)
+        originalTranslations = translations
+        filteredTranslations = translations
+        this.selectedBookId = selectedBookId
+        this.listener = listener
     }
 
-    @NonNull
-    @Override
-    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View itemView = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_translation, parent, false);
-
-        ViewHolder vh = new ViewHolder(itemView);
-        return vh;
+    override fun onCreateViewHolder(
+        parent: ViewGroup,
+        viewType: Int
+    ): ViewHolder {
+        val itemView = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_translation, parent, false)
+        return ViewHolder(itemView)
     }
 
-    @Override
-    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        DisplayableTranslation t = filteredTranslations.get(position);
-
-        holder.binding.tvBookName.setText(t.getName());
-        holder.binding.tvAuthorName.setText(t.getAuthor());
-
-        if (t.getDownloadStatus() == NetworkUtil.STATUS_DOWNLOADED && t.getId().equals(selectedBookId)) {
-            holder.binding.ivSelected.setVisibility(View.VISIBLE);
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        val t = filteredTranslations!![position]
+        holder.binding.tvBookName.text = t.name
+        holder.binding.tvAuthorName.text = t.author
+        if (t.downloadStatus == NetworkUtil.STATUS_DOWNLOADED && t.id == selectedBookId) {
+            holder.binding.ivSelected.visibility = View.VISIBLE
         } else {
-            holder.binding.ivSelected.setVisibility(View.INVISIBLE);
+            holder.binding.ivSelected.visibility = View.INVISIBLE
         }
-
-        if (t.getDownloadStatus() == NetworkUtil.STATUS_DOWNLOADED) {
-            holder.binding.btnAction.setVisibility(View.INVISIBLE);
-            holder.binding.progressDownload.setVisibility(View.INVISIBLE);
-            holder.binding.progressDownloadLevel.setVisibility(View.INVISIBLE);
-
-        } else if (t.getDownloadStatus() == NetworkUtil.STATUS_DOWNLOADING) {
-            holder.binding.btnAction.setVisibility(View.VISIBLE);
-            holder.binding.btnAction.setImageResource(R.drawable.ic_close);
-            holder.binding.progressDownload.setVisibility(View.VISIBLE);
-            holder.binding.progressDownloadLevel.setVisibility(View.VISIBLE);
+        if (t.downloadStatus == NetworkUtil.STATUS_DOWNLOADED) {
+            holder.binding.btnAction.visibility = View.INVISIBLE
+            holder.binding.progressDownload.visibility = View.INVISIBLE
+            holder.binding.progressDownloadLevel.visibility = View.INVISIBLE
+        } else if (t.downloadStatus == NetworkUtil.STATUS_DOWNLOADING) {
+            holder.binding.btnAction.visibility = View.VISIBLE
+            holder.binding.btnAction.setImageResource(R.drawable.ic_close)
+            holder.binding.progressDownload.visibility = View.VISIBLE
+            holder.binding.progressDownloadLevel.visibility = View.VISIBLE
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                holder.binding.progressDownloadLevel.setProgress(t.getDownloadLevelPercentage(), true);
+                holder.binding.progressDownloadLevel.setProgress(t.downloadLevelPercentage, true)
             } else {
-                holder.binding.progressDownloadLevel.setProgress(t.getDownloadLevelPercentage());
+                holder.binding.progressDownloadLevel.progress = t.downloadLevelPercentage
             }
         } else {
             // not downloaded
-            holder.binding.btnAction.setVisibility(View.VISIBLE);
-            holder.binding.btnAction.setImageResource(R.drawable.ic_download);
-            holder.binding.progressDownload.setVisibility(View.INVISIBLE);
-            holder.binding.progressDownloadLevel.setVisibility(View.INVISIBLE);
+            holder.binding.btnAction.visibility = View.VISIBLE
+            holder.binding.btnAction.setImageResource(R.drawable.ic_download)
+            holder.binding.progressDownload.visibility = View.INVISIBLE
+            holder.binding.progressDownloadLevel.visibility = View.INVISIBLE
         }
     }
 
-    @Override
-    public int getItemCount() {
-        return filteredTranslations != null ? filteredTranslations.size() : 0;
+    override fun getItemCount(): Int {
+        return if (filteredTranslations != null) filteredTranslations!!.size else 0
     }
 
-    public void setTranslations(@Nullable List<DisplayableTranslation> translations) {
-        sortTranslationList(translations);
-        this.originalTranslations = translations;
-        getFilter().filter(searchText);
+    fun setTranslations(translations: MutableList<DisplayableTranslation>?) {
+        sortTranslationList(translations)
+        originalTranslations = translations
+        filter.filter(searchText)
     }
 
-    @Override
-    public Filter getFilter() {
-        return new Filter() {
-            @Override
-            protected FilterResults performFiltering(CharSequence constraint) {
-                List<DisplayableTranslation> resultTranslations = new ArrayList<>();
-                if (constraint.length() == 0) {
-                    resultTranslations = originalTranslations;
+    override fun getFilter(): Filter {
+        return object : Filter() {
+            override fun performFiltering(constraint: CharSequence): FilterResults {
+                var resultTranslations: MutableList<DisplayableTranslation>? = ArrayList()
+                if (constraint.isEmpty()) {
+                    resultTranslations = originalTranslations
                 } else {
-                    for (DisplayableTranslation t : originalTranslations) {
-                        if (t.getName().toLowerCase().contains(constraint.toString().toLowerCase())
-                                || t.getAuthor().toLowerCase().contains(constraint.toString().toLowerCase())) {
-                            resultTranslations.add(t);
+                    for (t in originalTranslations!!) {
+                        if (t.name.lowercase(Locale.getDefault()).contains(
+                                constraint.toString().lowercase(
+                                    Locale.getDefault()
+                                )
+                            )
+                            || t.author.lowercase(Locale.getDefault()).contains(
+                                constraint.toString().lowercase(
+                                    Locale.getDefault()
+                                )
+                            )
+                        ) {
+                            resultTranslations!!.add(t)
                         }
                     }
                 }
-
-                FilterResults results = new FilterResults();
-                results.values = resultTranslations;
-                return results;
+                val results = FilterResults()
+                results.values = resultTranslations
+                return results
             }
 
-            @Override
-            protected void publishResults(CharSequence constraint, FilterResults results) {
-                searchText = constraint.toString();
-                filteredTranslations = (List<DisplayableTranslation>) results.values;
-                notifyDataSetChanged();
-            }
-        };
-    }
-
-    public class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
-
-        ItemTranslationBinding binding;
-
-        public ViewHolder(@NonNull View itemView) {
-            super(itemView);
-            binding = ItemTranslationBinding.bind(itemView);
-            attachListeners();
-        }
-
-        private void attachListeners() {
-            binding.getRoot().setOnClickListener(this);
-            binding.btnAction.setOnClickListener(v -> onActionButtonClicked());
-        }
-
-        @Override
-        public void onClick(View v) {
-            int position = getAdapterPosition();
-            DisplayableTranslation t = filteredTranslations.get(position);
-            if (t.getDownloadStatus() == NetworkUtil.STATUS_DOWNLOADED) {
-                listener.onTranslationClick(t.getTranslationBook(), getAdapterPosition());
-            }
-        }
-
-        private void onActionButtonClicked() {
-            int position = getAdapterPosition();
-            DisplayableTranslation t = filteredTranslations.get(position);
-            if (t.getDownloadStatus() == NetworkUtil.STATUS_NOT_DOWNLOADED) {
-                listener.onDownloadTranslationClick(t.getTranslationBook(), position);
-            } else if (t.getDownloadStatus() == NetworkUtil.STATUS_DOWNLOADING) {
-                listener.onCancelDownloadTranslationClick(t.getTranslationBook(), position);
+            override fun publishResults(constraint: CharSequence, results: FilterResults) {
+                searchText = constraint.toString()
+                filteredTranslations = results.values as? List<DisplayableTranslation>
+                notifyDataSetChanged()
             }
         }
     }
 
-    private void sortTranslationList(List<DisplayableTranslation> displayableTranslations) {
-        Collections.sort(displayableTranslations, (o1, o2) -> o1.getName().compareToIgnoreCase(o2.getName()));
+    inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView),
+        View.OnClickListener {
+        var binding: ItemTranslationBinding
+
+        init {
+            binding = ItemTranslationBinding.bind(itemView)
+            attachListeners()
+        }
+
+        private fun attachListeners() {
+            binding.root.setOnClickListener(this)
+            binding.btnAction.setOnClickListener { v: View? -> onActionButtonClicked() }
+        }
+
+        override fun onClick(v: View) {
+            val position = adapterPosition
+            val t = filteredTranslations!![position]
+            if (t.downloadStatus == NetworkUtil.STATUS_DOWNLOADED) {
+                listener.onTranslationClick(t.translationBook, adapterPosition)
+            }
+        }
+
+        private fun onActionButtonClicked() {
+            val position = adapterPosition
+            val t = filteredTranslations!![position]
+            if (t.downloadStatus == NetworkUtil.STATUS_NOT_DOWNLOADED) {
+                listener.onDownloadTranslationClick(t.translationBook, position)
+            } else if (t.downloadStatus == NetworkUtil.STATUS_DOWNLOADING) {
+                listener.onCancelDownloadTranslationClick(t.translationBook, position)
+            }
+        }
     }
 
+    private fun sortTranslationList(displayableTranslations: MutableList<DisplayableTranslation>?) {
+        displayableTranslations?.sortWith { o1: DisplayableTranslation, o2: DisplayableTranslation ->
+            o1.name.compareTo(
+                o2.name,
+                ignoreCase = true
+            )
+        }
+    }
 
     /**
      * Used in handling items clicks
      */
-    public interface ItemClickListener {
-        void onTranslationClick(TranslationBook translationBook, int clickedItemIndex);
-
-        void onDownloadTranslationClick(TranslationBook translationBook, int clickedItemIndex);
-
-        void onCancelDownloadTranslationClick(TranslationBook translationBook, int clickedItemIndex);
+    interface ItemClickListener {
+        fun onTranslationClick(translationBook: TranslationBook?, clickedItemIndex: Int)
+        fun onDownloadTranslationClick(translationBook: TranslationBook?, clickedItemIndex: Int)
+        fun onCancelDownloadTranslationClick(
+            translationBook: TranslationBook?,
+            clickedItemIndex: Int
+        )
     }
 
+    companion object {
+        private val TAG = TranslationsAdapter::class.java.simpleName
+    }
 }

@@ -1,200 +1,178 @@
-package app.quranhub.ui.mushaf.adapter;
+package app.quranhub.ui.mushaf.adapter
 
-import android.view.Gravity;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
+import android.view.Gravity
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.recyclerview.widget.RecyclerView
+import app.quranhub.R
+import app.quranhub.data.local.entity.Book
+import app.quranhub.data.remote.model.BookContent
+import app.quranhub.databinding.ItemBookBinding
+import app.quranhub.ui.mushaf.listener.ItemSelectionListener
+import app.quranhub.util.LocaleUtils.appLanguage
+import java.util.Locale
 
-import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.RecyclerView;
+class BookAdapter(private val translationActionsListener: TranslationActionsListener) :
+    RecyclerView.Adapter<BookAdapter.ViewHolder>() {
 
-import java.util.ArrayList;
-import java.util.List;
+    private var bookList: MutableList<BookContent>
+    private var translationFilterList: MutableList<BookContent>
 
-import app.quranhub.R;
-import app.quranhub.data.local.entity.Book;
-import app.quranhub.data.remote.model.BookContent;
-import app.quranhub.databinding.ItemBookBinding;
-import app.quranhub.ui.mushaf.listener.ItemSelectionListener;
-import app.quranhub.util.LocaleUtils;
+    private var isEditable = false
 
-public class BookAdapter extends RecyclerView.Adapter<BookAdapter.ViewHolder> {
-
-    private List<BookContent> bookList;
-    private List<BookContent> translationFiliterList;
-    public static final int TRANSLATION_NOT_DOWNLOADED = 0;
-    public static final int TRANSLATION_DOWNLOADED_IN_PROGRESS = 1;
-    public static final int TRANSLATION_DOWNLOADED = 2;
-    private boolean isEditable;
-    private TranslationActionsListener translationActionsListener;
-
-    public BookAdapter(TranslationActionsListener translationActionsListener) {
-        this.translationActionsListener = translationActionsListener;
-        isEditable = false;
-        bookList = new ArrayList<>();
-        translationFiliterList = new ArrayList<>();
+    init {
+        bookList = ArrayList()
+        translationFilterList = ArrayList()
     }
 
-    @NonNull
-    @Override
-    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_book, parent, false);
-        return new BookAdapter.ViewHolder(view);
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_book, parent, false)
+        return ViewHolder(view)
     }
 
-    @Override
-    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        BookContent model = translationFiliterList.get(position);
-        holder.binding.translationTv.setText(model.getName());
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        val model = translationFilterList[position]
+        holder.binding.translationTv.text = model.name
         if (isEditable) {
-            holder.binding.translationIv.setImageResource(R.drawable.ic_delete);
-            changeIconType(false, holder);
-        } else if (model.getDownloadStatus() == TRANSLATION_DOWNLOADED) {
-            holder.binding.translationIv.setImageResource(R.drawable.check_gold_ic);
-            changeIconType(false, holder);
-        } else if (model.getDownloadStatus() == TRANSLATION_NOT_DOWNLOADED) {
-            holder.binding.translationIv.setImageResource(R.drawable.ic_download);
-            changeIconType(false, holder);
-        } else if (model.getDownloadStatus() == TRANSLATION_DOWNLOADED_IN_PROGRESS) {
-            changeIconType(true, holder);
+            holder.binding.translationIv.setImageResource(R.drawable.ic_delete)
+            changeIconType(false, holder)
+        } else if (model.downloadStatus == TRANSLATION_DOWNLOADED) {
+            holder.binding.translationIv.setImageResource(R.drawable.check_gold_ic)
+            changeIconType(false, holder)
+        } else if (model.downloadStatus == TRANSLATION_NOT_DOWNLOADED) {
+            holder.binding.translationIv.setImageResource(R.drawable.ic_download)
+            changeIconType(false, holder)
+        } else if (model.downloadStatus == TRANSLATION_DOWNLOADED_IN_PROGRESS) {
+            changeIconType(true, holder)
         }
-
-        if (!LocaleUtils.getAppLanguage().equals("ar")) {
-            holder.binding.translationTv.setGravity(Gravity.LEFT);
+        if (appLanguage != "ar") {
+            holder.binding.translationTv.gravity = Gravity.LEFT
         }
-
-        holder.binding.translationTv.setOnClickListener(v -> {
-            if (model.getDownloadStatus() == TRANSLATION_NOT_DOWNLOADED) {                             // open file in pdf if it exist in local storage and downloaded before
-                translationActionsListener.onDownloadTranslation(model);
-            } else if (model.getDownloadStatus() == TRANSLATION_DOWNLOADED) {
-                translationActionsListener.onSelectItem(model);
+        holder.binding.translationTv.setOnClickListener { v: View? ->
+            if (model.downloadStatus == TRANSLATION_NOT_DOWNLOADED) {                             // open file in pdf if it exist in local storage and downloaded before
+                translationActionsListener.onDownloadTranslation(model)
+            } else if (model.downloadStatus == TRANSLATION_DOWNLOADED) {
+                translationActionsListener.onSelectItem(model)
             }
-        });
-
-        holder.binding.downloadProgress.setOnClickListener(v -> {
-            translationActionsListener.onCancelDownload(model);
-        });
-
-        holder.binding.translationIv.setOnClickListener(v -> {
+        }
+        holder.binding.downloadProgress.setOnClickListener { v: View? ->
+            translationActionsListener.onCancelDownload(
+                model
+            )
+        }
+        holder.binding.translationIv.setOnClickListener { v: View? ->
             if (isEditable) {
-                translationActionsListener.onDeleteTranslation(model);
-            } else if (model.getDownloadStatus() == TRANSLATION_NOT_DOWNLOADED) {
-                translationActionsListener.onDownloadTranslation(model);
+                translationActionsListener.onDeleteTranslation(model)
+            } else if (model.downloadStatus == TRANSLATION_NOT_DOWNLOADED) {
+                translationActionsListener.onDownloadTranslation(model)
             }
-        });
+        }
     }
 
-    private void changeIconType(boolean isDownloadProgress, ViewHolder holder) {
+    private fun changeIconType(isDownloadProgress: Boolean, holder: ViewHolder) {
         if (isDownloadProgress) {
-            holder.binding.cancelDownload.setVisibility(View.VISIBLE);
-            holder.binding.downloadProgress.setVisibility(View.VISIBLE);
-            holder.binding.translationIv.setVisibility(View.INVISIBLE);
+            holder.binding.cancelDownload.visibility = View.VISIBLE
+            holder.binding.downloadProgress.visibility = View.VISIBLE
+            holder.binding.translationIv.visibility = View.INVISIBLE
         } else {
-            holder.binding.cancelDownload.setVisibility(View.INVISIBLE);
-            holder.binding.downloadProgress.setVisibility(View.INVISIBLE);
-            holder.binding.translationIv.setVisibility(View.VISIBLE);
+            holder.binding.cancelDownload.visibility = View.INVISIBLE
+            holder.binding.downloadProgress.visibility = View.INVISIBLE
+            holder.binding.translationIv.visibility = View.VISIBLE
         }
     }
 
-    @Override
-    public int getItemCount() {
-        return translationFiliterList.size();
+    override fun getItemCount(): Int {
+        return translationFilterList.size
     }
 
-    public void setBookList(List<BookContent> bookList) {
-        this.bookList = bookList;
-        this.translationFiliterList = bookList;
-        notifyDataSetChanged();
+    fun setBookList(bookList: MutableList<BookContent>) {
+        this.bookList = bookList
+        translationFilterList = bookList
+        notifyDataSetChanged()
     }
 
-    public void filter(String inputQuery) {
+    fun filter(inputQuery: String) {
         if (inputQuery.isEmpty()) {
-            if (!isEditable)
-                translationFiliterList = bookList;
-            else
-                setDownloadTranslations();
+            if (!isEditable) translationFilterList = bookList else setDownloadTranslations()
         } else {
-            List<BookContent> filteredList = new ArrayList<>();
-            for (BookContent row : bookList) {
-                if (isEditable && row.getDownloadStatus() != TRANSLATION_DOWNLOADED)
-                    continue;
-                if (row.getName().toLowerCase().contains(inputQuery.toLowerCase())) {
-                    filteredList.add(row);
+            val filteredList: MutableList<BookContent> = ArrayList()
+            for (row in bookList) {
+                if (isEditable && row.downloadStatus != TRANSLATION_DOWNLOADED) continue
+                if (row.name.lowercase(Locale.getDefault())
+                        .contains(inputQuery.lowercase(Locale.getDefault()))
+                ) {
+                    filteredList.add(row)
                 }
             }
-            translationFiliterList = filteredList;
+            translationFilterList = filteredList
         }
-        notifyDataSetChanged();
+        notifyDataSetChanged()
     }
 
-
-    public void setDownloadTranslations() {
-        isEditable = true;
-        List<BookContent> filteredList = new ArrayList<>();
-        for (BookContent model : bookList) {
-            if (model.getDownloadStatus() == TRANSLATION_DOWNLOADED)
-                filteredList.add(model);
+    fun setDownloadTranslations() {
+        isEditable = true
+        val filteredList: MutableList<BookContent> = ArrayList()
+        for (model in bookList) {
+            if (model.downloadStatus == TRANSLATION_DOWNLOADED) filteredList.add(model)
         }
-
-        this.translationFiliterList = filteredList;
-        notifyDataSetChanged();
+        translationFilterList = filteredList
+        notifyDataSetChanged()
     }
 
-    public void setAllTranslation() {
-        isEditable = false;
-        translationFiliterList = bookList;
-        notifyDataSetChanged();
+    fun setAllTranslation() {
+        isEditable = false
+        translationFilterList = bookList
+        notifyDataSetChanged()
     }
 
-    public void removeDeletedFile(int id) {
-        for (BookContent model : translationFiliterList) {
-            if (model.getId() == id) {
-                translationFiliterList.remove(model);
-                break;
+    fun removeDeletedFile(id: Int) {
+        for (model in translationFilterList) {
+            if (model.id == id) {
+                translationFilterList.remove(model)
+                break
             }
         }
-
-        for (BookContent model : bookList) {
-            if (model.getId() == id) {
-                model.setDownloadStatus(TRANSLATION_NOT_DOWNLOADED);
-                break;
+        for (model in bookList) {
+            if (model.id == id) {
+                model.downloadStatus = TRANSLATION_NOT_DOWNLOADED
+                break
             }
         }
-
-        notifyDataSetChanged();
+        notifyDataSetChanged()
     }
 
-    public void updateBooksDownloadStatus(List<Book> models) {
-        for (Book book : models) {
-            for (BookContent content : translationFiliterList) {
-                if (book.getId() == content.getId()) {
-                    content.setDownloadId(book.getDownloadId());
-                    content.setDownloadStatus(book.getDownloadStatus());
-                    break;
+    fun updateBooksDownloadStatus(models: List<Book>) {
+        for (book in models) {
+            for (content in translationFilterList) {
+                if (book.id == content.id) {
+                    content.downloadId = book.downloadId
+                    content.downloadStatus = book.downloadStatus
+                    break
                 }
             }
         }
-        notifyDataSetChanged();
+        notifyDataSetChanged()
     }
 
-    public class ViewHolder extends RecyclerView.ViewHolder {
+    inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        var binding: ItemBookBinding
 
-        ItemBookBinding binding;
-
-        public ViewHolder(@NonNull View itemView) {
-            super(itemView);
-            binding = ItemBookBinding.bind(itemView);
+        init {
+            binding = ItemBookBinding.bind(itemView)
         }
     }
 
-    public interface TranslationActionsListener extends ItemSelectionListener<BookContent> {
-        void onCancelDownload(BookContent model);
-
-        void onDownloadTranslation(BookContent model);
-
-        void onDeleteTranslation(BookContent model);
+    interface TranslationActionsListener : ItemSelectionListener<BookContent?> {
+        fun onCancelDownload(model: BookContent?)
+        fun onDownloadTranslation(model: BookContent?)
+        fun onDeleteTranslation(model: BookContent?)
     }
 
-
+    companion object {
+        const val TRANSLATION_NOT_DOWNLOADED = 0
+        const val TRANSLATION_DOWNLOADED_IN_PROGRESS = 1
+        const val TRANSLATION_DOWNLOADED = 2
+    }
 }

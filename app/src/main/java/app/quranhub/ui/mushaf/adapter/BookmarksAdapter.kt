@@ -1,236 +1,211 @@
-package app.quranhub.ui.mushaf.adapter;
+package app.quranhub.ui.mushaf.adapter
 
-import android.annotation.SuppressLint;
-import android.content.Context;
-import android.graphics.Typeface;
-import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.Filter;
-import android.widget.Filterable;
+import android.annotation.SuppressLint
+import android.content.Context
+import android.graphics.Typeface
+import android.util.Log
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.Filter
+import android.widget.Filterable
+import androidx.recyclerview.widget.RecyclerView
+import app.quranhub.R
+import app.quranhub.data.Constants
+import app.quranhub.databinding.ItemBookmarkedFavoriteAyaBinding
+import app.quranhub.ui.mushaf.listener.ItemSelectionListener
+import app.quranhub.ui.mushaf.model.DisplayableBookmark
+import app.quranhub.util.LocaleUtils.formatNumber
+import java.util.Locale
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.recyclerview.widget.RecyclerView;
+class BookmarksAdapter(
+    private val context: Context, private val bookmarkActionListener: BookmarkActionListener
+) : RecyclerView.Adapter<BookmarksAdapter.ViewHolder>(), Filterable {
 
-import java.util.ArrayList;
-import java.util.List;
+    private var originalBookmarks: MutableList<DisplayableBookmark>? = null
+    private var filteredBookmarks: MutableList<DisplayableBookmark>? = null
 
-import app.quranhub.R;
-import app.quranhub.data.Constants;
-import app.quranhub.databinding.ItemBookmarkedFavoriteAyaBinding;
-import app.quranhub.ui.mushaf.listener.ItemSelectionListener;
-import app.quranhub.ui.mushaf.model.DisplayableBookmark;
-import app.quranhub.util.LocaleUtils;
+    private var bookmarkColors: IntArray = context.resources.getIntArray(R.array.bookmark_colors)
 
-public class BookmarksAdapter extends RecyclerView.Adapter<BookmarksAdapter.ViewHolder>
-        implements Filterable {
+    private var searchText = ""
+    private var isEditable = false
 
-    private static final String TAG = BookmarksAdapter.class.getSimpleName();
-
-    @Nullable
-    private List<DisplayableBookmark> originalBookmarks;
-    @Nullable
-    private List<DisplayableBookmark> filteredBookmarks;
-    @NonNull
-    private Context context;
-    @NonNull
-    private BookmarkActionListener bookmarkActionListener;
-    protected int[] bookmarkColors;
-    private String searchText = "";
-
-    private boolean isEditable = false;
-
-    public BookmarksAdapter(@NonNull Context context
-            , @NonNull BookmarkActionListener bookmarkActionListener) {
-        this.context = context;
-        this.bookmarkActionListener = bookmarkActionListener;
-        bookmarkColors = context.getResources().getIntArray(R.array.bookmark_colors);
+    fun setBookmarks(bookmarks: MutableList<DisplayableBookmark>) {
+        originalBookmarks = bookmarks
+        filter.filter(searchText)
     }
 
-    public void setBookmarks(@NonNull List<DisplayableBookmark> bookmarks) {
-        this.originalBookmarks = bookmarks;
-        getFilter().filter(searchText);
+    fun setEditable(isEditable: Boolean) {
+        this.isEditable = isEditable
+        notifyDataSetChanged()
     }
 
-    public void setEditable(boolean isEditable) {
-        this.isEditable = isEditable;
-        notifyDataSetChanged();
+    fun isEditable(): Boolean {
+        return isEditable
     }
 
-    public boolean isEditable() {
-        return this.isEditable;
+    fun toggleEdit() {
+        setEditable(!isEditable)
     }
 
-    public void toggleEdit() {
-        setEditable(!isEditable);
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val view = LayoutInflater.from(context)
+            .inflate(R.layout.item_bookmarked_favorite_aya, parent, false)
+        return ViewHolder(view)
     }
 
-    @NonNull
-    @Override
-    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(context)
-                .inflate(R.layout.item_bookmarked_favorite_aya, parent, false);
-        return new ViewHolder(view);
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        holder.bind(filteredBookmarks!![position])
     }
 
-    @Override
-    public void onBindViewHolder(@NonNull final ViewHolder holder, int position) {
-        holder.bind(filteredBookmarks.get(position));
+    override fun getItemCount(): Int {
+        return if (filteredBookmarks == null) 0 else filteredBookmarks!!.size
     }
 
-    @Override
-    public int getItemCount() {
-        if (filteredBookmarks == null)
-            return 0;
-        return filteredBookmarks.size();
-    }
-
-    @Override
-    public Filter getFilter() {
-        return new Filter() {
-            @Override
-            protected FilterResults performFiltering(CharSequence constraint) {
-                List<DisplayableBookmark> resultBookmarks = new ArrayList<>();
-                if (constraint.length() == 0) {
-                    resultBookmarks = originalBookmarks;
+    override fun getFilter(): Filter {
+        return object : Filter() {
+            override fun performFiltering(constraint: CharSequence): FilterResults {
+                var resultBookmarks: MutableList<DisplayableBookmark>? = ArrayList()
+                if (constraint.isEmpty()) {
+                    resultBookmarks = originalBookmarks
                 } else {
-                    for (DisplayableBookmark bookmark : originalBookmarks) {
-                        if (bookmark.getAyaContent().toLowerCase().contains(constraint.toString().toLowerCase())) {
-                            resultBookmarks.add(bookmark);
+                    for (bookmark in originalBookmarks!!) {
+                        if (bookmark.ayaContent.lowercase(Locale.getDefault()).contains(
+                                constraint.toString().lowercase(
+                                    Locale.getDefault()
+                                )
+                            )
+                        ) {
+                            resultBookmarks!!.add(bookmark)
                         }
                     }
                 }
-
-                FilterResults results = new FilterResults();
-                results.values = resultBookmarks;
-                return results;
+                val results = FilterResults()
+                results.values = resultBookmarks
+                return results
             }
 
-            @Override
-            protected void publishResults(CharSequence constraint, FilterResults results) {
-                searchText = constraint.toString();
-                filteredBookmarks = (List<DisplayableBookmark>) results.values;
-                notifyDataSetChanged();
-            }
-        };
-    }
-
-
-    public void deleteBookmark(int ayaId) {
-        for (DisplayableBookmark displayableBookmark : filteredBookmarks) {
-            if (displayableBookmark.getAyaId() == ayaId) {
-                originalBookmarks.remove(displayableBookmark);
-                filteredBookmarks.remove(displayableBookmark);
-                notifyDataSetChanged();
-                break;
+            override fun publishResults(constraint: CharSequence, results: FilterResults) {
+                searchText = constraint.toString()
+                filteredBookmarks = results.values as? MutableList<DisplayableBookmark>
+                notifyDataSetChanged()
             }
         }
     }
 
-    public void filterBookmarks(int bookmarkType) {
+    fun deleteBookmark(ayaId: Int) {
+        for (displayableBookmark in filteredBookmarks!!) {
+            if (displayableBookmark.ayaId == ayaId) {
+                originalBookmarks!!.remove(displayableBookmark)
+                filteredBookmarks!!.remove(displayableBookmark)
+                notifyDataSetChanged()
+                break
+            }
+        }
+    }
+
+    fun filterBookmarks(bookmarkType: Int) {
         if (bookmarkType == 0) { // show all bookmark
-            filteredBookmarks = originalBookmarks;
+            filteredBookmarks = originalBookmarks
         } else {
-            List<DisplayableBookmark> filteredList = new ArrayList<>();
-            for (DisplayableBookmark bookmark : originalBookmarks) {
-                if (bookmark.getBookmarkType() == bookmarkType) {
-                    filteredList.add(bookmark);
+            val filteredList: MutableList<DisplayableBookmark> = ArrayList()
+            for (bookmark in originalBookmarks!!) {
+                if (bookmark.bookmarkType == bookmarkType) {
+                    filteredList.add(bookmark)
                 }
-                filteredBookmarks = filteredList;
+                filteredBookmarks = filteredList
             }
         }
-        notifyDataSetChanged();
+        notifyDataSetChanged()
     }
 
-    public void editBookmark(int ayaId, int bookmarkType, int colorIndex) {
-        for (DisplayableBookmark displayableBookmark : filteredBookmarks) {
-            if (displayableBookmark.getAyaId() == ayaId) {
-                displayableBookmark.setBookmarkType(bookmarkType);
-                displayableBookmark.setColorIndex(colorIndex);
-                break;
+    fun editBookmark(ayaId: Int, bookmarkType: Int, colorIndex: Int) {
+        for (displayableBookmark in filteredBookmarks!!) {
+            if (displayableBookmark.ayaId == ayaId) {
+                displayableBookmark.bookmarkType = bookmarkType
+                displayableBookmark.colorIndex = colorIndex
+                break
             }
         }
-        for (DisplayableBookmark displayableBookmark : originalBookmarks) {
-            if (displayableBookmark.getAyaId() == ayaId) {
-                displayableBookmark.setBookmarkType(bookmarkType);
-                displayableBookmark.setColorIndex(colorIndex);
-                break;
+        for (displayableBookmark in originalBookmarks!!) {
+            if (displayableBookmark.ayaId == ayaId) {
+                displayableBookmark.bookmarkType = bookmarkType
+                displayableBookmark.colorIndex = colorIndex
+                break
             }
         }
-        notifyDataSetChanged();
+        notifyDataSetChanged()
     }
 
-    public class ViewHolder extends RecyclerView.ViewHolder {
+    inner class ViewHolder(view: View?) : RecyclerView.ViewHolder(view!!) {
+        var binding: ItemBookmarkedFavoriteAyaBinding
 
-        ItemBookmarkedFavoriteAyaBinding binding;
-
-        public ViewHolder(View view) {
-            super(view);
-            binding = ItemBookmarkedFavoriteAyaBinding.bind(view);
-            attachListeners();
+        init {
+            binding = ItemBookmarkedFavoriteAyaBinding.bind(view!!)
+            attachListeners()
         }
 
         @SuppressLint("SetTextI18n")
-        public void bind(DisplayableBookmark displayableBookmark) {
-            if (displayableBookmark.getBookmarkType() == Constants.BookmarkType.NOTE) {
-                binding.ivBookmarkType.setColorFilter(null);
-                binding.ivBookmarkType.setImageResource(R.drawable.bookmark_green);
-            } else if (displayableBookmark.getBookmarkType() == Constants.BookmarkType.MEMORIZE) {
-                binding.ivBookmarkType.setColorFilter(null);
-                binding.ivBookmarkType.setImageResource(R.drawable.bookmark_red);
-            } else if (displayableBookmark.getBookmarkType() == Constants.BookmarkType.RECITING) {
-                binding.ivBookmarkType.setColorFilter(null);
-                binding.ivBookmarkType.setImageResource(R.drawable.bookmark_gold);
-            } else if (displayableBookmark.getBookmarkType() == Constants.BookmarkType.FAVORITE) {
-                binding.ivBookmarkType.setColorFilter(null);
-                binding.ivBookmarkType.setImageResource(R.drawable.fav_added__gold_ic);
+        fun bind(displayableBookmark: DisplayableBookmark) {
+            if (displayableBookmark.bookmarkType == Constants.BookmarkType.NOTE) {
+                binding.ivBookmarkType.colorFilter = null
+                binding.ivBookmarkType.setImageResource(R.drawable.bookmark_green)
+            } else if (displayableBookmark.bookmarkType == Constants.BookmarkType.MEMORIZE) {
+                binding.ivBookmarkType.colorFilter = null
+                binding.ivBookmarkType.setImageResource(R.drawable.bookmark_red)
+            } else if (displayableBookmark.bookmarkType == Constants.BookmarkType.RECITING) {
+                binding.ivBookmarkType.colorFilter = null
+                binding.ivBookmarkType.setImageResource(R.drawable.bookmark_gold)
+            } else if (displayableBookmark.bookmarkType == Constants.BookmarkType.FAVORITE) {
+                binding.ivBookmarkType.colorFilter = null
+                binding.ivBookmarkType.setImageResource(R.drawable.fav_added__gold_ic)
             } else {
-                binding.ivBookmarkType.setImageResource(R.drawable.bookmark_gold);
-                binding.ivBookmarkType.setColorFilter(bookmarkColors[displayableBookmark.getColorIndex()]);
+                binding.ivBookmarkType.setImageResource(R.drawable.bookmark_gold)
+                binding.ivBookmarkType.setColorFilter(bookmarkColors[displayableBookmark.colorIndex])
             }
-
-            binding.tvAyaContent.setText(displayableBookmark.getAyaContent());
-            binding.tvAyaNum.setText(LocaleUtils.formatNumber(displayableBookmark.getSuraAyaNumber()));
-            binding.tvGuz2Num.setText(LocaleUtils.formatNumber(displayableBookmark.getGuz2Number()));
-            binding.tvHizbNum.setText(LocaleUtils.formatNumber(displayableBookmark.getHizbNumber()));
-            binding.tvRub3Num.setText(LocaleUtils.formatNumber(displayableBookmark.getRub3Number()));
-            binding.tvSuraName.setText(displayableBookmark.getSuraName());
-            binding.tvSuraName.setTypeface(Typeface.create(Typeface.createFromAsset(
-                    context.getAssets(), "fonts/diwany_thuluth.ttf"), Typeface.BOLD));
-            binding.tvPageNum.setText(LocaleUtils.formatNumber(displayableBookmark.getPageNumber()));
-
+            binding.tvAyaContent.text = displayableBookmark.ayaContent
+            binding.tvAyaNum.text =
+                formatNumber(displayableBookmark.suraAyaNumber)
+            binding.tvGuz2Num.text = formatNumber(displayableBookmark.guz2Number)
+            binding.tvHizbNum.text = formatNumber(displayableBookmark.hizbNumber)
+            binding.tvRub3Num.text =
+                formatNumber(displayableBookmark.rub3Number)
+            binding.tvSuraName.text = displayableBookmark.suraName
+            binding.tvSuraName.typeface = Typeface.create(
+                Typeface.createFromAsset(
+                    context.assets, "fonts/diwany_thuluth.ttf"
+                ), Typeface.BOLD
+            )
+            binding.tvPageNum.text = formatNumber(displayableBookmark.pageNumber)
             if (isEditable) {
-                binding.ibDeleteBookmark.setVisibility(View.VISIBLE);
+                binding.ibDeleteBookmark.visibility = View.VISIBLE
             } else {
-                binding.ibDeleteBookmark.setVisibility(View.GONE);
+                binding.ibDeleteBookmark.visibility = View.GONE
             }
-
         }
 
-        private void attachListeners() {
-            binding.itemView.setOnClickListener(v -> gotoBookmarkAya());
-            binding.ibDeleteBookmark.setOnClickListener(v -> deleteBookmark());
-            binding.ivBookmarkType.setOnClickListener(v -> displayBookmarkTypeDialog());
+        private fun attachListeners() {
+            binding.itemView.setOnClickListener { v: View? -> gotoBookmarkAya() }
+            binding.ibDeleteBookmark.setOnClickListener { v: View? -> deleteBookmark() }
+            binding.ivBookmarkType.setOnClickListener { v: View? -> displayBookmarkTypeDialog() }
         }
 
-        private void gotoBookmarkAya() {
+        private fun gotoBookmarkAya() {
             if (!isEditable) {
-                bookmarkActionListener.onSelectItem(filteredBookmarks.get(getAdapterPosition()));
+                bookmarkActionListener.onSelectItem(filteredBookmarks!![adapterPosition])
             }
         }
 
-        private void deleteBookmark() {
+        private fun deleteBookmark() {
             if (isEditable) {
-                Log.d(TAG, "delete bookmark: " + getAdapterPosition());
-                bookmarkActionListener.deleteBookmark(filteredBookmarks.get(getAdapterPosition()));
+                Log.d(TAG, "delete bookmark: $adapterPosition")
+                bookmarkActionListener.deleteBookmark(filteredBookmarks!![adapterPosition])
             }
         }
 
-        private void displayBookmarkTypeDialog() {
+        private fun displayBookmarkTypeDialog() {
             if (isEditable) {
-                bookmarkActionListener.updateBookmarkType(filteredBookmarks.get(getAdapterPosition()).getBookmarkId());
+                bookmarkActionListener.updateBookmarkType(filteredBookmarks!![adapterPosition].bookmarkId)
 
                 /*BookmarkTypesPopup bookmarkTypesPopup = new BookmarkTypesPopup(context, bookmarkTypeId -> {
                     bookmarkActionListener.updateBookmarkType(filteredBookmarks.get(getAdapterPosition())
@@ -239,14 +214,14 @@ public class BookmarksAdapter extends RecyclerView.Adapter<BookmarksAdapter.View
                 bookmarkTypesPopup.showPopup(view);*/
             }
         }
-
     }
 
-    public interface BookmarkActionListener extends ItemSelectionListener<DisplayableBookmark> {
+    interface BookmarkActionListener : ItemSelectionListener<DisplayableBookmark?> {
+        fun deleteBookmark(displayableBookmark: DisplayableBookmark)
+        fun updateBookmarkType(bookmarkId: Int)
+    }
 
-        void deleteBookmark(@NonNull DisplayableBookmark displayableBookmark);
-
-        void updateBookmarkType(@NonNull int bookmarkId);
-
+    companion object {
+        private val TAG = BookmarksAdapter::class.java.simpleName
     }
 }

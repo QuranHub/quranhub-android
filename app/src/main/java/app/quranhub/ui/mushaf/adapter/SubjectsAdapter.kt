@@ -1,108 +1,88 @@
-package app.quranhub.ui.mushaf.adapter;
+package app.quranhub.ui.mushaf.adapter
 
-import android.animation.ObjectAnimator;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
+import android.animation.ObjectAnimator
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import app.quranhub.R
+import app.quranhub.databinding.ItemTopicBinding
+import app.quranhub.databinding.ItemTopicCategoryBinding
+import app.quranhub.ui.mushaf.adapter.SubjectsAdapter.CategoryViewHolder
+import app.quranhub.ui.mushaf.adapter.SubjectsAdapter.TopicViewHolder
+import app.quranhub.ui.mushaf.listener.ItemSelectionListener
+import app.quranhub.ui.mushaf.model.TopicCategory
+import app.quranhub.ui.mushaf.model.TopicModel
+import com.thoughtbot.expandablerecyclerview.ExpandableRecyclerViewAdapter
+import com.thoughtbot.expandablerecyclerview.models.ExpandableGroup
+import com.thoughtbot.expandablerecyclerview.viewholders.ChildViewHolder
+import com.thoughtbot.expandablerecyclerview.viewholders.GroupViewHolder
 
-import com.thoughtbot.expandablerecyclerview.ExpandableRecyclerViewAdapter;
-import com.thoughtbot.expandablerecyclerview.models.ExpandableGroup;
-import com.thoughtbot.expandablerecyclerview.viewholders.ChildViewHolder;
-import com.thoughtbot.expandablerecyclerview.viewholders.GroupViewHolder;
+class SubjectsAdapter(
+    groups: List<ExpandableGroup<*>?>?, private val listener: ItemSelectionListener<TopicCategory>
+) : ExpandableRecyclerViewAdapter<TopicViewHolder, CategoryViewHolder>(groups) {
 
-import java.util.List;
-
-import app.quranhub.R;
-import app.quranhub.databinding.ItemTopicBinding;
-import app.quranhub.databinding.ItemTopicCategoryBinding;
-import app.quranhub.ui.mushaf.listener.ItemSelectionListener;
-import app.quranhub.ui.mushaf.model.TopicCategory;
-import app.quranhub.ui.mushaf.model.TopicModel;
-
-public class SubjectsAdapter extends
-        ExpandableRecyclerViewAdapter<SubjectsAdapter.TopicViewHolder, SubjectsAdapter.CategoryViewHolder> {
-
-    private ItemSelectionListener<TopicCategory> listener;
-
-    public SubjectsAdapter(List<? extends ExpandableGroup> groups
-            , ItemSelectionListener<TopicCategory> listener) {
-        super(groups);
-        this.listener = listener;
+    override fun onCreateGroupViewHolder(parent: ViewGroup, viewType: Int): TopicViewHolder {
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_topic_category, parent, false)
+        return TopicViewHolder(view)
     }
 
-    @Override
-    public TopicViewHolder onCreateGroupViewHolder(ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_topic_category, parent, false);
-        return new TopicViewHolder(view);
+    override fun onCreateChildViewHolder(parent: ViewGroup, viewType: Int): CategoryViewHolder {
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_topic, parent, false)
+        return CategoryViewHolder(view)
     }
 
-    @Override
-    public CategoryViewHolder onCreateChildViewHolder(ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_topic, parent, false);
-        return new CategoryViewHolder(view);
+    override fun onBindChildViewHolder(
+        holder: CategoryViewHolder, flatPosition: Int, group: ExpandableGroup<*>, childIndex: Int
+    ) {
+        val category = (group as TopicModel).items[childIndex]
+        holder.binding.categoryTv.text = category.categoryName
+        holder.itemView.setOnClickListener { v: View? -> listener.onSelectItem(category) }
     }
 
-
-    @Override
-    public void onBindChildViewHolder(CategoryViewHolder holder, int flatPosition
-            , ExpandableGroup group, int childIndex) {
-        TopicCategory category = ((TopicModel) group).getItems().get(childIndex);
-        holder.binding.categoryTv.setText(category.getCategoryName());
-        holder.itemView.setOnClickListener(v -> listener.onSelectItem(category));
+    override fun onBindGroupViewHolder(
+        holder: TopicViewHolder, flatPosition: Int, group: ExpandableGroup<*>
+    ) {
+        val topicModel = group as TopicModel
+        holder.binding.topicTv.text = topicModel.topicName
     }
 
-    @Override
-    public void onBindGroupViewHolder(TopicViewHolder holder, int flatPosition
-            , ExpandableGroup group) {
-        TopicModel topicModel = ((TopicModel) group);
-        holder.binding.topicTv.setText(topicModel.getTopicName());
+    class CategoryViewHolder(itemView: View?) : ChildViewHolder(itemView) {
+        var binding: ItemTopicBinding
 
-    }
-
-    public static class CategoryViewHolder extends ChildViewHolder {
-
-        ItemTopicBinding binding;
-
-        public CategoryViewHolder(View itemView) {
-            super(itemView);
-            binding = ItemTopicBinding.bind(itemView);
+        init {
+            binding = ItemTopicBinding.bind(itemView!!)
         }
     }
 
-    public static class TopicViewHolder extends GroupViewHolder {
+    class TopicViewHolder(itemView: View?) : GroupViewHolder(itemView) {
+        var binding: ItemTopicCategoryBinding
 
-        ItemTopicCategoryBinding binding;
-
-        public TopicViewHolder(View itemView) {
-            super(itemView);
-            binding = ItemTopicCategoryBinding.bind(itemView);
+        init {
+            binding = ItemTopicCategoryBinding.bind(itemView!!)
         }
 
-        @Override
-        public void expand() {
-            expandArrow();
+        override fun expand() {
+            expandArrow()
         }
 
-        @Override
-        public void collapse() {
-            collapseArrow();
+        override fun collapse() {
+            collapseArrow()
         }
 
-        private void expandArrow() {
-            changeRotate(0f, 180f).start();
+        private fun expandArrow() {
+            changeRotate(0f, 180f).start()
         }
 
-        private void collapseArrow() {
-            changeRotate(180f, 0f).start();
+        private fun collapseArrow() {
+            changeRotate(180f, 0f).start()
         }
 
-        private ObjectAnimator changeRotate(float from, float to) {
-            ObjectAnimator objectAnimator = ObjectAnimator.ofFloat(binding.arrowIv, "rotation", from, to);
-            objectAnimator.setDuration(350);
-            return objectAnimator;
+        private fun changeRotate(from: Float, to: Float): ObjectAnimator {
+            val objectAnimator = ObjectAnimator.ofFloat(binding.arrowIv, "rotation", from, to)
+            objectAnimator.duration = 350
+            return objectAnimator
         }
     }
-
 }
