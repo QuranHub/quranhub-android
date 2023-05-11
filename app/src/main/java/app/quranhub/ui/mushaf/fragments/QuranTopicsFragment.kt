@@ -1,132 +1,120 @@
-package app.quranhub.ui.mushaf.fragments;
+package app.quranhub.ui.mushaf.fragments
 
+import android.content.Context
+import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.LinearLayoutManager
+import app.quranhub.R
+import app.quranhub.databinding.FragmentQuranTopicsBinding
+import app.quranhub.ui.common.interfaces.ToolbarActionsListener
+import app.quranhub.ui.main.MainActivity
+import app.quranhub.ui.mushaf.adapter.SubjectsAdapter
+import app.quranhub.ui.mushaf.listener.ItemSelectionListener
+import app.quranhub.ui.mushaf.model.TopicCategory
+import app.quranhub.ui.mushaf.model.TopicModel
+import app.quranhub.ui.mushaf.viewmodel.SubjectsViewModel
+import java.util.Locale
 
-import android.content.Context;
-import android.os.Bundle;
-import android.text.Editable;
-import android.text.TextWatcher;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
+class QuranTopicsFragment : Fragment(), ItemSelectionListener<TopicCategory> {
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
-import androidx.lifecycle.ViewModelProvider;
-import androidx.recyclerview.widget.LinearLayoutManager;
+    private var binding: FragmentQuranTopicsBinding? = null
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+    private var adapter: SubjectsAdapter? = null
+    private var viewModel: SubjectsViewModel? = null
+    private var navDrawerListener: ToolbarActionsListener? = null
+    private var topicModels: List<TopicModel?>? = null
 
-import app.quranhub.R;
-import app.quranhub.databinding.FragmentQuranTopicsBinding;
-import app.quranhub.ui.common.interfaces.ToolbarActionsListener;
-import app.quranhub.ui.main.MainActivity;
-import app.quranhub.ui.mushaf.adapter.SubjectsAdapter;
-import app.quranhub.ui.mushaf.listener.ItemSelectionListener;
-import app.quranhub.ui.mushaf.model.TopicCategory;
-import app.quranhub.ui.mushaf.model.TopicModel;
-import app.quranhub.ui.mushaf.viewmodel.SubjectsViewModel;
-
-public class QuranTopicsFragment extends Fragment implements ItemSelectionListener<TopicCategory> {
-
-    private FragmentQuranTopicsBinding binding;
-
-    private SubjectsAdapter adapter;
-    private SubjectsViewModel viewModel;
-    private ToolbarActionsListener navDrawerListener;
-    private List<TopicModel> topicModels;
-
-    @Override
-    public void onAttach(@NonNull Context context) {
-        super.onAttach(context);
-        if (context instanceof ToolbarActionsListener) {
-            navDrawerListener = (ToolbarActionsListener) context;
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        if (context is ToolbarActionsListener) {
+            navDrawerListener = context
         }
-
     }
 
-    @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        binding = FragmentQuranTopicsBinding.inflate(inflater, container, false);
-        return binding.getRoot();
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        binding = FragmentQuranTopicsBinding.inflate(inflater, container, false)
+        return binding!!.root
     }
 
-    @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-        intiRecycler();
-        bindViewModel();
-        attachListeners();
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        intiRecycler()
+        bindViewModel()
+        attachListeners()
     }
 
-    private void attachListeners() {
-        observeOnInputSearch();
-        binding.hamburgerIv.setOnClickListener(v -> onNavHamburgerClick());
+    private fun attachListeners() {
+        observeOnInputSearch()
+        binding!!.hamburgerIv.setOnClickListener { onNavHamburgerClick() }
     }
 
-    private void observeOnInputSearch() {
-        binding.etSearch.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+    private fun observeOnInputSearch() {
+        binding!!.etSearch.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
+                filter(s.toString())
             }
 
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                filter(s.toString());
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-            }
-        });
+            override fun afterTextChanged(s: Editable) {}
+        })
     }
 
-    private void filter(String inputQuery) {
+    private fun filter(inputQuery: String) {
         if (inputQuery.isEmpty()) {
-            adapter = new SubjectsAdapter(topicModels, this);
-            binding.topicsRv.setAdapter(adapter);
+            adapter = SubjectsAdapter(topicModels, this)
+            binding!!.topicsRv.adapter = adapter
         } else {
-            List<TopicModel> filteredList = new ArrayList<>();
-            for (TopicModel row : topicModels) {
-                if (row.getTopicName().toLowerCase().contains(inputQuery.toLowerCase())) {
-                    filteredList.add(row);
+            val filteredList: MutableList<TopicModel?> = ArrayList()
+            for (row in topicModels!!) {
+                if (row!!.topicName.lowercase(Locale.getDefault()).contains(
+                        inputQuery.lowercase(
+                            Locale.getDefault()
+                        )
+                    )
+                ) {
+                    filteredList.add(row)
                 }
             }
-            adapter = new SubjectsAdapter(filteredList, this);
-            binding.topicsRv.setAdapter(adapter);
+            adapter = SubjectsAdapter(filteredList, this)
+            binding!!.topicsRv.adapter = adapter
         }
     }
 
-    private void bindViewModel() {
-        List<String> subjects = Arrays.asList(requireActivity().getResources().getStringArray(R.array.subject_name));
-        List<String> subjectsCategory = Arrays.asList(requireActivity().getResources().getStringArray(R.array.subject_category_name));
-        viewModel = new ViewModelProvider(this).get(SubjectsViewModel.class);
-        viewModel.getSubjects(subjects, subjectsCategory);
-        viewModel.getSubjectsLiveData().observe(getViewLifecycleOwner(), topicModels -> {
-            binding.progreesBar.setVisibility(View.GONE);
-            this.topicModels = topicModels;
-            adapter = new SubjectsAdapter(topicModels, this);
-            binding.topicsRv.setAdapter(adapter);
-        });
-    }
-
-    private void intiRecycler() {
-        topicModels = new ArrayList<>();
-        binding.topicsRv.setLayoutManager(new LinearLayoutManager(getActivity()));
-    }
-
-    @Override
-    public void onSelectItem(TopicCategory category) {
-        MainActivity activity = (MainActivity) getActivity();
-        if (activity != null) {
-            activity.openTopicAyasFragment(category);
+    private fun bindViewModel() {
+        val subjects =
+            listOf(*requireActivity().resources.getStringArray(R.array.subject_name))
+        val subjectsCategory =
+            listOf(*requireActivity().resources.getStringArray(R.array.subject_category_name))
+        viewModel = ViewModelProvider(this)[SubjectsViewModel::class.java]
+        viewModel!!.getSubjects(subjects, subjectsCategory)
+        viewModel!!.subjectsLiveData.observe(viewLifecycleOwner) { topicModels: List<TopicModel?>? ->
+            binding!!.progreesBar.visibility = View.GONE
+            this.topicModels = topicModels
+            adapter = SubjectsAdapter(topicModels, this)
+            binding!!.topicsRv.adapter = adapter
         }
     }
 
-    private void onNavHamburgerClick() {
-        navDrawerListener.onNavDrawerClick();
+    private fun intiRecycler() {
+        topicModels = ArrayList()
+        binding!!.topicsRv.layoutManager = LinearLayoutManager(activity)
+    }
+
+    override fun onSelectItem(category: TopicCategory) {
+        val activity = activity as? MainActivity
+        activity?.openTopicAyasFragment(category)
+    }
+
+    private fun onNavHamburgerClick() {
+        navDrawerListener!!.onNavDrawerClick()
     }
 }

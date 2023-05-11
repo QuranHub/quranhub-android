@@ -1,66 +1,59 @@
-package app.quranhub.ui.mushaf.fragments;
+package app.quranhub.ui.mushaf.fragments
 
+import android.net.Uri
+import android.os.Bundle
+import android.os.Environment
+import android.util.Log
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.fragment.app.Fragment
+import app.quranhub.data.Constants
+import app.quranhub.databinding.FragmentPdfViewerBinding
+import com.github.barteksc.pdfviewer.listener.OnLoadCompleteListener
+import com.github.barteksc.pdfviewer.listener.OnPageChangeListener
+import java.io.File
 
-import android.net.Uri;
-import android.os.Bundle;
-import android.os.Environment;
-import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
+class PdfViewerFragment : Fragment() {
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
+    private var binding: FragmentPdfViewerBinding? = null
 
-import com.github.barteksc.pdfviewer.listener.OnLoadCompleteListener;
-import com.github.barteksc.pdfviewer.listener.OnPageChangeListener;
+    private var fileName: String? = null
+    private val uri: Uri? = null
 
-import java.io.File;
-
-import app.quranhub.data.Constants;
-import app.quranhub.databinding.FragmentPdfViewerBinding;
-
-
-public class PdfViewerFragment extends Fragment {
-
-    private FragmentPdfViewerBinding binding;
-
-    private String fileName;
-    private Uri uri;
-
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        binding = FragmentPdfViewerBinding.inflate(inflater, container, false);
-        return binding.getRoot();
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        binding = FragmentPdfViewerBinding.inflate(inflater, container, false)
+        return binding!!.root
     }
 
-    @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-        setPdfView();
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        setPdfView()
     }
 
-    private void setPdfView() {
-        OnLoadCompleteListener completeListener = nbPages -> binding.progressBar.setVisibility(View.GONE);
-        OnPageChangeListener pageChangeListener = new OnPageChangeListener() {
-            @Override
-            public void onPageChanged(int page, int pageCount) {
-                Log.d("TAG", "onPageChanged: " + page);
-            }
-        };
-        fileName = getArguments().getString("file_name");
-        File file = new File(Environment.getExternalStorageDirectory() + File.separator
-                + Constants.Directory.LIBRARY_PUBLIC, fileName);
-
-        binding.pdfView.fromFile(file)
-                .enableDoubletap(true)
-                .enableSwipe(true)
-                .onLoad(completeListener)
-                .onPageChange(pageChangeListener)
-                .load();
-
+    private fun setPdfView() {
+        val completeListener =
+            OnLoadCompleteListener { _: Int -> binding!!.progressBar.visibility = View.GONE }
+        val pageChangeListener =
+            OnPageChangeListener { page, _ -> Log.d("TAG", "onPageChanged: $page") }
+        fileName = requireArguments().getString("file_name")
+        val file = File(
+            Environment.getExternalStorageDirectory().toString() + File.separator
+                    + Constants.Directory.LIBRARY_PUBLIC, fileName!!
+        )
+        binding!!.pdfView.fromFile(file)
+            .enableDoubletap(true)
+            .enableSwipe(true)
+            .onLoad(completeListener)
+            .onPageChange(pageChangeListener)
+            .load()
     }
 
+    override fun onDestroyView() {
+        super.onDestroyView()
+        binding = null
+    }
 }

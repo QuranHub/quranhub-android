@@ -1,338 +1,323 @@
-package app.quranhub.ui.mushaf.fragments;
+package app.quranhub.ui.mushaf.fragments
 
-
-import android.Manifest;
-import android.content.Context;
-import android.os.Bundle;
-import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.Toast;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
-import androidx.lifecycle.LiveData;
-import androidx.recyclerview.widget.DividerItemDecoration;
-import androidx.recyclerview.widget.LinearLayoutManager;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import app.quranhub.R;
-import app.quranhub.data.local.db.UserDatabase;
-import app.quranhub.data.local.entity.TranslationBook;
-import app.quranhub.data.local.prefs.AppPreferencesManager;
-import app.quranhub.data.remote.ApiClient;
-import app.quranhub.data.remote.TranslationDownloader;
-import app.quranhub.data.remote.api.TranslationsApi;
-import app.quranhub.data.remote.model.TranslationsResponse;
-import app.quranhub.databinding.FragmentTranslationsDataBinding;
-import app.quranhub.ui.common.interfaces.Searchable;
-import app.quranhub.ui.mushaf.adapter.TranslationsAdapter;
-import app.quranhub.ui.mushaf.model.DisplayableTranslation;
-import app.quranhub.util.FragmentUtils;
-import pub.devrel.easypermissions.EasyPermissions;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
+import android.Manifest
+import android.content.Context
+import android.os.Bundle
+import android.util.Log
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.Toast
+import androidx.fragment.app.Fragment
+import androidx.lifecycle.LiveData
+import androidx.recyclerview.widget.DividerItemDecoration
+import androidx.recyclerview.widget.LinearLayoutManager
+import app.quranhub.R
+import app.quranhub.data.local.db.UserDatabase.Companion.getInstance
+import app.quranhub.data.local.entity.TranslationBook
+import app.quranhub.data.local.prefs.AppPreferencesManager.getQuranTranslationBook
+import app.quranhub.data.local.prefs.AppPreferencesManager.persistBookDbName
+import app.quranhub.data.local.prefs.AppPreferencesManager.persistBookName
+import app.quranhub.data.local.prefs.AppPreferencesManager.persistQuranTranslationBook
+import app.quranhub.data.remote.ApiClient.client
+import app.quranhub.data.remote.TranslationDownloader
+import app.quranhub.data.remote.TranslationDownloader.TranslationDownloadCallback
+import app.quranhub.data.remote.api.TranslationsApi
+import app.quranhub.data.remote.model.TranslationsResponse
+import app.quranhub.databinding.FragmentTranslationsDataBinding
+import app.quranhub.ui.common.interfaces.Searchable
+import app.quranhub.ui.mushaf.adapter.TranslationsAdapter
+import app.quranhub.ui.mushaf.model.DisplayableTranslation
+import app.quranhub.util.FragmentUtils.isSafeFragment
+import pub.devrel.easypermissions.EasyPermissions
+import pub.devrel.easypermissions.EasyPermissions.PermissionCallbacks
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 /**
- * A simple {@link Fragment} subclass.
- * Use the {@link TranslationsDataFragment#newInstance} factory method to
+ * A simple [Fragment] subclass.
+ * Use the [TranslationsDataFragment.newInstance] factory method to
  * create an instance of this fragment.
  */
 // TODO apply MVVM
-public class TranslationsDataFragment extends Fragment implements Searchable, TranslationsAdapter.ItemClickListener
-        , EasyPermissions.PermissionCallbacks, TranslationDownloader.TranslationDownloadCallback {
+class TranslationsDataFragment : Fragment(), Searchable, TranslationsAdapter.ItemClickListener,
+    PermissionCallbacks, TranslationDownloadCallback {
 
-    private static final String TAG = TranslationsDataFragment.class.getSimpleName();
+    private val searchText = ""
+    private var languageCode: String? = null
+    private var listener: TranslationSelectionListener? = null
+    private var binding: FragmentTranslationsDataBinding? = null
+    private var displayableTranslations: MutableList<DisplayableTranslation>? = null
+    private var adapter: TranslationsAdapter? = null
+    var remoteTranslationBooks: List<TranslationBook>? = null
+    var translationBooksLiveData: LiveData<List<TranslationBook?>?>? = null
+    var translationDownloaders: MutableList<TranslationDownloader>? = null
 
-    private static final String ARG_LANGUAGE_CODE = "ARG_LANGUAGE_CODE";
-    private static final int WRITE_REQUEST_CODE = 0;
-
-    private static final String STATE_SEARCH_TEXT = "STATE_SEARCH_TEXT";
-    private String searchText = "";
-
-    @Nullable
-    private String languageCode;
-
-    private TranslationSelectionListener listener;
-
-    private FragmentTranslationsDataBinding binding;
-
-    private List<DisplayableTranslation> displayableTranslations;
-    private TranslationsAdapter adapter;
-
-    List<TranslationBook> remoteTranslationBooks;
-    LiveData<List<TranslationBook>> translationBooksLiveData;
-
-    List<TranslationDownloader> translationDownloaders;
-
-
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param languageCode
-     * @return A new instance of fragment TranslationsDataFragment.
-     */
-    public static TranslationsDataFragment newInstance(String languageCode) {
-        TranslationsDataFragment fragment = new TranslationsDataFragment();
-        Bundle args = new Bundle();
-        args.putString(ARG_LANGUAGE_CODE, languageCode);
-        fragment.setArguments(args);
-        return fragment;
-    }
-
-    @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-
-        if (getParentFragment() instanceof TranslationSelectionListener) {
-            listener = (TranslationSelectionListener) getParentFragment();
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        listener = if (parentFragment is TranslationSelectionListener) {
+            parentFragment as TranslationSelectionListener?
         } else {
-            throw new RuntimeException(getParentFragment().getClass().getSimpleName()
-                    + " must implement TranslationsDataFragment#TranslationSelectionListener");
+            error(
+                "${requireParentFragment().javaClass.simpleName} must implement TranslationsDataFragment#TranslationSelectionListener"
+            )
         }
     }
 
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            languageCode = getArguments().getString(ARG_LANGUAGE_CODE);
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        if (arguments != null) {
+            languageCode = requireArguments().getString(ARG_LANGUAGE_CODE)
         }
     }
 
-    @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        binding = FragmentTranslationsDataBinding.inflate(inflater, container, false);
-        initView();
-        return binding.getRoot();
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        binding = FragmentTranslationsDataBinding.inflate(inflater, container, false)
+        initView()
+        return binding!!.root
     }
 
-    private void initView() {
+    private fun initView() {
         // setup translationsRecyclerView
-        binding.rvTranslations.setHasFixedSize(true);
-        LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
-        binding.rvTranslations.setLayoutManager(layoutManager);
-        DividerItemDecoration dividerItemDecoration = new DividerItemDecoration(requireContext(),
-                layoutManager.getOrientation());
-        binding.rvTranslations.addItemDecoration(dividerItemDecoration);
-        displayableTranslations = new ArrayList<>();
-        adapter = new TranslationsAdapter(displayableTranslations, AppPreferencesManager.getQuranTranslationBook(requireContext()), this);
-        binding.rvTranslations.setAdapter(adapter);
+        binding!!.rvTranslations.setHasFixedSize(true)
+        val layoutManager = LinearLayoutManager(context)
+        binding!!.rvTranslations.layoutManager = layoutManager
+        val dividerItemDecoration = DividerItemDecoration(
+            requireContext(),
+            layoutManager.orientation
+        )
+        binding!!.rvTranslations.addItemDecoration(dividerItemDecoration)
+        displayableTranslations = ArrayList()
+        adapter = TranslationsAdapter(
+            displayableTranslations,
+            getQuranTranslationBook(requireContext()),
+            this
+        )
+        binding!!.rvTranslations.adapter = adapter
     }
 
-    @Override
-    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
-
-        translationBooksLiveData = UserDatabase.getInstance(requireContext())
-                .getTranslationBookDao()
-                .getByLanguage(languageCode);
-        setupTranslationBooksLiveDataObserver();
-
-        fetchTranslationBooks();
-        translationDownloaders = new ArrayList<>();
-
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        translationBooksLiveData = getInstance(requireContext())
+            .translationBookDao
+            .getByLanguage(languageCode)
+        setupTranslationBooksLiveDataObserver()
+        fetchTranslationBooks()
+        translationDownloaders = ArrayList()
         if (savedInstanceState != null) {
-            search(savedInstanceState.getString(STATE_SEARCH_TEXT));
+            search(savedInstanceState.getString(STATE_SEARCH_TEXT))
         }
     }
 
-    private void fetchTranslationBooks() {
-        TranslationsApi translationsApi = ApiClient.getClient().create(TranslationsApi.class);
-        Call<TranslationsResponse> translationsCall = translationsApi.getAllTranslations();
-        translationsCall.enqueue(new Callback<TranslationsResponse>() {
-            @Override
-            public void onResponse(@NonNull Call<TranslationsResponse> call, @NonNull Response<TranslationsResponse> response) {
-
-                if (FragmentUtils.isSafeFragment(TranslationsDataFragment.this)) {
-
-                    TranslationsResponse translationsResponse = response.body();
-
+    private fun fetchTranslationBooks() {
+        val translationsApi = client!!.create(
+            TranslationsApi::class.java
+        )
+        val translationsCall = translationsApi.allTranslations
+        translationsCall!!.enqueue(object : Callback<TranslationsResponse?> {
+            override fun onResponse(
+                call: Call<TranslationsResponse?>,
+                response: Response<TranslationsResponse?>
+            ) {
+                if (isSafeFragment(this@TranslationsDataFragment)) {
+                    val translationsResponse = response.body()
                     if (translationsResponse != null) {
-
-                        remoteTranslationBooks = translationsResponse.getTranslationBooksForLanguage(languageCode);
-
+                        remoteTranslationBooks =
+                            translationsResponse.getTranslationBooksForLanguage(languageCode)
                         if (remoteTranslationBooks != null) {
-
-                            for (TranslationBook book : remoteTranslationBooks) {
-                                DisplayableTranslation d = new DisplayableTranslation(book);
-                                if (!displayableTranslations.contains(d)) {
+                            for (book in remoteTranslationBooks!!) {
+                                val d = DisplayableTranslation(book)
+                                if (!displayableTranslations!!.contains(d)) {
                                     // only add if it's not there
-                                    displayableTranslations.add(d);
+                                    displayableTranslations!!.add(d)
                                 }
                             }
-
-                            binding.progressTranslation.setVisibility(View.GONE);
-                            adapter.setTranslations(displayableTranslations);
+                            binding!!.progressTranslation.visibility = View.GONE
+                            adapter!!.setTranslations(displayableTranslations)
                         }
                     }
-
                 }
             }
 
-            @Override
-            public void onFailure(@NonNull Call<TranslationsResponse> call, @NonNull Throwable t) {
-                Log.d(TAG, "onFailure - cause:  " + t.getMessage());
-
-                if (FragmentUtils.isSafeFragment(TranslationsDataFragment.this)) {
+            override fun onFailure(call: Call<TranslationsResponse?>, t: Throwable) {
+                Log.d(TAG, "onFailure - cause:  " + t.message)
+                if (isSafeFragment(this@TranslationsDataFragment)) {
                     //progressBar.setVisibility(View.GONE);
-                    Toast.makeText(getContext(), getString(R.string.error_translations_web_service)
-                            , Toast.LENGTH_LONG).show();
+                    Toast.makeText(
+                        context,
+                        getString(R.string.error_translations_web_service),
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
             }
-        });
+        })
     }
 
-    private void setupTranslationBooksLiveDataObserver() {
-        translationBooksLiveData.observe(getViewLifecycleOwner(), localTranslationBooks -> {
-
-            Log.d(TAG, "translationBooksLiveData: localTranslationBooks = " + localTranslationBooks);
-
-            if (displayableTranslations.size() > 0) {
+    private fun setupTranslationBooksLiveDataObserver() {
+        translationBooksLiveData!!.observe(viewLifecycleOwner) { localTranslationBooks: List<TranslationBook?>? ->
+            Log.d(TAG, "translationBooksLiveData: localTranslationBooks = $localTranslationBooks")
+            if (displayableTranslations!!.size > 0) {
                 // there's a change in localTranslationBooks
                 // merge objects in remoteTranslationBooks & localTranslationBooks
-                displayableTranslations.clear();
-                for (TranslationBook book : localTranslationBooks) {
-                    displayableTranslations.add(new DisplayableTranslation(book));
+                displayableTranslations!!.clear()
+                for (book in localTranslationBooks!!) {
+                    displayableTranslations!!.add(DisplayableTranslation(book!!))
                 }
                 if (remoteTranslationBooks != null) {
-                    for (TranslationBook book : remoteTranslationBooks) {
-                        DisplayableTranslation d = new DisplayableTranslation(book);
-                        if (!displayableTranslations.contains(d)) {
+                    for (book in remoteTranslationBooks!!) {
+                        val d = DisplayableTranslation(book)
+                        if (!displayableTranslations!!.contains(d)) {
                             // only add if it's not there
-                            displayableTranslations.add(d);
+                            displayableTranslations!!.add(d)
                         }
                     }
                 }
-
             } else {
                 // displayableTranslations is empty
                 // copy objects from localTranslationBooks
-                for (TranslationBook book : localTranslationBooks) {
-                    displayableTranslations.add(new DisplayableTranslation(book));
+                for (book in localTranslationBooks!!) {
+                    displayableTranslations!!.add(DisplayableTranslation(book!!))
                 }
             }
-
-            Log.d(TAG, "translationBooksLiveData: displayableTranslations = " + displayableTranslations);
-
-            adapter.setTranslations(displayableTranslations);
-
-        });
-    }
-
-    @Override
-    public void onSaveInstanceState(@NonNull Bundle outState) {
-        super.onSaveInstanceState(outState);
-
-        outState.putString(STATE_SEARCH_TEXT, searchText);
-    }
-
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        binding = null;
-    }
-
-    @Override
-    public void onDetach() {
-        super.onDetach();
-        listener = null;
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this);
-    }
-
-    @Override
-    public void onPermissionsGranted(int requestCode, @NonNull List<String> perms) {
-        //Download the file once permission is granted
-        translationDownloaders.get(translationDownloaders.size() - 1).download();
-    }
-
-    @Override
-    public void onPermissionsDenied(int requestCode, @NonNull List<String> perms) {
-        Log.d(TAG, "Permission has been denied");
-    }
-
-    @Override
-    public void onTranslationClick(TranslationBook translationBook, int clickedItemIndex) {
-        Log.d(TAG, "Clicked translation book: " + translationBook);
-
-        AppPreferencesManager.persistQuranTranslationBook(getContext(), translationBook.getId());
-        AppPreferencesManager.persistBookDbName(getActivity(), translationBook.getDatabaseName());
-        AppPreferencesManager.persistBookName(getActivity(), translationBook.getName());
-        listener.onTranslationSelected(translationBook);
-    }
-
-    @Override
-    public void onDownloadTranslationClick(TranslationBook translationBook, int clickedItemIndex) {
-        Log.d(TAG, "onDownloadTranslationClick: translationBook = " + translationBook);
-
-        TranslationDownloader downloader = new TranslationDownloader(translationBook, getContext(), this);
-        translationDownloaders.add(downloader);
-
-        // check if app has permission to write to the external storage.
-        if (EasyPermissions.hasPermissions(getContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-            downloader.download();
-        } else {
-            // if permission is not present request for the same.
-            EasyPermissions.requestPermissions(this, getString(R.string.translation_dowload_permission_rationale)
-                    , WRITE_REQUEST_CODE, Manifest.permission.READ_EXTERNAL_STORAGE);
+            Log.d(
+                TAG,
+                "translationBooksLiveData: displayableTranslations = $displayableTranslations"
+            )
+            adapter!!.setTranslations(displayableTranslations)
         }
     }
 
-    @Override
-    public void onCancelDownloadTranslationClick(TranslationBook translationBook, int clickedItemIndex) {
-        Log.d(TAG, "onCancelDownloadTranslationClick: translationBook = " + translationBook);
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString(STATE_SEARCH_TEXT, searchText)
+    }
 
-        for (TranslationDownloader downloader : translationDownloaders) {
-            if (downloader.getTranslationBook().getId().equals(translationBook.getId())) {
-                Log.d(TAG, "Download canceled for : " + translationBook.getId());
-                downloader.cancel();
-                translationDownloaders.remove(downloader);
-                break;
+    override fun onDestroyView() {
+        super.onDestroyView()
+        binding = null
+    }
+
+    override fun onDetach() {
+        super.onDetach()
+        listener = null
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this)
+    }
+
+    override fun onPermissionsGranted(requestCode: Int, perms: List<String>) {
+        //Download the file once permission is granted
+        translationDownloaders!![translationDownloaders!!.size - 1].download()
+    }
+
+    override fun onPermissionsDenied(requestCode: Int, perms: List<String>) {
+        Log.d(TAG, "Permission has been denied")
+    }
+
+    override fun onTranslationClick(translationBook: TranslationBook?, clickedItemIndex: Int) {
+        Log.d(TAG, "Clicked translation book: $translationBook")
+        persistQuranTranslationBook(requireContext(), translationBook!!.id)
+        persistBookDbName(requireActivity(), translationBook.databaseName)
+        persistBookName(requireActivity(), translationBook.name)
+        listener!!.onTranslationSelected(translationBook)
+    }
+
+    override fun onDownloadTranslationClick(
+        translationBook: TranslationBook?,
+        clickedItemIndex: Int
+    ) {
+        Log.d(TAG, "onDownloadTranslationClick: translationBook = $translationBook")
+        val downloader = TranslationDownloader(translationBook!!, requireContext(), this)
+        translationDownloaders!!.add(downloader)
+
+        // check if app has permission to write to the external storage.
+        if (EasyPermissions.hasPermissions(
+                requireContext(),
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
+            )
+        ) {
+            downloader.download()
+        } else {
+            // if permission is not present request for the same.
+            EasyPermissions.requestPermissions(
+                this,
+                getString(R.string.translation_dowload_permission_rationale),
+                WRITE_REQUEST_CODE,
+                Manifest.permission.READ_EXTERNAL_STORAGE
+            )
+        }
+    }
+
+    override fun onCancelDownloadTranslationClick(
+        translationBook: TranslationBook?,
+        clickedItemIndex: Int
+    ) {
+        Log.d(TAG, "onCancelDownloadTranslationClick: translationBook = $translationBook")
+        for (downloader in translationDownloaders!!) {
+            if (downloader.translationBook.id == translationBook!!.id) {
+                Log.d(TAG, "Download canceled for : " + translationBook.id)
+                downloader.cancel()
+                translationDownloaders!!.remove(downloader)
+                break
             }
         }
     }
 
-    @Override
-    public void onDownloadStarted() {
-    }
+    override fun onDownloadStarted() {}
+    override fun onDownloadFinished() {}
+    override fun onDownloadCancelled() {}
 
-    @Override
-    public void onDownloadFinished() {
-    }
-
-    @Override
-    public void onDownloadCancelled() {
-    }
-
-    @Override
-    public void onDownloadFailed() {
-        if (FragmentUtils.isSafeFragment(this)) {
-            Toast.makeText(getContext(), getString(R.string.error_download_translation), Toast.LENGTH_SHORT).show();
+    override fun onDownloadFailed() {
+        if (isSafeFragment(this)) {
+            Toast.makeText(
+                context,
+                getString(R.string.error_download_translation),
+                Toast.LENGTH_SHORT
+            ).show()
         }
     }
 
-    @Override
-    public void search(String text) {
-        adapter.getFilter().filter(text);
+    override fun search(text: String?) {
+        adapter!!.filter.filter(text)
     }
-
 
     /**
      * The target fragment must implement this interface.
      */
-    public interface TranslationSelectionListener {
-        void onTranslationSelected(TranslationBook translationBook);
+    interface TranslationSelectionListener {
+        fun onTranslationSelected(translationBook: TranslationBook)
+    }
+
+    companion object {
+        private val TAG = TranslationsDataFragment::class.java.simpleName
+
+        private const val ARG_LANGUAGE_CODE = "ARG_LANGUAGE_CODE"
+        private const val WRITE_REQUEST_CODE = 0
+        private const val STATE_SEARCH_TEXT = "STATE_SEARCH_TEXT"
+
+        /**
+         * Use this factory method to create a new instance of
+         * this fragment using the provided parameters.
+         *
+         * @param languageCode
+         * @return A new instance of fragment TranslationsDataFragment.
+         */
+        fun newInstance(languageCode: String?): TranslationsDataFragment {
+            val fragment = TranslationsDataFragment()
+            val args = Bundle()
+            args.putString(ARG_LANGUAGE_CODE, languageCode)
+            fragment.arguments = args
+            return fragment
+        }
     }
 }

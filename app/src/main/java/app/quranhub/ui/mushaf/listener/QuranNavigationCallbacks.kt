@@ -1,9 +1,6 @@
-package app.quranhub.ui.mushaf.listener;
+package app.quranhub.ui.mushaf.listener
 
-public interface QuranNavigationCallbacks {
-
-    void gotoQuranPage(int pageNumber);
-
-    void gotoQuranPageAya(int pageNumber, int ayaId, boolean addToStack);
-
+interface QuranNavigationCallbacks {
+    fun gotoQuranPage(pageNumber: Int)
+    fun gotoQuranPageAya(pageNumber: Int, ayaId: Int, addToStack: Boolean)
 }

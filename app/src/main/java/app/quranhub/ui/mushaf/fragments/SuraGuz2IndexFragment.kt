@@ -1,270 +1,243 @@
-package app.quranhub.ui.mushaf.fragments;
+package app.quranhub.ui.mushaf.fragments
 
+import android.content.Context
+import android.os.Bundle
+import android.text.Editable
+import android.text.TextUtils
+import android.text.TextWatcher
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.Toast
+import androidx.fragment.app.Fragment
+import app.quranhub.R
+import app.quranhub.databinding.FragmentSuraGuz2IndexBinding
+import app.quranhub.ui.common.dialogs.OptionsListDialogFragment
+import app.quranhub.ui.common.dialogs.OptionsListDialogFragment.Companion.getInstance
+import app.quranhub.ui.common.interfaces.ToolbarActionsListener
+import app.quranhub.ui.mushaf.adapter.Guz2IndexAdapter
+import app.quranhub.ui.mushaf.listener.QuranNavigationCallbacks
+import app.quranhub.ui.mushaf.model.SuraIndexModelMapper
+import app.quranhub.ui.mushaf.presenter.SuraGuz2IndexPresenter
+import app.quranhub.ui.mushaf.presenter.SuraGuz2IndexPresenterImp
+import app.quranhub.ui.mushaf.view.SuraGuz2IndexView
+import app.quranhub.util.ScreenUtils.dismissKeyboard
+import com.google.android.material.tabs.TabLayout
+import com.google.android.material.tabs.TabLayout.OnTabSelectedListener
+import java.util.Arrays
 
-import android.content.Context;
-import android.os.Bundle;
-import android.text.Editable;
-import android.text.TextUtils;
-import android.text.TextWatcher;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.Toast;
+class SuraGuz2IndexFragment : Fragment(), SuraGuz2IndexView,
+    OptionsListDialogFragment.ItemSelectionListener {
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
+    private var toolbarActionsListener: ToolbarActionsListener? = null
+    private var quranNavigationCallbacks: QuranNavigationCallbacks? = null
+    private var selectedTab = SURA_INDEX_TAB
+    private var suraIndexFragment: SuraIndexFragment? = null
+    private var guz2IndexFragment: Guz2IndexFragment? = null
+    private var presenter: SuraGuz2IndexPresenter<*>? = null
+    private var inputSearch: String? = ""
+    private var selectedGUZ2Filter = Guz2IndexAdapter.FILTER_GUZ2_ALL
 
-import com.google.android.material.tabs.TabLayout;
+    private var binding: FragmentSuraGuz2IndexBinding? = null
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import app.quranhub.R;
-import app.quranhub.databinding.FragmentSuraGuz2IndexBinding;
-import app.quranhub.ui.common.dialogs.OptionsListDialogFragment;
-import app.quranhub.ui.common.interfaces.ToolbarActionsListener;
-import app.quranhub.ui.mushaf.adapter.Guz2IndexAdapter;
-import app.quranhub.ui.mushaf.listener.QuranNavigationCallbacks;
-import app.quranhub.ui.mushaf.model.SuraIndexModelMapper;
-import app.quranhub.ui.mushaf.presenter.SuraGuz2IndexPresenter;
-import app.quranhub.ui.mushaf.presenter.SuraGuz2IndexPresenterImp;
-import app.quranhub.ui.mushaf.view.SuraGuz2IndexView;
-import app.quranhub.util.ScreenUtils;
-
-public class SuraGuz2IndexFragment extends Fragment implements SuraGuz2IndexView, OptionsListDialogFragment.ItemSelectionListener {
-
-    private static final String TAG = SuraGuz2IndexFragment.class.getSimpleName();
-
-    private static final String ARG_SELECTED_TAB = "ARG_SELECTED_TAB";
-
-    private static final String STATE_SELECTED_TAB = "STATE_SELECTED_TAB";
-    private static final String STATE_INPUT_SEARCH = "STATE_INPUT_SEARCH";
-    private static final String STATE_SELECTED_GUZ2_FILTER = "STATE_SELECTED_GUZ2_FILTER";
-
-    private static final String FRAGMENT_SURA_INDEX = "FRAGMENT_SURA_INDEX";
-    private static final String FRAGMENT_GUZ2_INDEX = "FRAGMENT_GUZ2_INDEX";
-
-    public static final int SURA_INDEX_TAB = 0;
-    public static final int GUZ2_INDEX_TAB = 1;
-    private static final int RC_GUZ2_FILTER = 0;
-
-    private ToolbarActionsListener toolbarActionsListener;
-    private QuranNavigationCallbacks quranNavigationCallbacks;
-
-    private int selectedTab = SURA_INDEX_TAB;
-    private SuraIndexFragment suraIndexFragment;
-    private Guz2IndexFragment guz2IndexFragment;
-    private SuraGuz2IndexPresenter presenter;
-    private String inputSearch = "";
-    private int selectedGUZ2Filter = Guz2IndexAdapter.FILTER_GUZ2_ALL;
-
-    private FragmentSuraGuz2IndexBinding binding;
-
-    public static SuraGuz2IndexFragment newInstance(int selectedTab) {
-        SuraGuz2IndexFragment fragment = new SuraGuz2IndexFragment();
-        Bundle args = new Bundle();
-        args.putInt(ARG_SELECTED_TAB, selectedTab);
-        fragment.setArguments(args);
-        return fragment;
-    }
-
-    @Override
-    public void onAttach(@NonNull Context context) {
-        super.onAttach(context);
-        if (context instanceof ToolbarActionsListener && context instanceof QuranNavigationCallbacks) {
-            toolbarActionsListener = (ToolbarActionsListener) context;
-            quranNavigationCallbacks = (QuranNavigationCallbacks) context;
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        if (context is ToolbarActionsListener && context is QuranNavigationCallbacks) {
+            toolbarActionsListener = context
+            quranNavigationCallbacks = context
         } else {
-            throw new RuntimeException("The parent activity must implement ToolbarActionsListener" +
-                    " & QuranNavigationCallbacks interfaces.");
+            error(
+                "The parent activity must implement ToolbarActionsListener" +
+                        " & QuranNavigationCallbacks interfaces."
+            )
         }
     }
 
-    @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            selectedTab = getArguments().getInt(ARG_SELECTED_TAB);
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        if (arguments != null) {
+            selectedTab = requireArguments().getInt(ARG_SELECTED_TAB)
         }
     }
 
-    @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        binding = FragmentSuraGuz2IndexBinding.inflate(inflater, container, false);
-        return binding.getRoot();
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        binding = FragmentSuraGuz2IndexBinding.inflate(inflater, container, false)
+        return binding!!.root
     }
 
-    @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-        restoreSavedInstanceState(savedInstanceState);
-        initPresenter();
-        addIndexFragment(selectedTab);
-
-        attachListeners();
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        restoreSavedInstanceState(savedInstanceState)
+        initPresenter()
+        addIndexFragment(selectedTab)
+        attachListeners()
     }
 
-    private void attachListeners() {
-        listenOnSelectedTab();
-        observeOnInputSearch();
-        binding.hamburgerIv.setOnClickListener(v -> onNavHamburgerClick());
-        binding.filterBtn.setOnClickListener(v -> onFilterButtonClick());
+    private fun attachListeners() {
+        listenOnSelectedTab()
+        observeOnInputSearch()
+        binding!!.hamburgerIv.setOnClickListener { onNavHamburgerClick() }
+        binding!!.filterBtn.setOnClickListener { onFilterButtonClick() }
     }
 
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        binding = null;
+    override fun onDestroyView() {
+        super.onDestroyView()
+        binding = null
     }
 
-    @Override
-    public void onDetach() {
-        super.onDetach();
-        toolbarActionsListener = null;
-        quranNavigationCallbacks = null;
+    override fun onDetach() {
+        super.onDetach()
+        toolbarActionsListener = null
+        quranNavigationCallbacks = null
     }
 
-    private void initPresenter() {
-        presenter = new SuraGuz2IndexPresenterImp<SuraGuz2IndexView>(getActivity());
-        presenter.onAttach(this);
+    private fun initPresenter() {
+        presenter = SuraGuz2IndexPresenterImp<SuraGuz2IndexView>(activity)
+        (presenter as? SuraGuz2IndexPresenterImp<SuraGuz2IndexView>)?.onAttach(this)
     }
 
-    private void restoreSavedInstanceState(Bundle savedInstanceState) {
+    private fun restoreSavedInstanceState(savedInstanceState: Bundle?) {
         if (savedInstanceState != null) {
-            selectedTab = savedInstanceState.getInt(STATE_SELECTED_TAB);
-            inputSearch = savedInstanceState.getString(STATE_INPUT_SEARCH);
-            selectedGUZ2Filter = savedInstanceState.getInt(STATE_SELECTED_GUZ2_FILTER);
+            selectedTab = savedInstanceState.getInt(STATE_SELECTED_TAB)
+            inputSearch = savedInstanceState.getString(STATE_INPUT_SEARCH)
+            selectedGUZ2Filter = savedInstanceState.getInt(STATE_SELECTED_GUZ2_FILTER)
         }
     }
 
-    @Override
-    public void onSaveInstanceState(@NonNull Bundle outState) {
-        super.onSaveInstanceState(outState);
-        outState.putInt(STATE_SELECTED_TAB, selectedTab);
-        outState.putString(STATE_INPUT_SEARCH, inputSearch);
-        outState.putInt(STATE_SELECTED_GUZ2_FILTER, selectedGUZ2Filter);
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt(STATE_SELECTED_TAB, selectedTab)
+        outState.putString(STATE_INPUT_SEARCH, inputSearch)
+        outState.putInt(STATE_SELECTED_GUZ2_FILTER, selectedGUZ2Filter)
     }
 
-    private void observeOnInputSearch() {
-        binding.etSearch.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                if (binding.tabLayout.getSelectedTabPosition() == SURA_INDEX_TAB && suraIndexFragment != null) {
-                    inputSearch = s.toString();
-                    suraIndexFragment.onSearchSura(inputSearch);
+    private fun observeOnInputSearch() {
+        binding!!.etSearch.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
+                if (binding!!.tabLayout.selectedTabPosition == SURA_INDEX_TAB && suraIndexFragment != null) {
+                    inputSearch = s.toString()
+                    suraIndexFragment!!.onSearchSura(inputSearch)
                 }
             }
 
-            @Override
-            public void afterTextChanged(Editable s) {
-
-            }
-        });
+            override fun afterTextChanged(s: Editable) {}
+        })
     }
 
-    private void listenOnSelectedTab() {
-        binding.tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
-            @Override
-            public void onTabSelected(TabLayout.Tab tab) {
-                addIndexFragment(binding.tabLayout.getSelectedTabPosition());
+    private fun listenOnSelectedTab() {
+        binding!!.tabLayout.addOnTabSelectedListener(object : OnTabSelectedListener {
+            override fun onTabSelected(tab: TabLayout.Tab) {
+                addIndexFragment(binding!!.tabLayout.selectedTabPosition)
             }
 
-            @Override
-            public void onTabUnselected(TabLayout.Tab tab) {
-            }
-
-            @Override
-            public void onTabReselected(TabLayout.Tab tab) {
-            }
-        });
+            override fun onTabUnselected(tab: TabLayout.Tab) {}
+            override fun onTabReselected(tab: TabLayout.Tab) {}
+        })
     }
 
-    private void addIndexFragment(int tab) {
-        selectedTab = tab;
-        binding.tabLayout.getTabAt(selectedTab).select();
+    private fun addIndexFragment(tab: Int) {
+        selectedTab = tab
+        binding!!.tabLayout.getTabAt(selectedTab)!!.select()
         if (tab == SURA_INDEX_TAB) {
-            suraIndexFragment = (SuraIndexFragment) getChildFragmentManager().findFragmentByTag(FRAGMENT_SURA_INDEX);
+            suraIndexFragment =
+                childFragmentManager.findFragmentByTag(FRAGMENT_SURA_INDEX) as SuraIndexFragment?
             if (suraIndexFragment == null) {
-                suraIndexFragment = new SuraIndexFragment();
-                getChildFragmentManager().beginTransaction()
-                        .replace(R.id.index_container, suraIndexFragment, FRAGMENT_SURA_INDEX)
-                        .commit();
+                suraIndexFragment = SuraIndexFragment()
+                childFragmentManager.beginTransaction()
+                    .replace(R.id.index_container, suraIndexFragment!!, FRAGMENT_SURA_INDEX)
+                    .commit()
             }
-            binding.filterBtn.setVisibility(View.INVISIBLE);
-            binding.etSearch.setVisibility(View.VISIBLE);
-            presenter.getSuraIndex();
+            binding!!.filterBtn.visibility = View.INVISIBLE
+            binding!!.etSearch.visibility = View.VISIBLE
+            presenter!!.getSuraIndex()
         } else if (tab == GUZ2_INDEX_TAB) {
-            guz2IndexFragment = (Guz2IndexFragment) getChildFragmentManager().findFragmentByTag(FRAGMENT_GUZ2_INDEX);
+            guz2IndexFragment =
+                childFragmentManager.findFragmentByTag(FRAGMENT_GUZ2_INDEX) as Guz2IndexFragment?
             if (guz2IndexFragment == null) {
-                guz2IndexFragment = Guz2IndexFragment.newInstance(selectedGUZ2Filter);
-                getChildFragmentManager().beginTransaction()
-                        .replace(R.id.index_container, guz2IndexFragment, FRAGMENT_GUZ2_INDEX)
-                        .commit();
+                guz2IndexFragment = Guz2IndexFragment.newInstance(selectedGUZ2Filter)
+                childFragmentManager.beginTransaction()
+                    .replace(R.id.index_container, guz2IndexFragment!!, FRAGMENT_GUZ2_INDEX)
+                    .commit()
             }
-            binding.filterBtn.setVisibility(View.VISIBLE);
-            binding.etSearch.getText().clear();
-            inputSearch = "";
-            binding.etSearch.setVisibility(View.GONE);
+            binding!!.filterBtn.visibility = View.VISIBLE
+            binding!!.etSearch.text.clear()
+            inputSearch = ""
+            binding!!.etSearch.visibility = View.GONE
         }
     }
 
-    private void onNavHamburgerClick() {
-        toolbarActionsListener.onNavDrawerClick();
+    private fun onNavHamburgerClick() {
+        toolbarActionsListener!!.onNavDrawerClick()
     }
 
-    private void onFilterButtonClick() {
-        if (binding.tabLayout.getSelectedTabPosition() == GUZ2_INDEX_TAB && guz2IndexFragment != null) {
-            List<String> guz2Options = new ArrayList<>();
-            guz2Options.add(getString(R.string.all_guz2));
-            guz2Options.addAll(Arrays.asList(getResources().getStringArray(R.array.agza2_name)));
-            OptionsListDialogFragment guz2Dialog = OptionsListDialogFragment.getInstance(
-                    getString(R.string.title_options_dialog_filter_guz2_index),
-                    guz2Options, selectedGUZ2Filter, this, RC_GUZ2_FILTER);
-            guz2Dialog.show(getFragmentManager(), "guz2Dialog");
+    private fun onFilterButtonClick() {
+        if (binding!!.tabLayout.selectedTabPosition == GUZ2_INDEX_TAB && guz2IndexFragment != null) {
+            val guz2Options: MutableList<String?> = ArrayList()
+            guz2Options.add(getString(R.string.all_guz2))
+            guz2Options.addAll(Arrays.asList(*resources.getStringArray(R.array.agza2_name)))
+            val guz2Dialog = getInstance(
+                getString(R.string.title_options_dialog_filter_guz2_index),
+                guz2Options, selectedGUZ2Filter, this, RC_GUZ2_FILTER
+            )
+            guz2Dialog.show(parentFragmentManager, "guz2Dialog")
         }
     }
 
-    public void navigateToSelectedSura(int suraPage) {
-        ScreenUtils.dismissKeyboard(getActivity(), binding.etSearch);
-        quranNavigationCallbacks.gotoQuranPage(suraPage);
+    fun navigateToSelectedSura(suraPage: Int) {
+        dismissKeyboard(requireActivity(), binding!!.etSearch)
+        quranNavigationCallbacks!!.gotoQuranPage(suraPage)
     }
 
-    @Override
-    public void onGetIndex(List<SuraIndexModelMapper> indexList) {
-        suraIndexFragment.setAdapterData(indexList);
+    override fun onGetIndex(indexList: List<SuraIndexModelMapper>) {
+        suraIndexFragment!!.setAdapterData(indexList)
         if (!TextUtils.isEmpty(inputSearch)) {
-            suraIndexFragment.onSearchSura(inputSearch);
+            suraIndexFragment!!.onSearchSura(inputSearch)
         }
     }
 
-    @Override
-    public void showMessage(String message) {
-        Toast.makeText(getActivity(), message, Toast.LENGTH_LONG).show();
+    override fun showMessage(message: String) {
+        Toast.makeText(activity, message, Toast.LENGTH_LONG).show()
     }
 
-    @Override
-    public void showLoading() {
-        binding.progreesBar.setVisibility(View.VISIBLE);
+    override fun showLoading() {
+        binding!!.progreesBar.visibility = View.VISIBLE
     }
 
-    @Override
-    public void hideLoading() {
-        binding.progreesBar.setVisibility(View.GONE);
+    override fun hideLoading() {
+        binding!!.progreesBar.visibility = View.GONE
     }
 
-    @Override
-    public void onItemSelected(int requestCode, int itemIndex) { // filter dialog callback
+    override fun onItemSelected(requestCode: Int, itemIndex: Int) { // filter dialog callback
         if (requestCode == RC_GUZ2_FILTER && guz2IndexFragment != null) {
-            selectedGUZ2Filter = itemIndex;
-            guz2IndexFragment.filterForGuz2(selectedGUZ2Filter);
+            selectedGUZ2Filter = itemIndex
+            guz2IndexFragment!!.filterForGuz2(selectedGUZ2Filter)
+        }
+    }
+
+    companion object {
+        private val TAG = SuraGuz2IndexFragment::class.java.simpleName
+
+        private const val ARG_SELECTED_TAB = "ARG_SELECTED_TAB"
+        private const val STATE_SELECTED_TAB = "STATE_SELECTED_TAB"
+        private const val STATE_INPUT_SEARCH = "STATE_INPUT_SEARCH"
+        private const val STATE_SELECTED_GUZ2_FILTER = "STATE_SELECTED_GUZ2_FILTER"
+        private const val FRAGMENT_SURA_INDEX = "FRAGMENT_SURA_INDEX"
+        private const val FRAGMENT_GUZ2_INDEX = "FRAGMENT_GUZ2_INDEX"
+
+        const val SURA_INDEX_TAB = 0
+        const val GUZ2_INDEX_TAB = 1
+        private const val RC_GUZ2_FILTER = 0
+
+        fun newInstance(selectedTab: Int): SuraGuz2IndexFragment {
+            val fragment = SuraGuz2IndexFragment()
+            val args = Bundle()
+            args.putInt(ARG_SELECTED_TAB, selectedTab)
+            fragment.arguments = args
+            return fragment
         }
     }
 }

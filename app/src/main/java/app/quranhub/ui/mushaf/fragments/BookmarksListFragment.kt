@@ -1,186 +1,174 @@
-package app.quranhub.ui.mushaf.fragments;
+package app.quranhub.ui.mushaf.fragments
 
-import android.content.Context;
-import android.os.Bundle;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.DialogFragment;
-import androidx.fragment.app.Fragment;
-import androidx.lifecycle.ViewModelProvider;
-import androidx.recyclerview.widget.DividerItemDecoration;
-import androidx.recyclerview.widget.LinearLayoutManager;
-
-import java.util.List;
-
-import app.quranhub.data.local.entity.BookmarkType;
-import app.quranhub.databinding.FragmentBookmarksListBinding;
-import app.quranhub.ui.mushaf.adapter.BookmarksAdapter;
-import app.quranhub.ui.mushaf.dialogs.BookmarkEditDialog;
-import app.quranhub.ui.mushaf.listener.BookmarksListListener;
-import app.quranhub.ui.mushaf.listener.QuranNavigationCallbacks;
-import app.quranhub.ui.mushaf.model.DisplayableBookmark;
-import app.quranhub.ui.mushaf.viewmodel.BookmarksListViewModel;
+import android.content.Context
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.fragment.app.DialogFragment
+import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.DividerItemDecoration
+import androidx.recyclerview.widget.LinearLayoutManager
+import app.quranhub.data.local.entity.BookmarkType
+import app.quranhub.databinding.FragmentBookmarksListBinding
+import app.quranhub.ui.mushaf.adapter.BookmarksAdapter
+import app.quranhub.ui.mushaf.adapter.BookmarksAdapter.BookmarkActionListener
+import app.quranhub.ui.mushaf.dialogs.BookmarkEditDialog
+import app.quranhub.ui.mushaf.dialogs.BookmarkEditDialog.BookmarkFilterListener
+import app.quranhub.ui.mushaf.dialogs.BookmarkEditDialog.Companion.getInstance
+import app.quranhub.ui.mushaf.listener.BookmarksListListener
+import app.quranhub.ui.mushaf.listener.QuranNavigationCallbacks
+import app.quranhub.ui.mushaf.model.DisplayableBookmark
+import app.quranhub.ui.mushaf.viewmodel.BookmarksListViewModel
 
 /**
  * A fragment representing a list of user saved bookmarked Quran ayas.
- * Use the {@link BookmarksListFragment#newInstance} factory method to
+ * Use the [BookmarksListFragment.newInstance] factory method to
  * create an instance of this fragment.
  */
-public class BookmarksListFragment extends Fragment
-        implements BookmarksAdapter.BookmarkActionListener, BookmarkEditDialog.BookmarkFilterListener {
+class BookmarksListFragment : Fragment(), BookmarkActionListener, BookmarkFilterListener {
 
-    private static final String TAG = BookmarksListFragment.class.getSimpleName();
+    private var bookMarksViewModel: BookmarksListViewModel? = null
+    private var bookmarkFilterDialog: DialogFragment? = null
+    private var bookmarksListener: BookmarksListListener? = null
+    private var bookmarkTypes: List<BookmarkType?>? = null
+    private var editedBookmarkId = -1
+    private var binding: FragmentBookmarksListBinding? = null
+    private var adapter: BookmarksAdapter? = null
+    private var selectedFilterType = BookmarkEditDialog.ALL_BOOKMARK_FILTER
+    private var quranNavigationCallbacks: QuranNavigationCallbacks? = null
 
-    private BookmarksListViewModel bookMarksViewModel;
-    private DialogFragment bookmarkFilterDialog;
-    private BookmarksListListener bookmarksListener;
-    private List<BookmarkType> bookmarkTypes;
-    private int editedBookmarkId = -1;
-
-    private FragmentBookmarksListBinding binding;
-
-    private BookmarksAdapter adapter;
-    private int selectedFilterType = BookmarkEditDialog.ALL_BOOKMARK_FILTER;
-
-    private QuranNavigationCallbacks quranNavigationCallbacks;
-
-
-    public BookmarksListFragment() {
-        // Required empty public constructor
-    }
-
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @return A new instance of fragment {@link BookmarksListFragment}.
-     */
-    public static BookmarksListFragment newInstance() {
-        BookmarksListFragment fragment = new BookmarksListFragment();
-        return fragment;
-    }
-
-    @Override
-    public void onAttach(@NonNull Context context) {
-        super.onAttach(context);
-
-        if (getParentFragment() instanceof QuranNavigationCallbacks
-                && getParentFragment() instanceof BookmarksListListener) {
-            quranNavigationCallbacks = (QuranNavigationCallbacks) getParentFragment();
-            bookmarksListener = (BookmarksListListener) getParentFragment();
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        if (parentFragment is QuranNavigationCallbacks
+            && parentFragment is BookmarksListListener
+        ) {
+            quranNavigationCallbacks = parentFragment as QuranNavigationCallbacks?
+            bookmarksListener = parentFragment as BookmarksListListener?
         } else {
-            throw new RuntimeException(
-                    getParentFragment().getClass().getSimpleName() + " must implement " +
-                            "QuranNavigationCallbacks & BookmarksListener interfaces.");
+            error(
+                "${requireParentFragment().javaClass.simpleName} must implement QuranNavigationCallbacks & BookmarksListener interfaces."
+            )
         }
     }
 
-    @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        binding = FragmentBookmarksListBinding.inflate(inflater, container, false);
-        setupBookmarksRecyclerView();
-        bookmarkFilterDialog = new BookmarkEditDialog();
-        return binding.getRoot();
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        binding = FragmentBookmarksListBinding.inflate(inflater, container, false)
+        setupBookmarksRecyclerView()
+        bookmarkFilterDialog = BookmarkEditDialog()
+        return binding!!.root
     }
 
-    @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-        bindViewModel();
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        bindViewModel()
     }
 
-    private void bindViewModel() {
-        bookMarksViewModel = new ViewModelProvider(this).get(BookmarksListViewModel.class);
-        bookMarksViewModel.getBookmarkTypes();
-        bookMarksViewModel.getBookmarks().observe(getViewLifecycleOwner(), ayaBookmarks -> {
-
-            bookmarksListener.onEditabilityChange(ayaBookmarks.size() > 0);
-
-            bookMarksViewModel.bookmarksMapper(ayaBookmarks, displayableBookmarks -> {
-                if (binding.loadingIndicator.getVisibility() == View.VISIBLE) {
-                    binding.loadingIndicator.setVisibility(View.GONE);
+    private fun bindViewModel() {
+        bookMarksViewModel = ViewModelProvider(this).get(
+            BookmarksListViewModel::class.java
+        )
+        bookMarksViewModel!!.getBookmarkTypes()
+        bookMarksViewModel!!.bookmarks.observe(viewLifecycleOwner) { ayaBookmarks: List<DisplayableBookmark?> ->
+            bookmarksListener!!.onEditabilityChange(ayaBookmarks.isNotEmpty())
+            bookMarksViewModel!!.bookmarksMapper(ayaBookmarks) { displayableBookmarks: List<DisplayableBookmark> ->
+                if (binding!!.loadingIndicator.visibility == View.VISIBLE) {
+                    binding!!.loadingIndicator.visibility = View.GONE
                 }
-                adapter.setBookmarks(displayableBookmarks);
-                if (displayableBookmarks.size() > 0) {
-                    binding.tvEmptyListMsg.setVisibility(View.GONE);
+                adapter!!.setBookmarks(displayableBookmarks.toMutableList())
+                if (displayableBookmarks.isNotEmpty()) {
+                    binding!!.tvEmptyListMsg.visibility = View.GONE
                 } else {
-                    binding.tvEmptyListMsg.setVisibility(View.VISIBLE);
+                    binding!!.tvEmptyListMsg.visibility = View.VISIBLE
                 }
-            });
-        });
-
-        bookMarksViewModel.getBookmarksTypes().observe(getViewLifecycleOwner(), bookmarkTypes -> {
-            binding.loadingIndicator.setVisibility(View.GONE);
-            this.bookmarkTypes = bookmarkTypes;
-        });
-    }
-
-    private void setupBookmarksRecyclerView() {
-        binding.bookmarksRv.addItemDecoration(
-                new DividerItemDecoration(getContext(), DividerItemDecoration.VERTICAL));
-        binding.bookmarksRv.setHasFixedSize(true);
-        binding.bookmarksRv.setLayoutManager(new LinearLayoutManager(getContext()));
-        adapter = new BookmarksAdapter(getContext(), this);
-        binding.bookmarksRv.setAdapter(adapter);
-    }
-
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        binding = null;
-    }
-
-    @Override
-    public void onSelectItem(DisplayableBookmark displayableBookmark) {
-        quranNavigationCallbacks.gotoQuranPageAya(displayableBookmark.getPageNumber(), displayableBookmark.getAyaId(), false);
-    }
-
-    public void setEditBookmarks(boolean isEditable) {
-        adapter.setEditable(isEditable);
-    }
-
-
-    public void showFilterDialog() {
-        if (bookmarkTypes != null) {
-            BookmarkEditDialog dialog = BookmarkEditDialog.getInstance(bookmarkTypes, selectedFilterType, false);
-            dialog.show(getChildFragmentManager(), "BookmarkEditDialog");
+            }
+        }
+        bookMarksViewModel!!.bookmarksTypes.observe(viewLifecycleOwner) { bookmarkTypes: List<BookmarkType?>? ->
+            binding!!.loadingIndicator.visibility = View.GONE
+            this.bookmarkTypes = bookmarkTypes
         }
     }
 
-    public void searchBookmarks(String text) {
-        adapter.getFilter().filter(text);
+    private fun setupBookmarksRecyclerView() {
+        binding!!.bookmarksRv.addItemDecoration(
+            DividerItemDecoration(context, DividerItemDecoration.VERTICAL)
+        )
+        binding!!.bookmarksRv.setHasFixedSize(true)
+        binding!!.bookmarksRv.layoutManager = LinearLayoutManager(context)
+        adapter = BookmarksAdapter(requireContext(), this)
+        binding!!.bookmarksRv.adapter = adapter
     }
 
-    @Override
-    public void deleteBookmark(@NonNull DisplayableBookmark displayableBookmark) {
-        bookMarksViewModel.deleteBookmark(displayableBookmark.getBookmarkId());
-        adapter.deleteBookmark(displayableBookmark.getAyaId());
+    override fun onDestroyView() {
+        super.onDestroyView()
+        binding = null
     }
 
-    @Override
-    public void updateBookmarkType(@NonNull int bookmarkId) {
+    override fun onSelectItem(displayableBookmark: DisplayableBookmark?) {
+        displayableBookmark?.let {
+            quranNavigationCallbacks!!.gotoQuranPageAya(
+                it.pageNumber,
+                it.ayaId,
+                false
+            )
+        }
+
+    }
+
+    fun setEditBookmarks(isEditable: Boolean) {
+        adapter!!.setEditable(isEditable)
+    }
+
+    fun showFilterDialog() {
         if (bookmarkTypes != null) {
-            editedBookmarkId = bookmarkId;
-            BookmarkEditDialog dialog = BookmarkEditDialog.getInstance(bookmarkTypes, bookmarkId, true);
-            dialog.show(getChildFragmentManager(), "BookmarkEditDialog");
+            val dialog = getInstance(bookmarkTypes, selectedFilterType, false)
+            dialog.show(childFragmentManager, "BookmarkEditDialog")
         }
     }
 
-    @Override
-    public void onBookmarkFilter(int bookmarkType, int colorIndex) {
+    fun searchBookmarks(text: String?) {
+        adapter!!.filter.filter(text)
+    }
+
+    override fun deleteBookmark(displayableBookmark: DisplayableBookmark) {
+        bookMarksViewModel!!.deleteBookmark(displayableBookmark.bookmarkId)
+        adapter!!.deleteBookmark(displayableBookmark.ayaId)
+    }
+
+    override fun updateBookmarkType(bookmarkId: Int) {
+        if (bookmarkTypes != null) {
+            editedBookmarkId = bookmarkId
+            val dialog = getInstance(bookmarkTypes, bookmarkId, true)
+            dialog.show(childFragmentManager, "BookmarkEditDialog")
+        }
+    }
+
+    override fun onBookmarkFilter(bookmarkType: Int, colorIndex: Int) {
         if (editedBookmarkId == -1) {
-            selectedFilterType = bookmarkType;
-            adapter.filterBookmarks(bookmarkType);
+            selectedFilterType = bookmarkType
+            adapter!!.filterBookmarks(bookmarkType)
         } else {
-            bookMarksViewModel.changeBookmarkType(editedBookmarkId, bookmarkType);
-            adapter.editBookmark(editedBookmarkId, bookmarkType, colorIndex);
-            editedBookmarkId = -1;
+            bookMarksViewModel!!.changeBookmarkType(editedBookmarkId, bookmarkType)
+            adapter!!.editBookmark(editedBookmarkId, bookmarkType, colorIndex)
+            editedBookmarkId = -1
         }
     }
 
+    companion object {
+        private val TAG = BookmarksListFragment::class.java.simpleName
+
+        /**
+         * Use this factory method to create a new instance of
+         * this fragment using the provided parameters.
+         *
+         * @return A new instance of fragment [BookmarksListFragment].
+         */
+        fun newInstance(): BookmarksListFragment {
+            return BookmarksListFragment()
+        }
+    }
 }
