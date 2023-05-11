@@ -134,8 +134,8 @@ class QuranAudioDownloaderService : PRDownloaderService() {
                 val sheikhRecitationId = userDatabase.reciterRecitationDao
                     .getSheikhRecitationId(recitationId, reciterId)
                 val quranAudio = QuranAudio(
-                    aya.page, aya.sura, aya.suraAya,
-                    ayaId, filePath, sheikhRecitationId
+                    page = aya.page, sura = aya.sura, aya = aya.suraAya,
+                    ayaId = ayaId, filePath = filePath, sheikhRecitationId = sheikhRecitationId
                 )
                 userDatabase.quranAudioDao.insert(quranAudio)
             }

@@ -170,7 +170,12 @@ class AudioDownloadAmountDialogFragment : DialogFragment() {
                 val userDatabase = UserDatabase.getInstance(requireContext())
                 if (userDatabase.reciterRecitationDao[recitationId, reciterId] == null) {
                     userDatabase.reciterRecitationDao
-                        .insert(ReciterRecitation(recitationId, reciterId!!))
+                        .insert(
+                            ReciterRecitation(
+                                recitationId = recitationId,
+                                reciterId = reciterId!!
+                            )
+                        )
                 }
                 return null
             }

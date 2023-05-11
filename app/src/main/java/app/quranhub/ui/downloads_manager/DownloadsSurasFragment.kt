@@ -85,7 +85,12 @@ class DownloadsSurasFragment : BaseDownloadsFragment(), DeleteConfirmationCallba
                 }
                 if (userDatabase.reciterRecitationDao[recitationId, reciterId] == null) {
                     userDatabase.reciterRecitationDao
-                        .insert(ReciterRecitation(recitationId, reciterId!!))
+                        .insert(
+                            ReciterRecitation(
+                                recitationId = recitationId,
+                                reciterId = reciterId!!
+                            )
+                        )
                 }
                 val recitationIdPreference =
                     AppPreferencesManager.getRecitationSetting(requireContext())

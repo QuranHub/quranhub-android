@@ -456,7 +456,7 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
 
     override fun addNormalBookmark(bookmarkType: Int) {
         if (currentAya != null) {
-            presenter!!.insertAyaBookmark(AyaBookmark(currentAya!!.id, bookmarkType, currentAya))
+            presenter!!.insertAyaBookmark(AyaBookmark(currentAya!!.id, bookmarkType, currentAya!!))
         }
     }
 

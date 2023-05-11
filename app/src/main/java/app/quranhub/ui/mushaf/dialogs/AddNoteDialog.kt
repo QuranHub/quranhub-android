@@ -104,7 +104,7 @@ class AddNoteDialog : DialogFragment(), MediaPlayerCallback {
         if (note!!.noteText != null) {
             binding!!.addNoteEt.setText(note!!.noteText)
         }
-        if (!note!!.noteRecorderPath.isEmpty()) {
+        if (note?.noteRecorderPath?.isNotEmpty() == true) {
             setAudioViewsVisible()
             isRecorderAttached = true
             initSoundMedia()

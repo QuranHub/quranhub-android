@@ -102,7 +102,7 @@ class DownloadsRecitersFragment : BaseDownloadsFragment(), DeleteConfirmationCal
                 }
                 if (userDatabase.reciterRecitationDao[recitationId, reciter.id] == null) {
                     userDatabase.reciterRecitationDao.insert(
-                        ReciterRecitation(recitationId, reciter.id)
+                        ReciterRecitation(recitationId = recitationId, reciterId = reciter.id)
                     )
                 }
                 return null
