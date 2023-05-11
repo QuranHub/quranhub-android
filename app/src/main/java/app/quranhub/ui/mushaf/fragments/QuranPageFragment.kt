@@ -540,6 +540,8 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
 
     // draw shadow on the selected aya
     private fun drawShadow() {
+        if (context == null || !isAdded) return
+
         removePrevAyaShadows() // remove any if exists
         var shadowView: View
         var params: RelativeLayout.LayoutParams
@@ -589,7 +591,7 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
         var firstLine = true
         // draw line from current aya line to prev aya
         while (currentAyaY >= prevAyaY - lineHeight * 0.66) {
-            shadowView = View(activity)
+            shadowView = View(requireContext())
             ayaShadowsViews!!.add(shadowView)
             binding.quranPageContainer.addView(shadowView)
             params = shadowView.layoutParams as RelativeLayout.LayoutParams
