@@ -54,8 +54,8 @@ class NotesAdapter(context: Context, listener: NoteCallback) :
         } else {
             val filteredList: MutableList<DisplayedNote> = ArrayList()
             for (row in noteList) {
-                if (row.pure_text.lowercase(Locale.getDefault())
-                        .contains(inputQuery.lowercase(Locale.getDefault()))
+                if (row.pureText?.lowercase(Locale.getDefault())
+                        ?.contains(inputQuery.lowercase(Locale.getDefault())) == true
                 ) {
                     filteredList.add(row)
                 }
@@ -73,7 +73,7 @@ class NotesAdapter(context: Context, listener: NoteCallback) :
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val note = filteredNoteList[position]
         holder.binding.ayaNumTv.text =
-            context.getString(R.string.ayas_num, note.sura_aya.toString())
+            context.getString(R.string.ayas_num, note.suraAya.toString())
         holder.binding.ayaTv.text = note.text
         holder.binding.noteTypeTv.text = noteTypes[note.noteType]
         holder.binding.tvSuraName.text = suraText[note.sura - 1]

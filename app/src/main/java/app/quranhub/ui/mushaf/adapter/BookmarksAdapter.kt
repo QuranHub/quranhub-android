@@ -70,11 +70,11 @@ class BookmarksAdapter(
                     resultBookmarks = originalBookmarks
                 } else {
                     for (bookmark in originalBookmarks!!) {
-                        if (bookmark.ayaContent.lowercase(Locale.getDefault()).contains(
+                        if (bookmark.ayaContent?.lowercase(Locale.getDefault())?.contains(
                                 constraint.toString().lowercase(
                                     Locale.getDefault()
                                 )
-                            )
+                            ) == true
                         ) {
                             resultBookmarks!!.add(bookmark)
                         }

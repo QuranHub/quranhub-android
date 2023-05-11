@@ -37,8 +37,10 @@ class SubjectsAdapter(
         holder: CategoryViewHolder, flatPosition: Int, group: ExpandableGroup<*>, childIndex: Int
     ) {
         val category = (group as TopicModel).items[childIndex]
-        holder.binding.categoryTv.text = category.categoryName
-        holder.itemView.setOnClickListener { v: View? -> listener.onSelectItem(category) }
+        category?.let { c ->
+            holder.binding.categoryTv.text = c.categoryName
+            holder.itemView.setOnClickListener { listener.onSelectItem(c) }
+        }
     }
 
     override fun onBindGroupViewHolder(

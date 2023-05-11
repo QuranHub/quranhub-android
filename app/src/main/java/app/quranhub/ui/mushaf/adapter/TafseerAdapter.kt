@@ -81,7 +81,7 @@ class TafseerAdapter(private val context: Context) :
         } else {
             val filteredList: MutableList<TafseerModel> = ArrayList()
             for (row in tafseerModelList) {
-                if (row.pure_text.lowercase(Locale.getDefault())
+                if (row.pureText.lowercase(Locale.getDefault())
                         .contains(inputQuery.lowercase(Locale.getDefault()))
                 ) {
                     filteredList.add(row)

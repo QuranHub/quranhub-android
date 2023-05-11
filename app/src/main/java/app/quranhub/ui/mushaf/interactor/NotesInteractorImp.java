@@ -63,8 +63,8 @@ public class NotesInteractorImp implements NotesInteractor {
                         if (i < myNoteModels.size()) {
                             displayedNotes.add(new DisplayedNote(notes.get(i).getAyaId(), notes.get(i).getNoteType(),
                                     notes.get(i).getNoteText(), notes.get(i).getNoteRecorderPath()
-                                    , myNoteModels.get(i).getSura(), myNoteModels.get(i).getSura_aya(),
-                                    myNoteModels.get(i).getPure_text(), myNoteModels.get(i).getText(), myNoteModels.get(i).getPage()));
+                                    , myNoteModels.get(i).getSura(), myNoteModels.get(i).getSuraAya(),
+                                    myNoteModels.get(i).getPureText(), myNoteModels.get(i).getText(), myNoteModels.get(i).getPage()));
                         }
                     }
                     return displayedNotes;

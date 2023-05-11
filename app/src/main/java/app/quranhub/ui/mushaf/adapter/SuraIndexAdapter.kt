@@ -82,8 +82,8 @@ class SuraIndexAdapter(
         } else {
             val filteredList: MutableList<SuraIndexModelMapper> = ArrayList()
             for (row in suraIndexModelList) {
-                if (row.name.lowercase(Locale.getDefault())
-                        .contains(inputQuery.lowercase(Locale.getDefault()))
+                if (row.name?.lowercase(Locale.getDefault())
+                        ?.contains(inputQuery.lowercase(Locale.getDefault())) == true
                 ) {
                     filteredList.add(row)
                 }

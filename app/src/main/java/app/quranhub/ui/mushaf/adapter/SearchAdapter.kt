@@ -34,8 +34,8 @@ class SearchAdapter(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val model = filterSearchModels[position]
         val suraName = context.resources.getStringArray(R.array.sura_name)[model.sura - 1]
-        holder.binding.tvAyaContent.text = model.pure_text
-        holder.binding.tvAyaNum.text = model.sura_aya.toString()
+        holder.binding.tvAyaContent.text = model.pureText
+        holder.binding.tvAyaNum.text = model.suraAya.toString()
         holder.binding.tvGuz2Num.text = model.juz.toString()
         holder.binding.tvSuraName.text = suraName
         holder.binding.tvPageNum.text = model.page.toString()
@@ -60,8 +60,8 @@ class SearchAdapter(
         } else {
             val filteredList: MutableList<SearchModel> = ArrayList()
             for (row in searchModels) {
-                if (row.pure_text.lowercase(Locale.getDefault())
-                        .contains(inputQuery.lowercase(Locale.getDefault()))
+                if (row.pureText?.lowercase(Locale.getDefault())
+                        ?.contains(inputQuery.lowercase(Locale.getDefault())) == true
                 ) {
                     filteredList.add(row)
                 }

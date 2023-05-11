@@ -1,128 +1,88 @@
-package app.quranhub.ui.mushaf.model;
+package app.quranhub.ui.mushaf.model
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import app.quranhub.data.local.entity.TranslationBook
 
-import app.quranhub.data.local.entity.TranslationBook;
+class DisplayableTranslation(translationBook: TranslationBook) {
 
-public class DisplayableTranslation {
+    var translationBook: TranslationBook
 
-    @NonNull
-    private TranslationBook translationBook;
-
-
-    public DisplayableTranslation(@NonNull TranslationBook translationBook) {
-        this.translationBook = new TranslationBook(translationBook.getId(), translationBook.getName()
-                , translationBook.getAuthor(), translationBook.getLanguage(), translationBook.getFileDownloadPath()
-                , translationBook.getDatabaseName(), translationBook.getDownloadStatus(), translationBook.getDownloadLevelPercentage());
+    init {
+        this.translationBook = TranslationBook(
+            translationBook.id,
+            translationBook.name,
+            translationBook.author,
+            translationBook.language,
+            translationBook.fileDownloadPath,
+            translationBook.databaseName,
+            translationBook.downloadStatus,
+            translationBook.downloadLevelPercentage
+        )
     }
 
-    public DisplayableTranslation(@NonNull String id, @NonNull String name, @NonNull String author
-            , @NonNull String language, @NonNull String fileDownloadPath, @NonNull String databaseName
-            , int downloadStatus, int downloadLevelPercentage) {
-        translationBook = new TranslationBook(id, name, author, language, fileDownloadPath
-                , databaseName, downloadStatus, downloadLevelPercentage);
-    }
-
-    @NonNull
-    public TranslationBook getTranslationBook() {
-        return translationBook;
-    }
-
-    public void setTranslationBook(@NonNull TranslationBook translationBook) {
-        this.translationBook = translationBook;
-    }
-
-    @NonNull
-    public String getId() {
-        return translationBook.getId();
-    }
-
-    public void setId(@NonNull String id) {
-        translationBook.setId(id);
-    }
-
-    @NonNull
-    public String getName() {
-        return translationBook.getName();
-    }
-
-    public void setName(@NonNull String name) {
-        translationBook.setName(name);
-    }
-
-    @NonNull
-    public String getAuthor() {
-        return translationBook.getAuthor();
-    }
-
-    public void setAuthor(@NonNull String author) {
-        translationBook.setAuthor(author);
-    }
-
-    @NonNull
-    public String getLanguage() {
-        return translationBook.getLanguage();
-    }
-
-    public void setLanguage(@NonNull String language) {
-        translationBook.setLanguage(language);
-    }
-
-    @NonNull
-    public String getFileDownloadPath() {
-        return translationBook.getFileDownloadPath();
-    }
-
-    public void setFileDownloadPath(@NonNull String fileDownloadPath) {
-        translationBook.setFileDownloadPath(fileDownloadPath);
-    }
-
-    @NonNull
-    public String getDatabaseName() {
-        return translationBook.getDatabaseName();
-    }
-
-    public void setDatabaseName(@NonNull String databaseName) {
-        translationBook.setDatabaseName(databaseName);
-    }
-
-    public int getDownloadStatus() {
-        return translationBook.getDownloadStatus();
-    }
-
-    public void setDownloadStatus(int downloadStatus) {
-        translationBook.setDownloadStatus(downloadStatus);
-    }
-
-    public int getDownloadLevelPercentage() {
-        return translationBook.getDownloadLevelPercentage();
-    }
-
-    public void setDownloadLevelPercentage(int downloadLevelPercentage) {
-        translationBook.setDownloadLevelPercentage(downloadLevelPercentage);
-    }
-
-    @Override
-    public boolean equals(@Nullable Object obj) {
-        if (obj instanceof DisplayableTranslation) {
-            return this.getId().equals(((DisplayableTranslation) obj).getId());
+    var id: String
+        get() = translationBook.id
+        set(id) {
+            translationBook.id = id
         }
-        return false;
+
+    var name: String
+        get() = translationBook.name
+        set(name) {
+            translationBook.name = name
+        }
+
+    var author: String
+        get() = translationBook.author
+        set(author) {
+            translationBook.author = author
+        }
+
+    var language: String
+        get() = translationBook.language
+        set(language) {
+            translationBook.language = language
+        }
+
+    var fileDownloadPath: String
+        get() = translationBook.fileDownloadPath
+        set(fileDownloadPath) {
+            translationBook.fileDownloadPath = fileDownloadPath
+        }
+
+    var databaseName: String
+        get() = translationBook.databaseName
+        set(databaseName) {
+            translationBook.databaseName = databaseName
+        }
+
+    var downloadStatus: Int
+        get() = translationBook.downloadStatus
+        set(downloadStatus) {
+            translationBook.downloadStatus = downloadStatus
+        }
+
+    var downloadLevelPercentage: Int
+        get() = translationBook.downloadLevelPercentage
+        set(downloadLevelPercentage) {
+            translationBook.downloadLevelPercentage = downloadLevelPercentage
+        }
+
+    override fun equals(other: Any?): Boolean {
+        return if (other is DisplayableTranslation) {
+            id == other.id
+        } else false
     }
 
-    @NonNull
-    @Override
-    public String toString() {
+    override fun toString(): String {
         return "DisplayableTranslation{" +
-                "id='" + getId() + '\'' +
-                ", name='" + getName() + '\'' +
-                ", author='" + getAuthor() + '\'' +
-                ", language='" + getLanguage() + '\'' +
-                ", fileDownloadPath='" + getFileDownloadPath() + '\'' +
-                ", databaseName='" + getDatabaseName() + '\'' +
-                ", downloadStatus=" + getDownloadStatus() +
-                ", downloadLevelPercentage=" + getDownloadLevelPercentage() +
-                '}';
+                "id='" + id + '\'' +
+                ", name='" + name + '\'' +
+                ", author='" + author + '\'' +
+                ", language='" + language + '\'' +
+                ", fileDownloadPath='" + fileDownloadPath + '\'' +
+                ", databaseName='" + databaseName + '\'' +
+                ", downloadStatus=" + downloadStatus +
+                ", downloadLevelPercentage=" + downloadLevelPercentage +
+                '}'
     }
 }
