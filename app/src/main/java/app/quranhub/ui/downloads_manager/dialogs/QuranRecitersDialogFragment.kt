@@ -138,11 +138,12 @@ class QuranRecitersDialogFragment : DialogFragment(), OptionsListAdapter.ItemCli
 
     override fun onStart() {
         super.onStart()
-        var recitationKey: String? = null
-        if (recitationId == Constants.Recitation.HAFS_ID) recitationKey =
-            Constants.Recitation.HAFS_KEY else if (recitationId == Constants.Recitation.WARSH_ID) recitationKey =
-            Constants.Recitation.WARSH_KEY
-        val disposable: Disposable = recitationsRepository.getRecitersForRecitation(recitationKey!!)
+        val recitationKey: String = when (recitationId) {
+            Constants.Recitation.HAFS_ID -> Constants.Recitation.HAFS_KEY
+            Constants.Recitation.WARSH_ID -> Constants.Recitation.WARSH_KEY
+            else -> error("Invalid recitation id: $recitationId")
+        }
+        val disposable: Disposable = recitationsRepository.getRecitersForRecitation(recitationKey)
             .observeOn(AndroidSchedulers.mainThread())
             .subscribeOn(AndroidSchedulers.mainThread())
             .subscribeWith(object : DisposableSingleObserver<List<ReciterModel>>() {

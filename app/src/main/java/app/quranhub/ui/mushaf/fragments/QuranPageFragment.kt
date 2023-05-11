@@ -38,7 +38,7 @@ import app.quranhub.ui.mushaf.model.BookmarkModel
 import app.quranhub.ui.mushaf.presenter.QuranPagePresenter
 import app.quranhub.ui.mushaf.presenter.QuranPagePresenterImp
 import app.quranhub.ui.mushaf.view.QuranPageView
-import app.quranhub.util.FragmentUtils
+import app.quranhub.util.FragmentUtils.isSafeFragment
 import app.quranhub.util.GlideApp
 import app.quranhub.util.ImageUtil
 import app.quranhub.util.IntentUtils
@@ -540,7 +540,7 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
 
     // draw shadow on the selected aya
     private fun drawShadow() {
-        if (context == null || !isAdded) return
+        if (!isSafeFragment(this)) return
 
         removePrevAyaShadows() // remove any if exists
         var shadowView: View
@@ -659,7 +659,7 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
                     isFirstResource: Boolean
                 ): Boolean {
                     Log.d(TAG, "onLoadFailed: GlideApp")
-                    if (FragmentUtils.isSafeFragment(this@QuranPageFragment)) {
+                    if (isSafeFragment(this@QuranPageFragment)) {
                         binding.progreesBar.visibility = View.GONE
                         binding.loadFailedContainer.root.visibility = View.VISIBLE
                     }
@@ -673,7 +673,7 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
                     dataSource: DataSource,
                     isFirstResource: Boolean
                 ): Boolean {
-                    if (FragmentUtils.isSafeFragment(this@QuranPageFragment)) {
+                    if (isSafeFragment(this@QuranPageFragment)) {
                         binding.progreesBar.visibility = View.GONE
                         binding.loadFailedContainer.root.visibility = View.GONE
                         isPageShown = true

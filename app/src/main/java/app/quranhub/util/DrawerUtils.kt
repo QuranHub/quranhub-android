@@ -94,7 +94,8 @@ object DrawerUtils {
                     .withIdentifier(IDENTIFIER_TOPICS.toLong())
                     .withTextColorRes(R.color.drawer_text_color)
                     .withSelectedIcon(R.drawable.topics_gold_sidemenu_ic)
-                    .withSelectedTextColorRes(R.color.drawer_selected_tint),  //                        new PrimaryDrawerItem()
+                    .withSelectedTextColorRes(R.color.drawer_selected_tint),
+                //                        new PrimaryDrawerItem()
                 //                                .withName(activity.getString(R.string.library_menu))
                 //                                .withTypeface(Typeface.createFromAsset(activity.getAssets(), "fonts/droid_arabic_kufi.ttf"))
                 //                                .withIcon(R.drawable.library_green_sidemenu_ic)
@@ -142,15 +143,21 @@ object DrawerUtils {
                     .withTextColorRes(R.color.drawer_text_color)
                     .withSelectedIcon(R.drawable.settings_gold_sidemenu_ic)
                     .withSelectedTextColorRes(R.color.drawer_selected_tint)
-                    .withSelectable(false) //                        , new PrimaryDrawerItem()
-                //                                .withName(activity.getString(R.string.downloads_menu))
-                //                                .withTypeface(Typeface.createFromAsset(activity.getAssets(), "fonts/droid_arabic_kufi.ttf"))
-                //                                .withIcon(R.drawable.downloads_green_sidemenu_ic)
-                //                                .withIdentifier(IDENTIFIER_DOWNLOADS_MANAGER)
-                //                                .withTextColorRes(R.color.drawer_text_color)
-                //                                .withSelectedIcon(R.drawable.downloads_gold_sidemenu_ic)
-                //                                .withSelectedTextColorRes(R.color.drawer_selected_tint)
-                //                                .withSelectable(false)
+                    .withSelectable(false),
+                PrimaryDrawerItem()
+                    .withName(activity.getString(R.string.downloads_menu))
+                    .withTypeface(
+                        Typeface.createFromAsset(
+                            activity.assets,
+                            "fonts/droid_arabic_kufi.ttf"
+                        )
+                    )
+                    .withIcon(R.drawable.downloads_green_sidemenu_ic)
+                    .withIdentifier(IDENTIFIER_DOWNLOADS_MANAGER.toLong())
+                    .withTextColorRes(R.color.drawer_text_color)
+                    .withSelectedIcon(R.drawable.downloads_gold_sidemenu_ic)
+                    .withSelectedTextColorRes(R.color.drawer_selected_tint)
+                    .withSelectable(false)
             )
             .withOnDrawerItemClickListener { view: View?, position: Int, drawerItem: IDrawerItem<*, *>? ->
                 if (drawerItem != null) {

@@ -82,6 +82,7 @@ abstract class BaseDownloadsFragment : Fragment(), Editable, DownloadsAdapter.It
         }
         setupDescription()
         setupDownloadsRecyclerView()
+        displayDownloadItems()
     }
 
     private fun setupDescription() {
@@ -106,11 +107,6 @@ abstract class BaseDownloadsFragment : Fragment(), Editable, DownloadsAdapter.It
         displayableDownloads = mutableListOf()
         downloadsAdapter = DownloadsAdapter(displayableDownloads!!, this, editable)
         binding!!.rvDownloads.adapter = downloadsAdapter
-    }
-
-    override fun onActivityCreated(savedInstanceState: Bundle?) {
-        super.onActivityCreated(savedInstanceState)
-        displayDownloadItems()
     }
 
     @SuppressLint("StaticFieldLeak")

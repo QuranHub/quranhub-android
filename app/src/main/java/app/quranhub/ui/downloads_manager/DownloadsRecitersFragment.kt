@@ -4,10 +4,13 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.os.AsyncTask
 import android.os.Bundle
+import android.util.Log
 import app.quranhub.R
+import app.quranhub.data.Constants
 import app.quranhub.data.local.db.UserDatabase
 import app.quranhub.data.local.entity.Reciter
 import app.quranhub.data.local.entity.ReciterRecitation
+import app.quranhub.data.repository.RecitationsRepository
 import app.quranhub.ui.downloads_manager.dialogs.DeleteConfirmationDialogFragment.Companion.newInstance
 import app.quranhub.ui.downloads_manager.dialogs.DeleteConfirmationDialogFragment.DeleteConfirmationCallbacks
 import app.quranhub.ui.downloads_manager.model.DisplayableDownload
@@ -17,7 +20,10 @@ import app.quranhub.util.QuranAudioDeleteUtils.deleteReciterAudio
 class DownloadsRecitersFragment : BaseDownloadsFragment(), DeleteConfirmationCallbacks {
 
     private var recitationId = 0
-    private val reciters: List<Reciter>? = null
+
+    private var reciters: List<Reciter>? = null
+
+    private val recitationsRepository = RecitationsRepository()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,23 +33,34 @@ class DownloadsRecitersFragment : BaseDownloadsFragment(), DeleteConfirmationCal
     }
 
     override fun provideDisplayableDownloads(): List<DisplayableDownload> {
-        val displayableDownloadsList: MutableList<DisplayableDownload> = ArrayList()
+        val displayableDownloadsList: MutableList<DisplayableDownload> = mutableListOf()
 
-//        RecitersApi recitersApi = ApiClient.getClient().create(RecitersApi.class);
-//        Call<RecitersResponse> recitersCall = recitersApi.getQuranReciters(recitationId);
-//        try {
-//            Response<RecitersResponse> response = recitersCall.execute();
-//            RecitersResponse recitersResponse = response.body();
-//            if (recitersResponse != null) {
-//                reciters = recitersResponse.getReciters();
-//            } else {
-//                Log.e(TAG, "recitersResponse is null!");
-//                reciters = retrieveLocalReciters();
-//            }
-//        } catch (IOException e) {
-//            Log.e(TAG, "Failed to retrieve reciters from server.");
-//            reciters = retrieveLocalReciters();
-//        }
+        val recitationKey: String = when (recitationId) {
+            Constants.Recitation.HAFS_ID -> Constants.Recitation.HAFS_KEY
+            Constants.Recitation.WARSH_ID -> Constants.Recitation.WARSH_KEY
+            else -> error("Invalid recitation id: $recitationId")
+        }
+
+        reciters = try {
+            val reciterModels =
+                recitationsRepository.getRecitersForRecitation(recitationKey).blockingGet()
+            if (reciters != null) {
+                reciterModels!!.map {
+                    Reciter(
+                        it.id,
+                        it.getLocalizedName(requireContext()),
+                        it.getLocalizedNationality(requireContext()),
+                        it.audioBaseUrl
+                    )
+                }
+            } else {
+                Log.e(TAG, "reciterModels is null!")
+                retrieveLocalReciters()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to retrieve reciters from RecitationsRepository.");
+            retrieveLocalReciters();
+        }
 
         // process reciters list
         for (r in reciters!!) {
@@ -56,7 +73,7 @@ class DownloadsRecitersFragment : BaseDownloadsFragment(), DeleteConfirmationCal
             displayableDownload.downloadedAmount =
                 getString(R.string.downloaded_amount_suras, downloadedSurasIds.size)
             displayableDownload.isDownloadable = downloadedSurasIds.size < 114
-            displayableDownload.isDeletable = downloadedSurasIds.size > 0
+            displayableDownload.isDeletable = downloadedSurasIds.isNotEmpty()
             displayableDownloadsList.add(displayableDownload)
         }
         return displayableDownloadsList
