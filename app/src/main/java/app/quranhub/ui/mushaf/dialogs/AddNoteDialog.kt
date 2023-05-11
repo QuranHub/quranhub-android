@@ -33,6 +33,7 @@ import java.io.IOException
 class AddNoteDialog : DialogFragment(), MediaPlayerCallback {
 
     private var binding: DialogAddNoteBinding? = null
+
     private var isRecord = false
     private var isPlaying = false
     private var isRecorderAttached = false
@@ -41,7 +42,7 @@ class AddNoteDialog : DialogFragment(), MediaPlayerCallback {
     private var userSelectedPosition = 0
     private var dialog: Dialog? = null
     private var listener: AddNoteListener? = null
-    private var permissions: Array<String> = arrayOf()
+    private var permissions = arrayOf<String>()
     private var outputRecorderPath: String? = null
     private var ayaId = 0
     private var audioRecorder: MediaRecorder? = null
@@ -80,8 +81,7 @@ class AddNoteDialog : DialogFragment(), MediaPlayerCallback {
         dialog!!.setContentView(binding!!.root)
         dialog!!.window?.setBackgroundDrawableResource(android.R.color.transparent)
         dialog!!.setCanceledOnTouchOutside(false)
-        permissions =
-            arrayOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        permissions = arrayOf(Manifest.permission.RECORD_AUDIO)
         attachListeners()
     }
 
@@ -131,11 +131,11 @@ class AddNoteDialog : DialogFragment(), MediaPlayerCallback {
     }
 
     private fun attachListeners() {
-        binding!!.saveBtn.setOnClickListener { v: View? -> onAddNote() }
-        binding!!.cancelBtn.setOnClickListener { v: View? -> onCancel() }
-        binding!!.addRecorderIv.setOnClickListener { v: View? -> onClickRecord() }
-        binding!!.playIv.setOnClickListener { v: View? -> onPlayRecorder() }
-        binding!!.removeRecordIv.setOnClickListener { v: View? -> onRemoveRecord() }
+        binding!!.saveBtn.setOnClickListener { onAddNote() }
+        binding!!.cancelBtn.setOnClickListener { onCancel() }
+        binding!!.addRecorderIv.setOnClickListener { onClickRecord() }
+        binding!!.playIv.setOnClickListener { onPlayRecorder() }
+        binding!!.removeRecordIv.setOnClickListener { onRemoveRecord() }
     }
 
     private fun onAddNote() {
@@ -179,12 +179,7 @@ class AddNoteDialog : DialogFragment(), MediaPlayerCallback {
         } else {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 if (ContextCompat.checkSelfPermission(
-                        requireActivity(),
-                        permissions[0]
-                    ) == PackageManager.PERMISSION_GRANTED
-                    && ContextCompat.checkSelfPermission(
-                        requireActivity(),
-                        permissions[1]
+                        requireActivity(), permissions[0]
                     ) == PackageManager.PERMISSION_GRANTED
                 ) {
                     initRecording()

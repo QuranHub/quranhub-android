@@ -53,13 +53,13 @@ class AyaAudioPopup(private val context: Context, private val listener: AyaAudio
     }
 
     private fun attachListeners() {
-        binding!!.playIv.setOnClickListener { v: View? -> onPlayAudio() }
-        binding!!.recordIv.setOnClickListener { v: View? -> onClickRecord() }
-        binding!!.nextAyaIv.setOnClickListener { v: View? -> playNextAya() }
-        binding!!.prevAyaIv.setOnClickListener { v: View? -> playPrevAya() }
-        binding!!.repeatIv.setOnClickListener { v: View? -> onClickRepeat() }
-        binding!!.reciterIv.setOnClickListener { v: View? -> onClickReciter() }
-        binding!!.stopIv.setOnClickListener { v: View? -> onClickStop() }
+        binding!!.playIv.setOnClickListener { onPlayAudio() }
+        binding!!.recordIv.setOnClickListener { onClickRecord() }
+        binding!!.nextAyaIv.setOnClickListener { playNextAya() }
+        binding!!.prevAyaIv.setOnClickListener { playPrevAya() }
+        binding!!.repeatIv.setOnClickListener { onClickRepeat() }
+        binding!!.reciterIv.setOnClickListener { onClickReciter() }
+        binding!!.stopIv.setOnClickListener { onClickStop() }
     }
 
     private fun onPlayAudio() {

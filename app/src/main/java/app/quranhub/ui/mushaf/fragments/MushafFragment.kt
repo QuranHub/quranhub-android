@@ -736,7 +736,7 @@ class MushafFragment : Fragment(), MushafView, QuranFooterCallbacks, Translation
             openAyaRecorderPlayer()
         } else {
             // get permission to access microphone and mobile storage to save user voice recorder on phone
-            recordingPerm
+            getRecordingPerm()
         }
     }
 
@@ -761,30 +761,24 @@ class MushafFragment : Fragment(), MushafView, QuranFooterCallbacks, Translation
         dialog.show(childFragmentManager, "AyaRecorderPlayerDialog")
     }
 
-    private val recordingPerm: Unit
-        get() {
-            val permissions = arrayOf(
-                Manifest.permission.RECORD_AUDIO,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE
-            )
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                if (ContextCompat.checkSelfPermission(
-                        requireActivity(),
-                        permissions[0]
-                    ) == PackageManager.PERMISSION_GRANTED
-                    && ContextCompat.checkSelfPermission(
-                        requireActivity(),
-                        permissions[1]
-                    ) == PackageManager.PERMISSION_GRANTED
-                ) {
-                    startAyaRecording()
-                } else {
-                    requestPermissions(permissions, REQUEST_RECORDING_PERM)
-                }
-            } else {
+    private fun getRecordingPerm() {
+        val permissions = arrayOf(
+            Manifest.permission.RECORD_AUDIO
+        )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (ContextCompat.checkSelfPermission(
+                    requireActivity(),
+                    permissions[0]
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
                 startAyaRecording()
+            } else {
+                requestPermissions(permissions, REQUEST_RECORDING_PERM)
             }
+        } else {
+            startAyaRecording()
         }
+    }
 
     override fun onRequestPermissionsResult(
         requestCode: Int,
@@ -1024,10 +1018,13 @@ class MushafFragment : Fragment(), MushafView, QuranFooterCallbacks, Translation
 
     companion object {
         private val TAG = MushafFragment::class.java.simpleName
+
         private const val ARG_INIT_PAGE = "ARG_INIT_PAGE"
         private const val ARG_FROM_NOTFICATION = "ARG_FROM_NOTIFICATION"
         private const val ARG_INIT_AYA = "ARG_INIT_AYA"
+
         private const val REQUEST_RECORDING_PERM = 1
+
         fun newInstance(): MushafFragment {
             return MushafFragment()
         }
