@@ -45,7 +45,7 @@ public class Mus7fInteractorImp implements Mus7fInteractor {
 
     @Override
     public void initTranslationDB(String dbName) {
-        translationDatabase = TranslationDatabase.getInstance(context, dbName);
+        translationDatabase = TranslationDatabase.newInstance(context, dbName);
     }
 
     @SuppressLint("CheckResult")

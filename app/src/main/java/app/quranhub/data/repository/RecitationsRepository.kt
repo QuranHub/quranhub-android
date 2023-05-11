@@ -1,36 +1,37 @@
-package app.quranhub.data.repository;
+package app.quranhub.data.repository
 
-import androidx.annotation.NonNull;
+import app.quranhub.data.model.ReciterModel
+import com.google.android.gms.tasks.Task
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.QuerySnapshot
+import io.reactivex.Single
+import io.reactivex.SingleEmitter
 
-import com.google.firebase.firestore.FirebaseFirestore;
+class RecitationsRepository {
 
-import java.util.List;
+    private val db = FirebaseFirestore.getInstance()
 
-import app.quranhub.data.model.ReciterModel;
-import io.reactivex.Single;
+    fun getRecitersForRecitation(recitationKey: String): Single<List<ReciterModel>?> {
 
-public class RecitationsRepository {
-
-    private static final String TAG = RecitationsRepository.class.getSimpleName();
-
-    private final FirebaseFirestore db = FirebaseFirestore.getInstance();
-
-    @NonNull
-    public Single<List<ReciterModel>> getRecitersForRecitation(@NonNull String recitationKey) {
-        return Single.create(emitter -> {
+        return Single.create { emitter: SingleEmitter<List<ReciterModel>?> ->
             db.collection("recitations")
-                    .document(recitationKey)
-                    .collection("reciters")
-                    .get()
-                    .addOnCompleteListener(task -> {
-                        if (task.isSuccessful()) {
-                            final List<ReciterModel> reciterModels = task.getResult().toObjects(ReciterModel.class);
-                            emitter.onSuccess(reciterModels);
-                        } else {
-                            emitter.onError(task.getException());
-                        }
-                    });
-        });
+                .document(recitationKey)
+                .collection("reciters")
+                .get()
+                .addOnCompleteListener { task: Task<QuerySnapshot> ->
+                    if (task.isSuccessful) {
+                        val reciterModels = task.result.toObjects(
+                            ReciterModel::class.java
+                        )
+                        emitter.onSuccess(reciterModels)
+                    } else {
+                        emitter.onError(task.exception!!)
+                    }
+                }
+        }
     }
 
+    companion object {
+        private val TAG = RecitationsRepository::class.java.simpleName
+    }
 }

@@ -1,74 +1,68 @@
-package app.quranhub.data.local.db;
+package app.quranhub.data.local.db
 
-import android.content.Context;
-import android.content.SharedPreferences;
-import android.util.Log;
-
-import androidx.annotation.NonNull;
-import androidx.room.Database;
-import androidx.room.Room;
-import androidx.room.RoomDatabase;
-import androidx.room.migration.Migration;
-import androidx.sqlite.db.SupportSQLiteDatabase;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import android.content.Context
+import android.util.Log
+import androidx.room.Room.databaseBuilder
+import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
+import java.io.FileOutputStream
+import java.io.IOException
+import java.io.OutputStream
+import kotlin.concurrent.thread
 
 /**
  * Utility class for Room used to create Room databases that can be pre-populated
- * from an existing SQLite database bundled as a file in the app assets (at {@code assets/databases}).
- * Use this class instead of {@link androidx.room.Room} when building your database.
+ * from an existing SQLite database bundled as a file in the app assets (at `assets/databases`).
+ * Use this class instead of [androidx.room.Room] when building your database.
  *
- * @author Abdallah Abdelazim (<a href="mailto:abdallah.abdelazim@hotmail.com">abdallah.abdelazim@hotmail.com</a>).
+ * @author Abdallah Abdelazim ([abdallah.abdelazim@hotmail.com](mailto:abdallah.abdelazim@hotmail.com)).
  */
-public class RoomAsset {
+object RoomAsset {
 
-    private static final String TAG = RoomAsset.class.getSimpleName();
+    private val TAG = RoomAsset::class.java.simpleName
 
     /**
      * Creates a RoomDatabase.Builder for a pre-populated persistent database. Once a database is
      * built, you should keep a reference to it and re-use it.
-     * <p>In the {@link Database} annotation on your database class, you must use {@code version = 2}.
-     * Do not use the version in the {@link Database} annotation anymore. Instead, for migration,
-     * increment the {@code version} param passed here.
+     *
+     * In the [Database] annotation on your database class, you must use `version = 2`.
+     * Do not use the version in the [Database] annotation anymore. Instead, for migration,
+     * increment the `version` param passed here.
      *
      * @param context The context for the database. This is usually the Application context.
-     * @param klass   The abstract class which is annotated with {@link Database} and extends
-     *                {@link RoomDatabase}.
+     * @param klass   The abstract class which is annotated with [Database] and extends
+     * [RoomDatabase].
      * @param name    The name of the database file (which should also be the name of the bundled
-     *                database file in the assets).
+     * database file in the assets).
      * @param version A version number to allow for migration when the bundled assets database
-     *                is updated. Increment this number when updating the assets database file.
-     *                <p>If the database is already on the device & with a version number lower than the
-     *                passed number here, a migration will happen. Migration is done by deleting the
-     *                old database & recopying the one bundled with the assets again.
-     *                The version must be an integer greater than or equal 1.
+     * is updated. Increment this number when updating the assets database file.
+     *
+     * If the database is already on the device & with a version number lower than the
+     * passed number here, a migration will happen. Migration is done by deleting the
+     * old database & recopying the one bundled with the assets again.
+     * The version must be an integer greater than or equal 1.
      * @param <T>     The type of the database class.
-     * @return A {@code RoomDatabaseBuilder<T>} which you can use to create the database.
-     */
-    @NonNull
-    public static <T extends RoomDatabase> RoomDatabase.Builder<T> databaseBuilder(
-            @NonNull Context context, @NonNull Class<T> klass, @NonNull String name, int version) {
-        //noinspection ConstantConditions
-        if (name == null || name.trim().length() == 0) {
-            throw new IllegalArgumentException("Cannot build a database with null or empty name."
+     * @return A `RoomDatabaseBuilder<T>` which you can use to create the database.
+    </T> */
+    @JvmStatic
+    fun <T : RoomDatabase> databaseBuilder(
+        context: Context, klass: Class<T>, name: String, version: Int
+    ): RoomDatabase.Builder<T> {
+        require(name.trim().isNotEmpty()) {
+            ("Cannot build a database with null or empty name."
                     + " If you are trying to create an in memory database, use Room"
-                    + ".inMemoryDatabaseBuilder");
+                    + ".inMemoryDatabaseBuilder")
         }
 
         // copy pre-populated file from assets if necessary
-        copyAssetDatabase(context, name, version);
-
-        return Room.databaseBuilder(context, klass, name)
-                .addMigrations(new Migration(1, 2) {
-                    @Override
-                    public void migrate(@NonNull SupportSQLiteDatabase database) {
-                        /* prevent creation of the database schema by Room */
-                    }
-                });
+        copyAssetDatabase(context, name, version)
+        return databaseBuilder(context, klass, name)
+            .addMigrations(object : Migration(1, 2) {
+                override fun migrate(database: SupportSQLiteDatabase) {
+                    /* prevent creation of the database schema by Room */
+                }
+            })
     }
 
     /**
@@ -77,18 +71,19 @@ public class RoomAsset {
      *
      * @param context
      * @param dbName    The name of the database file in assets (which also the name of the
-     *                  database by Room).
+     * database by Room).
      * @param dbVersion A version number to allow for migration when the bundled assets database
-     *                  is updated. Increment this number when updating the assets database file.
-     *                  <p>If the database is already on the device & with a version number lower than the
-     *                  passed number here, a migration will happen. Migration is done by deleting the
-     *                  old database & recopying the one bundled with the assets again.
-     *                  The version must be an integer greater than or equal 1.
+     * is updated. Increment this number when updating the assets database file.
+     *
+     * If the database is already on the device & with a version number lower than the
+     * passed number here, a migration will happen. Migration is done by deleting the
+     * old database & recopying the one bundled with the assets again.
+     * The version must be an integer greater than or equal 1.
      */
-    public static void initializeDatabase(@NonNull Context context, @NonNull String dbName, int dbVersion) {
-
-        new Thread(() ->
-                copyAssetDatabase(context.getApplicationContext(), dbName, dbVersion)).start();
+    fun initializeDatabase(context: Context, dbName: String, dbVersion: Int) {
+        thread {
+            copyAssetDatabase(context.applicationContext, dbName, dbVersion)
+        }
     }
 
     /**
@@ -98,60 +93,53 @@ public class RoomAsset {
      * @param context      This is usually the Application context.
      * @param databaseName The name of the database file in assets (which also the name of the
      * @param version      A version number to allow for migration when the bundled assets database
-     *                     is updated. Increment this number when updating the assets database file.
-     *                     <p>If the database is already on the device & with a version number lower than the
-     *                     passed number here, a migration will happen. Migration is done by deleting the
-     *                     old database & recopying the one bundled with the assets again.
-     *                     The version must be an integer greater than or equal 1.
+     * is updated. Increment this number when updating the assets database file.
+     *
+     * If the database is already on the device & with a version number lower than the
+     * passed number here, a migration will happen. Migration is done by deleting the
+     * old database & recopying the one bundled with the assets again.
+     * The version must be an integer greater than or equal 1.
      */
-    private static synchronized void copyAssetDatabase(@NonNull Context context
-            , @NonNull String databaseName, int version) {
-
-        if (version < 1) {
-            throw new IllegalArgumentException("The version must be greater than or equal 1");
-        }
-
-        SharedPreferences sharedPref = context.getSharedPreferences("room_asset_prefs"
-                , Context.MODE_PRIVATE);
-        int oldVersion = sharedPref.getInt(databaseName, -1);
+    @Synchronized
+    private fun copyAssetDatabase(
+        context: Context, databaseName: String, version: Int
+    ) {
+        require(version >= 1) { "The version must be greater than or equal 1" }
+        val sharedPref = context.getSharedPreferences(
+            "room_asset_prefs", Context.MODE_PRIVATE
+        )
+        val oldVersion = sharedPref.getInt(databaseName, -1)
 
         // If the database already exists with the same version, return
         if (oldVersion == version) { // handle recopying if assets database is updated
-            Log.d(TAG, "Database '" + databaseName + "' already exists with the latest version");
-            return;
+            Log.d(TAG, "Database '$databaseName' already exists with the latest version")
+            return
         }
-
-        Log.d(TAG, "Copying database '" + databaseName + "'...");
-
-        final File dbPath = context.getDatabasePath(databaseName);
+        Log.d(TAG, "Copying database '$databaseName'...")
+        val dbPath = context.getDatabasePath(databaseName)
 
         // delete old database file if exists
-        dbPath.delete();
+        dbPath.delete()
 
         // Make sure we have a path to the file
-        dbPath.getParentFile().mkdirs();
+        dbPath.parentFile.mkdirs()
 
         // Try to copy database file
         try {
-            final InputStream inputStream = context.getAssets().open("databases/" + databaseName);
-            final OutputStream output = new FileOutputStream(dbPath);
-
-            byte[] buffer = new byte[8192];
-            int length;
-
-            while ((length = inputStream.read(buffer, 0, 8192)) > 0) {
-                output.write(buffer, 0, length);
+            val inputStream = context.assets.open("databases/$databaseName")
+            val output: OutputStream = FileOutputStream(dbPath)
+            val buffer = ByteArray(8192)
+            var length: Int
+            while (inputStream.read(buffer, 0, 8192).also { length = it } > 0) {
+                output.write(buffer, 0, length)
             }
-
-            output.flush();
-            output.close();
-            inputStream.close();
-
-            sharedPref.edit().putInt(databaseName, version).apply();
-        } catch (IOException e) {
-            Log.d(TAG, "Failed to open file", e);
-            e.printStackTrace();
+            output.flush()
+            output.close()
+            inputStream.close()
+            sharedPref.edit().putInt(databaseName, version).apply()
+        } catch (e: IOException) {
+            Log.d(TAG, "Failed to open file", e)
+            e.printStackTrace()
         }
     }
-
 }

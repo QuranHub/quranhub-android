@@ -1,34 +1,34 @@
-package app.quranhub.data.local.db;
+package app.quranhub.data.local.db
 
-import android.content.Context;
+import android.content.Context
+import androidx.room.Database
+import androidx.room.Room.databaseBuilder
+import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
+import app.quranhub.data.local.dao.TranslationDao
+import app.quranhub.data.local.entity.Translation
 
-import androidx.annotation.NonNull;
-import androidx.room.Database;
-import androidx.room.Room;
-import androidx.room.RoomDatabase;
-import androidx.room.migration.Migration;
-import androidx.sqlite.db.SupportSQLiteDatabase;
+@Database(entities = [Translation::class], version = 2, exportSchema = false)
+abstract class TranslationDatabase : RoomDatabase() {
 
-import app.quranhub.data.local.dao.TranslationDao;
-import app.quranhub.data.local.entity.Translation;
+    abstract val translationDao: TranslationDao
 
-@Database(entities = {Translation.class}, version = 2, exportSchema = false)
-public abstract class TranslationDatabase extends RoomDatabase {
+    companion object {
 
-    public static TranslationDatabase getInstance(@NonNull Context context, @NonNull String databaseName) {
-        return Room.databaseBuilder(context.getApplicationContext(),
-                        TranslationDatabase.class, databaseName)
-                .addMigrations(MIGRATION_1_2).build();
-    }
-
-    public abstract TranslationDao getTranslationDao();
-
-
-    private static final Migration MIGRATION_1_2 = new Migration(1, 2) {
-        @Override
-        public void migrate(@NonNull SupportSQLiteDatabase database) {
-            /* prevent creation of schema */
+        @JvmStatic
+        fun newInstance(context: Context, databaseName: String): TranslationDatabase {
+            return databaseBuilder(
+                context.applicationContext,
+                TranslationDatabase::class.java, databaseName
+            )
+                .addMigrations(MIGRATION_1_2).build()
         }
-    };
 
+        private val MIGRATION_1_2: Migration = object : Migration(1, 2) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                /* prevent creation of schema */
+            }
+        }
+    }
 }

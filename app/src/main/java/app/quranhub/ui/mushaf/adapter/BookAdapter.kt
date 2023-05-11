@@ -100,8 +100,8 @@ class BookAdapter(private val translationActionsListener: TranslationActionsList
             val filteredList: MutableList<BookContent> = ArrayList()
             for (row in bookList) {
                 if (isEditable && row.downloadStatus != TRANSLATION_DOWNLOADED) continue
-                if (row.name.lowercase(Locale.getDefault())
-                        .contains(inputQuery.lowercase(Locale.getDefault()))
+                if (row.name?.lowercase(Locale.getDefault())
+                        ?.contains(inputQuery.lowercase(Locale.getDefault())) == true
                 ) {
                     filteredList.add(row)
                 }

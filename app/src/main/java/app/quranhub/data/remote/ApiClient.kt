@@ -1,48 +1,44 @@
-package app.quranhub.data.remote;
+package app.quranhub.data.remote
 
-import com.jakewharton.retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
+import app.quranhub.data.Constants
+import com.jakewharton.retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
+import okhttp3.OkHttpClient
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import java.util.concurrent.TimeUnit
 
-import java.util.concurrent.TimeUnit;
+object ApiClient {
 
-import app.quranhub.data.Constants;
-import okhttp3.OkHttpClient;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
+    private var retrofit: Retrofit? = null
 
-public final class ApiClient {
+    private var httpClient: OkHttpClient? = null
 
-    private static Retrofit retrofit;
-    private static OkHttpClient httpClient;
-    private static final int REQUEST_TIMEOUT = 60;
+    private const val REQUEST_TIMEOUT = 60
 
-
-    private ApiClient() {
-    }
-
-    public static Retrofit getClient() {
-
-        if (httpClient == null && retrofit == null) {
-            synchronized (ApiClient.class) {
-                if (httpClient == null && retrofit == null) {
-                    initHttpClient();
-                    retrofit = new Retrofit.Builder()
+    @JvmStatic
+    val client: Retrofit?
+        get() {
+            if (httpClient == null && retrofit == null) {
+                synchronized(ApiClient::class.java) {
+                    if (httpClient == null && retrofit == null) {
+                        initHttpClient()
+                        retrofit = Retrofit.Builder()
                             .baseUrl(Constants.API_BASE_URL)
-                            .client(httpClient)
+                            .client(httpClient!!)
                             .addConverterFactory(GsonConverterFactory.create())
                             .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
-                            .build();
+                            .build()
+                    }
                 }
             }
+            return retrofit
         }
-        return retrofit;
-    }
 
-    private static void initHttpClient() {
-        OkHttpClient.Builder builder = new OkHttpClient().newBuilder()
-                .connectTimeout(REQUEST_TIMEOUT, TimeUnit.SECONDS)
-                .readTimeout(REQUEST_TIMEOUT, TimeUnit.SECONDS)
-                .writeTimeout(REQUEST_TIMEOUT, TimeUnit.SECONDS);
-        httpClient = builder.build();
+    private fun initHttpClient() {
+        val builder = OkHttpClient().newBuilder()
+            .connectTimeout(REQUEST_TIMEOUT.toLong(), TimeUnit.SECONDS)
+            .readTimeout(REQUEST_TIMEOUT.toLong(), TimeUnit.SECONDS)
+            .writeTimeout(REQUEST_TIMEOUT.toLong(), TimeUnit.SECONDS)
+        httpClient = builder.build()
     }
-
 }

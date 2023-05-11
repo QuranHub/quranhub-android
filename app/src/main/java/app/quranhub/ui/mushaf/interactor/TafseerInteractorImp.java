@@ -30,7 +30,7 @@ public class TafseerInteractorImp implements TafseerInteractor {
         if (translationDatabase != null) {
             translationDatabase.close();
         }
-        translationDatabase = TranslationDatabase.getInstance(context, dbName);
+        translationDatabase = TranslationDatabase.newInstance(context, dbName);
     }
 
     @Override

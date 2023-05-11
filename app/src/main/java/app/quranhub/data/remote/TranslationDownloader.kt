@@ -1,172 +1,134 @@
-package app.quranhub.data.remote;
+package app.quranhub.data.remote
 
-import android.content.Context;
-import android.util.Log;
+import android.content.Context
+import android.util.Log
+import app.quranhub.data.Constants
+import app.quranhub.data.local.db.UserDatabase
+import app.quranhub.data.local.entity.TranslationBook
+import app.quranhub.util.NetworkUtil
+import com.downloader.Error
+import com.downloader.OnDownloadListener
+import com.downloader.PRDownloader
+import com.downloader.Progress
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+class TranslationDownloader(
+    val translationBook: TranslationBook,
+    appContext: Context,
+    private val callback: TranslationDownloadCallback?
+) {
+    private val appContext: Context
 
-import com.downloader.Error;
-import com.downloader.OnDownloadListener;
-import com.downloader.PRDownloader;
+    private var downloadId = 0
 
-import java.io.File;
-
-import app.quranhub.data.Constants;
-import app.quranhub.data.local.db.UserDatabase;
-import app.quranhub.data.local.entity.TranslationBook;
-import app.quranhub.util.NetworkUtil;
-
-public class TranslationDownloader {
-
-    private static final String TAG = TranslationDownloader.class.getSimpleName();
-
-    @NonNull
-    private Context appContext;
-    @NonNull
-    private TranslationBook translationBook;
-    @Nullable
-    private TranslationDownloadCallback callback;
-
-    private int downloadId;
-
-
-    public TranslationDownloader(@NonNull TranslationBook translationBook, @NonNull Context appContext
-            , @Nullable TranslationDownloadCallback callback) {
-        this.translationBook = translationBook;
-        this.appContext = appContext.getApplicationContext();
-        this.callback = callback;
+    init {
+        this.appContext = appContext.applicationContext
     }
 
-    public void download() {
+    fun download() {
         // TODO refactor to use foreground service
-
-        String downloadUrl = Constants.API_BASE_URL + translationBook.getFileDownloadPath();
-        File dbPath = appContext.getDatabasePath(translationBook.getDatabaseName());
-
-        Log.d(TAG, "download: downloadUrl = " + downloadUrl + " , dbPath = " + dbPath);
+        val downloadUrl = Constants.API_BASE_URL + translationBook.fileDownloadPath
+        val dbPath = appContext.getDatabasePath(translationBook.databaseName)
+        Log.d(TAG, "download: downloadUrl = $downloadUrl , dbPath = $dbPath")
 
         // Make sure we have a path to the file
-        dbPath.getParentFile().mkdirs();
-
-        new Thread() {
-            @Override
-            public void run() {
-                translationBook.setDownloadStatus(NetworkUtil.STATUS_DOWNLOADING);
-                UserDatabase.getInstance(appContext).getTranslationBookDao().insert(translationBook);
+        dbPath.parentFile.mkdirs()
+        object : Thread() {
+            override fun run() {
+                translationBook.downloadStatus = NetworkUtil.STATUS_DOWNLOADING
+                UserDatabase.getInstance(appContext).translationBookDao.insert(translationBook)
             }
-        }.start();
-
-        downloadId = PRDownloader.download(downloadUrl, dbPath.getParent(), dbPath.getName())
-                .build()
-                .setOnStartOrResumeListener(() -> {
-                    Log.d(TAG, "setOnStartOrResumeListener: downloadId = " + downloadId);
-
-                    if (callback != null) {
-                        callback.onDownloadStarted();
-                    }
-                })
-                .setOnCancelListener(() -> {
-                    Log.d(TAG, "onCancel: downloadId = " + downloadId);
-
-                    new Thread() {
-                        @Override
-                        public void run() {
-                            UserDatabase.getInstance(appContext).getTranslationBookDao().delete(translationBook);
-                        }
-                    }.start();
-
-                    if (callback != null) {
-                        callback.onDownloadCancelled();
-                    }
-                })
-                .setOnProgressListener(progress -> {
-                    Log.d(TAG, "onProgress: downloadId = " + downloadId +
-                            " -> progress = " + progress.currentBytes + "/" + progress.totalBytes);
-
-                    // progress on four increments to optimize performance
-                    double progressRatio = (double) progress.currentBytes / progress.totalBytes;
-                    if (progressRatio > 0.9d) {
-                        Log.d(TAG, "progress : 100%");
-                        updateProgressPercentage(100);
-                    } else if (progressRatio > 0.75d && progressRatio < 0.80d) {
-                        Log.d(TAG, "progress : 75%");
-                        updateProgressPercentage(75);
-                    } else if (progressRatio > 0.50d && progressRatio < 0.55d) {
-                        Log.d(TAG, "progress : 50%");
-                        updateProgressPercentage(50);
-                    } else if (progressRatio > 0.25d && progressRatio < 0.30d) {
-                        Log.d(TAG, "progress : 25%");
-                        updateProgressPercentage(25);
-                    }
-                })
-                .start(new OnDownloadListener() {
-                    @Override
-                    public void onDownloadComplete() {
-                        Log.d(TAG, "PRDownloader: downloadId = " + downloadId + " ->  completed");
-
-                        new Thread() {
-                            @Override
-                            public void run() {
-                                translationBook.setDownloadStatus(NetworkUtil.STATUS_DOWNLOADED);
-                                UserDatabase.getInstance(appContext).getTranslationBookDao().insert(translationBook);
-                            }
-                        }.start();
-
-                        if (callback != null) {
-                            callback.onDownloadFinished();
-                        }
-                    }
-
-                    @Override
-                    public void onError(Error error) {
-                        Log.e(TAG, "PRDownloader: downloadId = " + downloadId + " ->  error");
-
-                        new Thread() {
-                            @Override
-                            public void run() {
-                                UserDatabase.getInstance(appContext).getTranslationBookDao().delete(translationBook);
-                            }
-                        }.start();
-
-                        if (callback != null) {
-                            callback.onDownloadFailed();
-                        }
-                    }
-                });
-    }
-
-    public void cancel() {
-        PRDownloader.cancel(downloadId);
-    }
-
-    public static void cancelAll() {
-        PRDownloader.cancelAll();
-    }
-
-    private void updateProgressPercentage(int downloadLevelPercentage) {
-        new Thread() {
-            @Override
-            public void run() {
-                translationBook.setDownloadLevelPercentage(downloadLevelPercentage);
-                UserDatabase.getInstance(appContext).getTranslationBookDao().insert(translationBook);
+        }.start()
+        downloadId = PRDownloader.download(downloadUrl, dbPath.parent, dbPath.name)
+            .build()
+            .setOnStartOrResumeListener {
+                Log.d(TAG, "setOnStartOrResumeListener: downloadId = $downloadId")
+                callback?.onDownloadStarted()
             }
-        }.start();
+            .setOnCancelListener {
+                Log.d(TAG, "onCancel: downloadId = $downloadId")
+                object : Thread() {
+                    override fun run() {
+                        UserDatabase.getInstance(appContext).translationBookDao.delete(
+                            translationBook
+                        )
+                    }
+                }.start()
+                callback?.onDownloadCancelled()
+            }
+            .setOnProgressListener { progress: Progress ->
+                Log.d(
+                    TAG, "onProgress: downloadId = " + downloadId +
+                            " -> progress = " + progress.currentBytes + "/" + progress.totalBytes
+                )
+
+                // progress on four increments to optimize performance
+                val progressRatio = progress.currentBytes.toDouble() / progress.totalBytes
+                if (progressRatio > 0.9) {
+                    Log.d(TAG, "progress : 100%")
+                    updateProgressPercentage(100)
+                } else if (progressRatio > 0.75 && progressRatio < 0.80) {
+                    Log.d(TAG, "progress : 75%")
+                    updateProgressPercentage(75)
+                } else if (progressRatio > 0.50 && progressRatio < 0.55) {
+                    Log.d(TAG, "progress : 50%")
+                    updateProgressPercentage(50)
+                } else if (progressRatio > 0.25 && progressRatio < 0.30) {
+                    Log.d(TAG, "progress : 25%")
+                    updateProgressPercentage(25)
+                }
+            }
+            .start(object : OnDownloadListener {
+                override fun onDownloadComplete() {
+                    Log.d(TAG, "PRDownloader: downloadId = $downloadId ->  completed")
+                    object : Thread() {
+                        override fun run() {
+                            translationBook.downloadStatus = NetworkUtil.STATUS_DOWNLOADED
+                            UserDatabase.getInstance(appContext).translationBookDao.insert(
+                                translationBook
+                            )
+                        }
+                    }.start()
+                    callback?.onDownloadFinished()
+                }
+
+                override fun onError(error: Error) {
+                    Log.e(TAG, "PRDownloader: downloadId = $downloadId ->  error")
+                    object : Thread() {
+                        override fun run() {
+                            UserDatabase.getInstance(appContext).translationBookDao.delete(
+                                translationBook
+                            )
+                        }
+                    }.start()
+                    callback?.onDownloadFailed()
+                }
+            })
     }
 
-    @NonNull
-    public TranslationBook getTranslationBook() {
-        return translationBook;
+    fun cancel() {
+        PRDownloader.cancel(downloadId)
     }
 
+    private fun updateProgressPercentage(downloadLevelPercentage: Int) {
+        object : Thread() {
+            override fun run() {
+                translationBook.downloadLevelPercentage = downloadLevelPercentage
+                UserDatabase.getInstance(appContext).translationBookDao.insert(translationBook)
+            }
+        }.start()
+    }
 
-    public interface TranslationDownloadCallback {
-        void onDownloadStarted();
+    interface TranslationDownloadCallback {
+        fun onDownloadStarted()
+        fun onDownloadFinished()
+        fun onDownloadCancelled()
+        fun onDownloadFailed()
+    }
 
-        void onDownloadFinished();
-
-        void onDownloadCancelled();
-
-        void onDownloadFailed();
+    companion object {
+        private val TAG = TranslationDownloader::class.java.simpleName
+        fun cancelAll() {
+            PRDownloader.cancelAll()
+        }
     }
 }

@@ -191,10 +191,10 @@ class QuranRecitersDialogFragment : DialogFragment(), OptionsListAdapter.ItemCli
                     for (r in recitersList) {
                         reciterModelsList.add(
                             ReciterModel(
-                                r.id,
-                                r.name,
-                                r.nationality,
-                                r.audioBaseUrl
+                                id = r.id,
+                                localizedName = r.name,
+                                localizedNationality = r.nationality,
+                                audioBaseUrl = r.audioBaseUrl
                             )
                         )
                     }

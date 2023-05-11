@@ -1,224 +1,192 @@
-package app.quranhub.data.remote;
+package app.quranhub.data.remote
 
-import android.annotation.SuppressLint;
-import android.app.DownloadManager;
-import android.content.Context;
-import android.database.Cursor;
-import android.net.Uri;
-import android.os.AsyncTask;
-import android.os.Environment;
-import android.util.Log;
-import android.view.Gravity;
-import android.widget.Toast;
+import android.annotation.SuppressLint
+import android.app.DownloadManager
+import android.content.Context
+import android.database.Cursor
+import android.net.Uri
+import android.os.AsyncTask
+import android.os.Environment
+import android.util.Log
+import android.view.Gravity
+import android.widget.Toast
+import app.quranhub.R
+import app.quranhub.data.Constants
+import app.quranhub.data.remote.model.BookContent
+import java.io.File
+import java.io.IOException
+import java.net.MalformedURLException
+import java.net.URL
 
-import androidx.annotation.NonNull;
+class BookDownloadManager(private val context: Context) {
 
-import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.util.ArrayList;
-import java.util.List;
+    private var downloadManager: DownloadManager
 
-import app.quranhub.R;
-import app.quranhub.data.Constants;
-import app.quranhub.data.remote.model.BookContent;
-
-public class BookDownloadManager {
-
-    private static final String TAG = BookDownloadManager.class.getSimpleName();
-
-    public static final String FILE_PATH = Constants.Directory.LIBRARY_PUBLIC;
-
-    private DownloadManager downloadManager;
-
-    @NonNull
-    private Context context;
-
-    public BookDownloadManager(@NonNull Context context) {
-        downloadManager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
-        this.context = context;
+    init {
+        downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
     }
 
-    public long downloadFile(BookContent book) {
-
-        Uri uri = Uri.parse(Constants.API_BASE_URL + book.getPath());
-        getFileSize(Constants.API_BASE_URL + book.getPath());
-        File file = new File(Environment.getExternalStorageDirectory() + Constants.Directory.ROOT_PUBLIC);
-
+    fun downloadFile(book: BookContent): Long {
+        val uri =
+            Uri.parse(Constants.API_BASE_URL + book.path)
+        getFileSize(Constants.API_BASE_URL + book.path)
+        val file = File(
+            Environment.getExternalStorageDirectory()
+                .toString() + Constants.Directory.ROOT_PUBLIC
+        )
         if (!file.exists()) {
-            file.mkdir();
+            file.mkdir()
         }
-
-        DownloadManager.Request request = new DownloadManager.Request(uri);
-        request.setAllowedNetworkTypes(DownloadManager.Request.NETWORK_MOBILE | DownloadManager.Request.NETWORK_WIFI);
-        request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
-        request.setTitle(book.getName() + " " + context.getString(R.string.download_file)); // Title for notification.
-        request.setDestinationInExternalPublicDir(FILE_PATH, book.getName() + ".pdf");
-        long downloadId = downloadManager.enqueue(request);
-        return downloadId;
+        val request = DownloadManager.Request(uri)
+        request.setAllowedNetworkTypes(DownloadManager.Request.NETWORK_MOBILE or DownloadManager.Request.NETWORK_WIFI)
+        request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+        request.setTitle(book.name + " " + context.getString(R.string.download_file)) // Title for notification.
+        request.setDestinationInExternalPublicDir(
+            FILE_PATH,
+            book.name + ".pdf"
+        )
+        return downloadManager.enqueue(request)
     }
-
 
     /**
      * Return the downloaded file size
      */
     @SuppressLint("StaticFieldLeak")
-    private void getFileSize(String uri) {
-
-        new AsyncTask<Void, Void, Integer>() {
-            @Override
-            protected Integer doInBackground(Void... voids) {
-                URL url = null;
-                int file_size = 0;
+    private fun getFileSize(uri: String) {
+        object : AsyncTask<Void?, Void?, Int>() {
+            protected override fun doInBackground(vararg voids: Void?): Int {
+                var fileSize = 0
                 try {
-                    url = new URL(uri);
-                    URLConnection urlConnection = url.openConnection();
-                    urlConnection.connect();
-                    file_size = urlConnection.getContentLength();
-                } catch (MalformedURLException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
+                    val url = URL(uri)
+                    val urlConnection = url.openConnection()
+                    urlConnection.connect()
+                    fileSize = urlConnection.contentLength
+                } catch (e: MalformedURLException) {
+                    e.printStackTrace()
+                } catch (e: IOException) {
+                    e.printStackTrace()
                 }
-                return file_size;
+                return fileSize
             }
-        }.execute();
-
+        }.execute()
     }
 
-    public void cancelDownload(long downloadId) {
-        downloadManager.remove(downloadId);
+    fun cancelDownload(downloadId: Long) {
+        downloadManager.remove(downloadId)
     }
 
     /**
      * get finished downloads
      */
-    public List<Integer> queryOnFinishedDownloads(List<Long> inProgressDownloadedIds) {
-        downloadManager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
-        DownloadManager.Query imageDownloadQuery = new DownloadManager.Query();
-        long[] ids = new long[inProgressDownloadedIds.size()];
-        for (int i = 0; i < inProgressDownloadedIds.size(); ++i) {
-            ids[i] = inProgressDownloadedIds.get(i);
+    @SuppressLint("Range")
+    fun queryOnFinishedDownloads(inProgressDownloadedIds: List<Long>): List<Int> {
+        downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+        val imageDownloadQuery = DownloadManager.Query()
+        val ids = LongArray(inProgressDownloadedIds.size)
+        for (i in inProgressDownloadedIds.indices) {
+            ids[i] = inProgressDownloadedIds[i]
         }
-        imageDownloadQuery.setFilterById(ids);
-        int downloadStatus;
-        List<Integer> statusList = new ArrayList<>();
-        Cursor cursor = downloadManager.query(imageDownloadQuery);
-
+        imageDownloadQuery.setFilterById(*ids)
+        var downloadStatus: Int
+        val statusList: MutableList<Int> = ArrayList()
+        val cursor = downloadManager.query(imageDownloadQuery)
         while (cursor.moveToNext()) {
-            downloadStatus = cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_STATUS));
-            statusList.add(downloadStatus);
-            Log.d("tt7", " " + cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_ID)));
+            downloadStatus = cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_STATUS))
+            statusList.add(downloadStatus)
+            Log.d("tt7", " " + cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_ID)))
         }
         /*if(ids.length > 0 && statusList.size() >0)
-            DownloadStatus(cursor, ids[0], statusList.get(0));*/
-        cursor.close();
-        return statusList;
-
+            DownloadStatus(cursor, ids[0], statusList.get(0));*/cursor.close()
+        return statusList
     }
 
-    public int queryOnFinishedDownloads(long id) {
-        downloadManager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
-        DownloadManager.Query imageDownloadQuery = new DownloadManager.Query();
-
-        imageDownloadQuery.setFilterById(id);
-        int downloadStatus = DownloadManager.STATUS_SUCCESSFUL;
-        Cursor cursor = downloadManager.query(imageDownloadQuery);
-
+    @SuppressLint("Range")
+    fun queryOnFinishedDownloads(id: Long): Int {
+        downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+        val imageDownloadQuery = DownloadManager.Query()
+        imageDownloadQuery.setFilterById(id)
+        var downloadStatus = DownloadManager.STATUS_SUCCESSFUL
+        val cursor = downloadManager.query(imageDownloadQuery)
         if (cursor.moveToFirst()) {
-            downloadStatus = cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_STATUS));
-            Log.d("tt7", " " + cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_ID)));
+            downloadStatus = cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_STATUS))
+            Log.d("tt7", " " + cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_ID)))
         } else {
-            downloadStatus = -1; // download is canceled
+            downloadStatus = -1 // download is canceled
         }
 
 
         //DownloadStatus(cursor, 0, downloadStatus);
-        cursor.close();
-        return downloadStatus;
+        cursor.close()
+        return downloadStatus
     }
 
-    private void DownloadStatus(Cursor cursor, long DownloadId, int status) {
+    private fun DownloadStatus(cursor: Cursor, DownloadId: Long, status: Int) {
 
         //column for download  status
 
         //column for reason code if the download failed or paused
-
-        int reason = 1;
+        val reason = 1
         //get the download filename
+        var statusText = ""
+        var reasonText = ""
+        when (status) {
+            DownloadManager.STATUS_FAILED -> {
+                statusText = "STATUS_FAILED"
+                when (reason) {
+                    DownloadManager.ERROR_CANNOT_RESUME -> reasonText = "ERROR_CANNOT_RESUME"
+                    DownloadManager.ERROR_DEVICE_NOT_FOUND -> reasonText = "ERROR_DEVICE_NOT_FOUND"
+                    DownloadManager.ERROR_FILE_ALREADY_EXISTS -> reasonText =
+                        "ERROR_FILE_ALREADY_EXISTS"
 
-        String statusText = "";
-        String reasonText = "";
+                    DownloadManager.ERROR_FILE_ERROR -> reasonText = "ERROR_FILE_ERROR"
+                    DownloadManager.ERROR_HTTP_DATA_ERROR -> reasonText = "ERROR_HTTP_DATA_ERROR"
+                    DownloadManager.ERROR_INSUFFICIENT_SPACE -> reasonText =
+                        "ERROR_INSUFFICIENT_SPACE"
 
-        switch (status) {
-            case DownloadManager.STATUS_FAILED:
-                statusText = "STATUS_FAILED";
-                switch (reason) {
-                    case DownloadManager.ERROR_CANNOT_RESUME:
-                        reasonText = "ERROR_CANNOT_RESUME";
-                        break;
-                    case DownloadManager.ERROR_DEVICE_NOT_FOUND:
-                        reasonText = "ERROR_DEVICE_NOT_FOUND";
-                        break;
-                    case DownloadManager.ERROR_FILE_ALREADY_EXISTS:
-                        reasonText = "ERROR_FILE_ALREADY_EXISTS";
-                        break;
-                    case DownloadManager.ERROR_FILE_ERROR:
-                        reasonText = "ERROR_FILE_ERROR";
-                        break;
-                    case DownloadManager.ERROR_HTTP_DATA_ERROR:
-                        reasonText = "ERROR_HTTP_DATA_ERROR";
-                        break;
-                    case DownloadManager.ERROR_INSUFFICIENT_SPACE:
-                        reasonText = "ERROR_INSUFFICIENT_SPACE";
-                        break;
-                    case DownloadManager.ERROR_TOO_MANY_REDIRECTS:
-                        reasonText = "ERROR_TOO_MANY_REDIRECTS";
-                        break;
-                    case DownloadManager.ERROR_UNHANDLED_HTTP_CODE:
-                        reasonText = "ERROR_UNHANDLED_HTTP_CODE";
-                        break;
-                    case DownloadManager.ERROR_UNKNOWN:
-                        reasonText = "ERROR_UNKNOWN";
-                        break;
+                    DownloadManager.ERROR_TOO_MANY_REDIRECTS -> reasonText =
+                        "ERROR_TOO_MANY_REDIRECTS"
+
+                    DownloadManager.ERROR_UNHANDLED_HTTP_CODE -> reasonText =
+                        "ERROR_UNHANDLED_HTTP_CODE"
+
+                    DownloadManager.ERROR_UNKNOWN -> reasonText = "ERROR_UNKNOWN"
                 }
-                break;
-            case DownloadManager.STATUS_PAUSED:
-                statusText = "STATUS_PAUSED";
-                switch (reason) {
-                    case DownloadManager.PAUSED_QUEUED_FOR_WIFI:
-                        reasonText = "PAUSED_QUEUED_FOR_WIFI";
-                        break;
-                    case DownloadManager.PAUSED_UNKNOWN:
-                        reasonText = "PAUSED_UNKNOWN";
-                        break;
-                    case DownloadManager.PAUSED_WAITING_FOR_NETWORK:
-                        reasonText = "PAUSED_WAITING_FOR_NETWORK";
-                        break;
-                    case DownloadManager.PAUSED_WAITING_TO_RETRY:
-                        reasonText = "PAUSED_WAITING_TO_RETRY";
-                        break;
+            }
+
+            DownloadManager.STATUS_PAUSED -> {
+                statusText = "STATUS_PAUSED"
+                when (reason) {
+                    DownloadManager.PAUSED_QUEUED_FOR_WIFI -> reasonText = "PAUSED_QUEUED_FOR_WIFI"
+                    DownloadManager.PAUSED_UNKNOWN -> reasonText = "PAUSED_UNKNOWN"
+                    DownloadManager.PAUSED_WAITING_FOR_NETWORK -> reasonText =
+                        "PAUSED_WAITING_FOR_NETWORK"
+
+                    DownloadManager.PAUSED_WAITING_TO_RETRY -> reasonText =
+                        "PAUSED_WAITING_TO_RETRY"
                 }
-                break;
-            case DownloadManager.STATUS_PENDING:
-                statusText = "STATUS_PENDING";
-                break;
-            case DownloadManager.STATUS_RUNNING:
-                statusText = "STATUS_RUNNING";
-                break;
-            case DownloadManager.STATUS_SUCCESSFUL:
-                statusText = "STATUS_SUCCESSFUL";
-                break;
+            }
+
+            DownloadManager.STATUS_PENDING -> statusText = "STATUS_PENDING"
+            DownloadManager.STATUS_RUNNING -> statusText = "STATUS_RUNNING"
+            DownloadManager.STATUS_SUCCESSFUL -> statusText = "STATUS_SUCCESSFUL"
         }
+        val toast = Toast.makeText(
+            context,
+            """
+                 Music Download Status:
+                 $statusText
+                 $reasonText
+                 """.trimIndent(),
+            Toast.LENGTH_LONG
+        )
+        toast.setGravity(Gravity.TOP, 25, 400)
+        toast.show()
+    }
 
+    companion object {
+        private val TAG = BookDownloadManager::class.java.simpleName
 
-        Toast toast = Toast.makeText(context,
-                "Music Download Status:" + "\n" + statusText + "\n" +
-                        reasonText,
-                Toast.LENGTH_LONG);
-        toast.setGravity(Gravity.TOP, 25, 400);
-        toast.show();
+        @JvmField
+        val FILE_PATH = Constants.Directory.LIBRARY_PUBLIC
     }
 }

@@ -1,117 +1,120 @@
-package app.quranhub.data.local.db;
+package app.quranhub.data.local.db
 
-import android.content.Context;
+import android.content.Context
+import androidx.room.Database
+import androidx.room.Room.databaseBuilder
+import androidx.room.RoomDatabase
+import androidx.sqlite.db.SupportSQLiteDatabase
+import app.quranhub.data.Constants
+import app.quranhub.data.local.dao.BookDao
+import app.quranhub.data.local.dao.BookmarkDao
+import app.quranhub.data.local.dao.NoteDao
+import app.quranhub.data.local.dao.QuranAudioDao
+import app.quranhub.data.local.dao.RecitationDao
+import app.quranhub.data.local.dao.ReciterDao
+import app.quranhub.data.local.dao.ReciterRecitationDao
+import app.quranhub.data.local.dao.TranslationBookDao
+import app.quranhub.data.local.entity.AyaBookmark
+import app.quranhub.data.local.entity.AyaRecorder
+import app.quranhub.data.local.entity.Book
+import app.quranhub.data.local.entity.BookmarkType
+import app.quranhub.data.local.entity.Note
+import app.quranhub.data.local.entity.QuranAudio
+import app.quranhub.data.local.entity.Recitation
+import app.quranhub.data.local.entity.Reciter
+import app.quranhub.data.local.entity.ReciterRecitation
+import app.quranhub.data.local.entity.TranslationBook
+import app.quranhub.data.local.prefs.AppPreferencesManager.isDbInitialized
+import app.quranhub.data.local.prefs.AppPreferencesManager.persistDbInitialized
 
-import androidx.annotation.NonNull;
-import androidx.room.Database;
-import androidx.room.Room;
-import androidx.room.RoomDatabase;
-import androidx.sqlite.db.SupportSQLiteDatabase;
+@Database(
+    entities = [AyaBookmark::class, BookmarkType::class, Book::class, TranslationBook::class, Note::class, Recitation::class, Reciter::class, ReciterRecitation::class, QuranAudio::class, AyaRecorder::class],
+    version = 3,
+    exportSchema = false
+)
+abstract class UserDatabase : RoomDatabase() {
 
-import app.quranhub.data.Constants;
-import app.quranhub.data.local.dao.BookDao;
-import app.quranhub.data.local.dao.BookmarkDao;
-import app.quranhub.data.local.dao.NoteDao;
-import app.quranhub.data.local.dao.QuranAudioDao;
-import app.quranhub.data.local.dao.RecitationDao;
-import app.quranhub.data.local.dao.ReciterDao;
-import app.quranhub.data.local.dao.ReciterRecitationDao;
-import app.quranhub.data.local.dao.TranslationBookDao;
-import app.quranhub.data.local.entity.AyaBookmark;
-import app.quranhub.data.local.entity.AyaRecorder;
-import app.quranhub.data.local.entity.Book;
-import app.quranhub.data.local.entity.BookmarkType;
-import app.quranhub.data.local.entity.Note;
-import app.quranhub.data.local.entity.QuranAudio;
-import app.quranhub.data.local.entity.Reciter;
-import app.quranhub.data.local.entity.ReciterRecitation;
-import app.quranhub.data.local.entity.TranslationBook;
-import app.quranhub.data.local.prefs.AppPreferencesManager;
+    abstract val bookmarkDao: BookmarkDao
 
+    abstract val bookDao: BookDao
 
-@Database(entities = {AyaBookmark.class, BookmarkType.class, Book.class, TranslationBook.class,
-        Note.class, app.quranhub.data.local.entity.Recitation.class, Reciter.class, ReciterRecitation.class,
-        QuranAudio.class, AyaRecorder.class}, version = 3, exportSchema = false)
-public abstract class UserDatabase extends RoomDatabase {
+    abstract val translationBookDao: TranslationBookDao
 
-    private static final String TAG = UserDatabase.class.getSimpleName();
+    abstract val noteDao: NoteDao
 
-    public static final String DATABASE_NAME = "user.db";
+    abstract val recitationDao: RecitationDao
 
-    private static volatile UserDatabase instance;
+    abstract val reciterDao: ReciterDao
 
-    public static UserDatabase getInstance(@NonNull Context context) {
-        if (instance == null) {
-            synchronized (UserDatabase.class) {
-                if (instance == null) {
-                    instance = Room.databaseBuilder(context.getApplicationContext(),
-                                    UserDatabase.class, DATABASE_NAME)
-                            .fallbackToDestructiveMigration()
-                            .addCallback(new Callback() {
-                                @Override
-                                public void onOpen(@NonNull SupportSQLiteDatabase db) {
-                                    super.onOpen(db);
+    abstract val reciterRecitationDao: ReciterRecitationDao
 
-                                    if (!AppPreferencesManager.isDbInitialized(context)) {
-                                        initData(db, context);
-                                    }
-                                }
+    abstract val quranAudioDao: QuranAudioDao
 
-                                @Override
-                                public void onDestructiveMigration(@NonNull SupportSQLiteDatabase db) {
-                                    super.onDestructiveMigration(db);
+    companion object {
+        private val TAG = UserDatabase::class.java.simpleName
 
-                                    AppPreferencesManager.persistDbInitialized(context, false);
-                                }
-                            })
-                            .build();
-                }
+        private const val DATABASE_NAME = "user.db"
+
+        @Volatile
+        private var instance: UserDatabase? = null
+
+        @JvmStatic
+        fun getInstance(context: Context): UserDatabase {
+            return instance ?: synchronized(UserDatabase::class.java) {
+                instance ?: databaseBuilder(
+                    context.applicationContext,
+                    UserDatabase::class.java, DATABASE_NAME
+                )
+                    .fallbackToDestructiveMigration()
+                    .addCallback(object : Callback() {
+                        override fun onOpen(db: SupportSQLiteDatabase) {
+                            super.onOpen(db)
+                            if (!isDbInitialized(context)) {
+                                initData(db, context)
+                            }
+                        }
+
+                        override fun onDestructiveMigration(db: SupportSQLiteDatabase) {
+                            super.onDestructiveMigration(db)
+                            persistDbInitialized(context, false)
+                        }
+                    })
+                    .build().also { instance = it }
             }
         }
-        return instance;
-    }
 
-    public abstract BookmarkDao getBookmarkDao();
+        private fun initData(db: SupportSQLiteDatabase, context: Context) {
+            initBookmarkTypes(db)
+            initAvailableRecitations(db)
+            persistDbInitialized(context, true)
+        }
 
-    public abstract BookDao getBookDao();
+        private fun initBookmarkTypes(db: SupportSQLiteDatabase) {
+            val favoriteType = """
+                INSERT INTO BookmarkType(typeId, bookmarkTypeName, colorIndex)
+                VALUES(1, "Favorite", 0)
+                """.trimIndent()
+            val memorizeType = """
+                INSERT INTO BookmarkType(typeId, bookmarkTypeName, colorIndex)
+                VALUES(2, "Reciting", 0)
+                """.trimIndent()
+            val recitingType = """
+                INSERT INTO BookmarkType(typeId, bookmarkTypeName, colorIndex)
+                VALUES(3, "Note", 0)
+                """.trimIndent()
+            val noteType = """
+                INSERT INTO BookmarkType(typeId, bookmarkTypeName, colorIndex)
+                VALUES(4, "Memorize", 0)
+                """.trimIndent()
+            db.execSQL(favoriteType)
+            db.execSQL(recitingType)
+            db.execSQL(noteType)
+            db.execSQL(memorizeType)
+        }
 
-    public abstract TranslationBookDao getTranslationBookDao();
-
-    public abstract NoteDao getNoteDao();
-
-    public abstract RecitationDao getRecitationDao();
-
-    public abstract ReciterDao getReciterDao();
-
-    public abstract ReciterRecitationDao getReciterRecitationDao();
-
-    public abstract QuranAudioDao getQuranAudioDao();
-
-    private static void initData(@NonNull SupportSQLiteDatabase db, @NonNull Context context) {
-        initBookmarkTypes(db);
-        initAvailableRecitations(db);
-
-        AppPreferencesManager.persistDbInitialized(context, true);
-    }
-
-    private static void initBookmarkTypes(@NonNull SupportSQLiteDatabase db) {
-
-        String favoriteType = "INSERT INTO BookmarkType(typeId, bookmarkTypeName, colorIndex)\n" +
-                "VALUES(1, \"Favorite\", 0)";
-        String memorizeType = "INSERT INTO BookmarkType(typeId, bookmarkTypeName, colorIndex)\n" +
-                "VALUES(2, \"Reciting\", 0)";
-        String recitingType = "INSERT INTO BookmarkType(typeId, bookmarkTypeName, colorIndex)\n" +
-                "VALUES(3, \"Note\", 0)";
-        String noteType = "INSERT INTO BookmarkType(typeId, bookmarkTypeName, colorIndex)\n" +
-                "VALUES(4, \"Memorize\", 0)";
-        db.execSQL(favoriteType);
-        db.execSQL(recitingType);
-        db.execSQL(noteType);
-        db.execSQL(memorizeType);
-    }
-
-    private static void initAvailableRecitations(@NonNull SupportSQLiteDatabase db) {
-        db.execSQL("INSERT INTO Recitation VALUES (" + Constants.Recitation.HAFS_ID + ", \"حفص عن عاصم\")");
-        db.execSQL("INSERT INTO Recitation VALUES (" + Constants.Recitation.WARSH_ID + ", \"ورش عن نافع\")");
+        private fun initAvailableRecitations(db: SupportSQLiteDatabase) {
+            db.execSQL("INSERT INTO Recitation VALUES (" + Constants.Recitation.HAFS_ID + ", \"حفص عن عاصم\")")
+            db.execSQL("INSERT INTO Recitation VALUES (" + Constants.Recitation.WARSH_ID + ", \"ورش عن نافع\")")
+        }
     }
 }
