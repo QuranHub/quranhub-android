@@ -1,62 +1,38 @@
-package app.quranhub.ui.mushaf.viewmodel;
+package app.quranhub.ui.mushaf.viewmodel
 
-import android.app.Application;
-import android.content.Context;
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import app.quranhub.ui.mushaf.interactor.Guz2IndexInteractor
+import app.quranhub.ui.mushaf.interactor.Guz2IndexInteractorImp
+import app.quranhub.ui.mushaf.model.HizbQuarterDataModel
 
-import androidx.annotation.NonNull;
-import androidx.lifecycle.AndroidViewModel;
-import androidx.lifecycle.LiveData;
-import androidx.lifecycle.MutableLiveData;
+class Guz2IndexViewModel(application: Application) : AndroidViewModel(application) {
 
-import java.util.List;
+    private val guz2IndexInteractor: Guz2IndexInteractor
+    private var _hizbQuarterDataModelsLiveData: LiveData<List<HizbQuarterDataModel>>? = null
+    private val indexItemClickEvent = MutableLiveData<IndexItemClickEvent>()
 
-import app.quranhub.ui.mushaf.interactor.Guz2IndexInteractor;
-import app.quranhub.ui.mushaf.interactor.Guz2IndexInteractorImp;
-import app.quranhub.ui.mushaf.model.HizbQuarterDataModel;
-
-public class Guz2IndexViewModel extends AndroidViewModel {
-
-    @NonNull
-    private Context context;
-    @NonNull
-    private Guz2IndexInteractor guz2IndexInteractor;
-
-    private LiveData<List<HizbQuarterDataModel>> hizbQuarterDataModelsLiveData;
-    @NonNull
-    private MutableLiveData<IndexItemClickEvent> indexItemClickEvent = new MutableLiveData<>();
-
-
-    public Guz2IndexViewModel(@NonNull Application application) {
-        super(application);
-        context = application;
-        guz2IndexInteractor = new Guz2IndexInteractorImp(application);
+    init {
+        guz2IndexInteractor = Guz2IndexInteractorImp(application)
     }
 
-    @NonNull
-    public LiveData<List<HizbQuarterDataModel>> getHizbQuarterDataModelsLiveData() {
-        if (hizbQuarterDataModelsLiveData == null) {
-            hizbQuarterDataModelsLiveData = guz2IndexInteractor.getAllHizbQuarterDataModel();
+    fun getHizbQuarterDataModelsLiveData(): LiveData<List<HizbQuarterDataModel>> {
+        if (_hizbQuarterDataModelsLiveData == null) {
+            _hizbQuarterDataModelsLiveData = guz2IndexInteractor.allHizbQuarterDataModel
         }
-        return hizbQuarterDataModelsLiveData;
+        return _hizbQuarterDataModelsLiveData!!
     }
 
-    @NonNull
-    public LiveData<IndexItemClickEvent> indexItemClickEvent() {
-        return indexItemClickEvent;
+    fun indexItemClickEvent(): LiveData<IndexItemClickEvent> {
+        return indexItemClickEvent
     }
 
-    public void notifyIndexItemClick(int clickedItemIndex) {
-        HizbQuarterDataModel model = hizbQuarterDataModelsLiveData.getValue().get(clickedItemIndex);
-        indexItemClickEvent.setValue(new IndexItemClickEvent(model.getStartPage()));
+    fun notifyIndexItemClick(clickedItemIndex: Int) {
+        val (_, _, _, startPage) = _hizbQuarterDataModelsLiveData!!.value!![clickedItemIndex]
+        indexItemClickEvent.value = IndexItemClickEvent(startPage)
     }
 
-
-    public static class IndexItemClickEvent {
-
-        public int page;
-
-        public IndexItemClickEvent(int page) {
-            this.page = page;
-        }
-    }
+    class IndexItemClickEvent(var page: Int)
 }

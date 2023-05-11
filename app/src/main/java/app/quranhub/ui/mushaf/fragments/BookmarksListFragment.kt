@@ -72,25 +72,34 @@ class BookmarksListFragment : Fragment(), BookmarkActionListener, BookmarkFilter
         bookMarksViewModel = ViewModelProvider(this).get(
             BookmarksListViewModel::class.java
         )
-        bookMarksViewModel!!.getBookmarkTypes()
-        bookMarksViewModel!!.bookmarks.observe(viewLifecycleOwner) { ayaBookmarks: List<DisplayableBookmark?> ->
-            bookmarksListener!!.onEditabilityChange(ayaBookmarks.isNotEmpty())
-            bookMarksViewModel!!.bookmarksMapper(ayaBookmarks) { displayableBookmarks: List<DisplayableBookmark> ->
-                if (binding!!.loadingIndicator.visibility == View.VISIBLE) {
-                    binding!!.loadingIndicator.visibility = View.GONE
-                }
-                adapter!!.setBookmarks(displayableBookmarks.toMutableList())
-                if (displayableBookmarks.isNotEmpty()) {
-                    binding!!.tvEmptyListMsg.visibility = View.GONE
-                } else {
-                    binding!!.tvEmptyListMsg.visibility = View.VISIBLE
-                }
+        bookMarksViewModel!!.getBookmarksTypes()
+        bookMarksViewModel!!.getBookmarks()
+            .observe(viewLifecycleOwner) { ayaBookmarks: List<DisplayableBookmark> ->
+                bookmarksListener!!.onEditabilityChange(ayaBookmarks.isNotEmpty())
+                bookMarksViewModel!!.bookmarksMapper(
+                    ayaBookmarks,
+                    object : BookmarksListViewModel.BookmarkMapperListener {
+                        override fun onDisplayableBookmarksReady(displayableBookmarks: List<DisplayableBookmark>?) {
+                            displayableBookmarks?.let {
+                                if (binding!!.loadingIndicator.visibility == View.VISIBLE) {
+                                    binding!!.loadingIndicator.visibility = View.GONE
+                                }
+                                adapter!!.setBookmarks(displayableBookmarks.toMutableList())
+                                if (displayableBookmarks.isNotEmpty()) {
+                                    binding!!.tvEmptyListMsg.visibility = View.GONE
+                                } else {
+                                    binding!!.tvEmptyListMsg.visibility = View.VISIBLE
+                                }
+                            }
+                        }
+
+                    })
             }
-        }
-        bookMarksViewModel!!.bookmarksTypes.observe(viewLifecycleOwner) { bookmarkTypes: List<BookmarkType?>? ->
-            binding!!.loadingIndicator.visibility = View.GONE
-            this.bookmarkTypes = bookmarkTypes
-        }
+        bookMarksViewModel!!.getBookmarksTypes()
+            .observe(viewLifecycleOwner) { bookmarkTypes: List<BookmarkType?>? ->
+                binding!!.loadingIndicator.visibility = View.GONE
+                this.bookmarkTypes = bookmarkTypes
+            }
     }
 
     private fun setupBookmarksRecyclerView() {

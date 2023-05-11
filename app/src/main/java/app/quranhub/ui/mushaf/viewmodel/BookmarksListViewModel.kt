@@ -1,60 +1,42 @@
-package app.quranhub.ui.mushaf.viewmodel;
+package app.quranhub.ui.mushaf.viewmodel
 
-import android.annotation.SuppressLint;
-import android.app.Application;
-import android.content.Context;
-import android.os.AsyncTask;
+import android.annotation.SuppressLint
+import android.app.Application
+import android.os.AsyncTask
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MediatorLiveData
+import app.quranhub.data.local.db.MushafDatabase.Companion.getInstance
+import app.quranhub.data.local.entity.BookmarkType
+import app.quranhub.ui.mushaf.interactor.BookmarksInteractor
+import app.quranhub.ui.mushaf.interactor.BookmarksInteractorImp
+import app.quranhub.ui.mushaf.model.DisplayableBookmark
 
-import androidx.annotation.NonNull;
-import androidx.lifecycle.AndroidViewModel;
-import androidx.lifecycle.LiveData;
-import androidx.lifecycle.MediatorLiveData;
+class BookmarksListViewModel(private val application: Application) : AndroidViewModel(application) {
+    private val bookmarksInteractor: BookmarksInteractor
+    private val _bookmarks: MediatorLiveData<List<DisplayableBookmark>>
+    private val _bookmarkLiveData: LiveData<List<DisplayableBookmark>>
+    private val _bookmarksTypes: MediatorLiveData<List<BookmarkType>>
+    private var bookmarkTypeLiveData: LiveData<List<BookmarkType>>? = null
 
-import java.util.ArrayList;
-import java.util.List;
-
-import app.quranhub.data.local.dao.HizbQuarterDao;
-import app.quranhub.data.local.db.MushafDatabase;
-import app.quranhub.data.local.entity.BookmarkType;
-import app.quranhub.ui.mushaf.interactor.BookmarksInteractor;
-import app.quranhub.ui.mushaf.interactor.BookmarksInteractorImp;
-import app.quranhub.ui.mushaf.model.DisplayableBookmark;
-import app.quranhub.ui.mushaf.model.HizbQuarterDataModel;
-
-public class BookmarksListViewModel extends AndroidViewModel {
-
-    @NonNull
-    private BookmarksInteractor bookmarksInteractor;
-
-    @NonNull
-    private MediatorLiveData<List<DisplayableBookmark>> bookmarks;
-    private LiveData<List<DisplayableBookmark>> bookmarkLiveData;
-    private MediatorLiveData<List<BookmarkType>> bookmarksTypes;
-    private LiveData<List<BookmarkType>> bookmarkTypeLiveData;
-    private Context context;
-
-    public BookmarksListViewModel(@NonNull Application application) {
-        super(application);
-        context = application;
-        bookmarksInteractor = new BookmarksInteractorImp(application.getApplicationContext());
-        bookmarkLiveData = bookmarksInteractor.getAllBookmarks();
-        bookmarksTypes = new MediatorLiveData<>();
-        bookmarks = new MediatorLiveData<>();
-        bookmarks.addSource(bookmarkLiveData, ayaBookmarks -> {
-            bookmarks.setValue(ayaBookmarks);
-        });
+    init {
+        bookmarksInteractor = BookmarksInteractorImp(application.applicationContext)
+        _bookmarkLiveData = bookmarksInteractor.allBookmarks
+        _bookmarksTypes = MediatorLiveData()
+        _bookmarks = MediatorLiveData()
+        _bookmarks.addSource(_bookmarkLiveData) { ayaBookmarks: List<DisplayableBookmark> ->
+            _bookmarks.setValue(
+                ayaBookmarks
+            )
+        }
     }
 
-
-    @NonNull
-    public LiveData<List<DisplayableBookmark>> getBookmarks() {
-        return bookmarks;
+    fun getBookmarks(): LiveData<List<DisplayableBookmark>> {
+        return _bookmarks
     }
 
-
-    @NonNull
-    public LiveData<List<BookmarkType>> getBookmarksTypes() {
-        return bookmarksTypes;
+    fun getBookmarksTypes(): LiveData<List<BookmarkType>> {
+        return _bookmarksTypes
     }
 
     /**
@@ -64,56 +46,51 @@ public class BookmarksListViewModel extends AndroidViewModel {
      * @param listener
      */
     @SuppressLint("StaticFieldLeak")
-    public void bookmarksMapper(@NonNull List<DisplayableBookmark> ayaBookmarks
-            , @NonNull BookmarkMapperListener listener) {
+    fun bookmarksMapper(
+        ayaBookmarks: List<DisplayableBookmark>, listener: BookmarkMapperListener
+    ) {
 
         // TODO refactor AsyncTask
-        new AsyncTask<DisplayableBookmark, Void, List<DisplayableBookmark>>() {
-            @Override
-            protected List<DisplayableBookmark> doInBackground(DisplayableBookmark... bookmarks) {
+        object : AsyncTask<DisplayableBookmark?, Void?, List<DisplayableBookmark>>() {
+            protected override fun doInBackground(vararg bookmarks: DisplayableBookmark?): List<DisplayableBookmark> {
                 // TODO simplify the DB queries
-                HizbQuarterDao dao = MushafDatabase
-                        .getInstance(context)
-                        .getHizbQuarterDao();
-
-                List<DisplayableBookmark> result = new ArrayList<>();
-                for (DisplayableBookmark bookmark : bookmarks) {
-                    HizbQuarterDataModel hizbQuarterDataModel = dao.getHizbQuarterDataModelForAya(bookmark.getAyaId());
-
-                    bookmark.setHizbNumber(hizbQuarterDataModel.getHizb());
-                    bookmark.setRub3Number(hizbQuarterDataModel.getQuarter());
-
-                    result.add(bookmark);
+                val dao = getInstance(application)
+                    .hizbQuarterDao
+                val result: MutableList<DisplayableBookmark> = ArrayList()
+                for (bookmark in bookmarks) {
+                    bookmark?.let {
+                        val hizbQuarterDataModel = dao.getHizbQuarterDataModelForAya(bookmark.ayaId)
+                        bookmark.hizbNumber = hizbQuarterDataModel!!.hizb
+                        bookmark.rub3Number = hizbQuarterDataModel.quarter
+                        result.add(bookmark)
+                    }
                 }
-                return result;
+                return result
             }
 
-            @Override
-            protected void onPostExecute(List<DisplayableBookmark> displayableBookmarks) {
-                listener.onDisplayableBookmarksReady(displayableBookmarks);
+            override fun onPostExecute(displayableBookmarks: List<DisplayableBookmark>) {
+                listener.onDisplayableBookmarksReady(displayableBookmarks)
             }
-        }.execute(ayaBookmarks.toArray(new DisplayableBookmark[0]));
-
+        }.execute(*ayaBookmarks.toTypedArray())
     }
 
-    public void deleteBookmark(int bookmarkId) {
-        bookmarksInteractor.deleteBookmark(bookmarkId);
+    fun deleteBookmark(bookmarkId: Int) {
+        bookmarksInteractor.deleteBookmark(bookmarkId)
     }
 
-    public void changeBookmarkType(int bookmarkId, int bookmarkTypeId) {
-        bookmarksInteractor.changeBookmarkType(bookmarkId, bookmarkTypeId);
+    fun changeBookmarkType(bookmarkId: Int, bookmarkTypeId: Int) {
+        bookmarksInteractor.changeBookmarkType(bookmarkId, bookmarkTypeId)
     }
 
-    public void getBookmarkTypes() {
-        bookmarkTypeLiveData = bookmarksInteractor.getBookmarkTypes();
-        bookmarksTypes.addSource(bookmarkTypeLiveData, types -> {
-            bookmarksTypes.setValue(types);
-        });
+    val bookmarkTypes: Unit
+        get() {
+            bookmarkTypeLiveData = bookmarksInteractor.bookmarkTypes
+            _bookmarksTypes.addSource(
+                bookmarkTypeLiveData!!
+            ) { types: List<BookmarkType> -> _bookmarksTypes.setValue(types) }
+        }
+
+    interface BookmarkMapperListener {
+        fun onDisplayableBookmarksReady(displayableBookmarks: List<DisplayableBookmark>?)
     }
-
-
-    public interface BookmarkMapperListener {
-        void onDisplayableBookmarksReady(List<DisplayableBookmark> displayableBookmarks);
-    }
-
 }

@@ -56,7 +56,7 @@ class AyaRecorderDialog : DialogFragment() {
             VoiceRecorderViewModel::class.java
         )
         if (startRecord) {
-            voiceRecorderViewModel!!.setAyaRecorderPath(ayaId, activity)
+            voiceRecorderViewModel!!.setAyaRecorderPath(ayaId, requireContext())
             voiceRecorderViewModel!!.startRecord()
         }
     }

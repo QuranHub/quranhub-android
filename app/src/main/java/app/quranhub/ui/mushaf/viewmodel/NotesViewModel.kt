@@ -1,49 +1,38 @@
-package app.quranhub.ui.mushaf.viewmodel;
+package app.quranhub.ui.mushaf.viewmodel
 
-import android.app.Application;
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MediatorLiveData
+import app.quranhub.data.local.entity.Note
+import app.quranhub.ui.mushaf.interactor.NotesInteractor
+import app.quranhub.ui.mushaf.interactor.NotesInteractorImp
+import app.quranhub.ui.mushaf.model.DisplayedNote
 
-import androidx.annotation.NonNull;
-import androidx.lifecycle.AndroidViewModel;
-import androidx.lifecycle.LiveData;
-import androidx.lifecycle.MediatorLiveData;
+class NotesViewModel(application: Application) : AndroidViewModel(application) {
+    private val interactor: NotesInteractor
+    private var notesLiveData: LiveData<List<DisplayedNote>>? = null
+    val notes: MediatorLiveData<List<DisplayedNote>>
 
-import java.util.List;
-
-import app.quranhub.data.local.entity.Note;
-import app.quranhub.ui.mushaf.interactor.NotesInteractor;
-import app.quranhub.ui.mushaf.interactor.NotesInteractorImp;
-import app.quranhub.ui.mushaf.model.DisplayedNote;
-
-public class NotesViewModel extends AndroidViewModel {
-
-    private NotesInteractor interactor;
-    private LiveData<List<DisplayedNote>> notesLiveData;
-    private MediatorLiveData<List<DisplayedNote>> notes;
-
-    public NotesViewModel(@NonNull Application application) {
-        super(application);
-        interactor = new NotesInteractorImp(application);
-        notes = new MediatorLiveData<>();
+    init {
+        interactor = NotesInteractorImp(application)
+        notes = MediatorLiveData()
     }
 
-    public void getAllNotes() {
-        notesLiveData = interactor.getNotes();
-        notes.addSource(notesLiveData, displayedNotes -> {
-            notes.setValue(displayedNotes);
-            notes.removeSource(notesLiveData);
-        });
+    val allNotes: Unit
+        get() {
+            notesLiveData = interactor.notes
+            notes.addSource(notesLiveData!!) { displayedNotes: List<DisplayedNote> ->
+                notes.value = displayedNotes
+                notes.removeSource(notesLiveData!!)
+            }
+        }
+
+    fun updateNote(note: Note?) {
+        interactor.editNote(note)
     }
 
-    public MediatorLiveData<List<DisplayedNote>> getNotes() {
-        return notes;
+    fun deleteNote(ayaId: Int) {
+        interactor.deleteNote(ayaId)
     }
-
-    public void updateNote(Note note) {
-        interactor.editNote(note);
-    }
-
-    public void deleteNote(int ayaId) {
-        interactor.deleteNote(ayaId);
-    }
-
 }

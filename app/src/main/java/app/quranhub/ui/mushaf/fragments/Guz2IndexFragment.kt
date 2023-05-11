@@ -63,16 +63,15 @@ class Guz2IndexFragment : Fragment(), IndexItemClickListener {
                 savedInstanceState.getInt(STATE_FILTER_GUZ2, Guz2IndexAdapter.FILTER_GUZ2_ALL)
         }
         initGuz2IndexRecyclerView()
-        guz2IndexViewModel = ViewModelProvider(this).get(
-            Guz2IndexViewModel::class.java
-        )
-        guz2IndexViewModel!!.hizbQuarterDataModelsLiveData.observe(viewLifecycleOwner) { hizbQuarterDataModels: List<HizbQuarterDataModel> ->
-            Log.d(TAG, "hizbQuarterDataModels = $hizbQuarterDataModels")
-            if (binding!!.guz2IndexProgressBar.visibility == View.VISIBLE) {
-                binding!!.guz2IndexProgressBar.visibility = View.GONE
+        guz2IndexViewModel = ViewModelProvider(this)[Guz2IndexViewModel::class.java]
+        guz2IndexViewModel!!.getHizbQuarterDataModelsLiveData()
+            .observe(viewLifecycleOwner) { hizbQuarterDataModels: List<HizbQuarterDataModel> ->
+                Log.d(TAG, "hizbQuarterDataModels = $hizbQuarterDataModels")
+                if (binding!!.guz2IndexProgressBar.visibility == View.VISIBLE) {
+                    binding!!.guz2IndexProgressBar.visibility = View.GONE
+                }
+                adapter!!.setHizbQuarterDataModels(hizbQuarterDataModels.toMutableList())
             }
-            adapter!!.setHizbQuarterDataModels(hizbQuarterDataModels.toMutableList())
-        }
         guz2IndexViewModel!!.indexItemClickEvent().observe(
             viewLifecycleOwner
         ) { indexItemClickEvent: IndexItemClickEvent ->

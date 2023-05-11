@@ -172,15 +172,17 @@ class BookDataFragment : Fragment(), Searchable, PermissionCallbacks, Translatio
                 firstTime = false
             }
         }
-        viewModel!!.localTranslationsLiveData.observe(viewLifecycleOwner) { models: List<Book> ->
-            books = models
-            if (bookContents != null) {
-                setBooksContentStatus(models)
-                adapter!!.updateBooksDownloadStatus(models)
-            }
-            if (!isEditable && firstTime && bookContents != null) {
-                getUpdatedDownloadedStatus(bookContents)
-                firstTime = false
+        viewModel!!.localTranslationsLiveData.observe(viewLifecycleOwner) { models: List<Book>? ->
+            models?.let {
+                books = it
+                if (bookContents != null) {
+                    setBooksContentStatus(it)
+                    adapter!!.updateBooksDownloadStatus(it)
+                }
+                if (!isEditable && firstTime && bookContents != null) {
+                    getUpdatedDownloadedStatus(bookContents)
+                    firstTime = false
+                }
             }
         }
     }

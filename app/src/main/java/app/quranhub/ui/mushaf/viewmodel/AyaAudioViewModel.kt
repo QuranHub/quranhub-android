@@ -1,94 +1,86 @@
-package app.quranhub.ui.mushaf.viewmodel;
+package app.quranhub.ui.mushaf.viewmodel
 
-import android.app.Application;
-import android.media.MediaPlayer;
-import android.util.Log;
+import android.app.Application
+import android.media.MediaPlayer
+import android.media.MediaPlayer.OnCompletionListener
+import android.util.Log
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import app.quranhub.util.AyaAudioHelper
 
-import androidx.annotation.NonNull;
-import androidx.lifecycle.AndroidViewModel;
-import androidx.lifecycle.LiveData;
-import androidx.lifecycle.MutableLiveData;
+class AyaAudioViewModel(application: Application) : AndroidViewModel(application) {
 
-import app.quranhub.util.AyaAudioHelper;
+    private val mediaPlayer: MediaPlayer?
+    private val _audioStateLiveData: MutableLiveData<Int>
 
-public class AyaAudioViewModel extends AndroidViewModel {
-
-    private MediaPlayer mediaPlayer;
-    private MutableLiveData<Integer> audioStateLiveData;
-
-    public AyaAudioViewModel(@NonNull Application application) {
-        super(application);
-        mediaPlayer = new MediaPlayer();
-        audioStateLiveData = new MutableLiveData<>();
-        mediaPlayer.setOnCompletionListener(mp -> {
-            audioStateLiveData.setValue(AyaAudioHelper.AudioStateCallback.State.COMPLETED);
-        });
+    init {
+        mediaPlayer = MediaPlayer()
+        _audioStateLiveData = MutableLiveData()
+        mediaPlayer.setOnCompletionListener(OnCompletionListener {
+            _audioStateLiveData.setValue(
+                AyaAudioHelper.AudioStateCallback.State.COMPLETED
+            )
+        })
     }
 
-    public void setAudioPath(String path) {
-        stopAudio();
+    fun setAudioPath(path: String?) {
+        stopAudio()
         try {
-            Log.e("TAG", path);
-            mediaPlayer.setDataSource(path);
-            mediaPlayer.setOnPreparedListener(mp -> {
-                audioStateLiveData.setValue(AyaAudioHelper.AudioStateCallback.State.PLAYING);
-                mediaPlayer.start();
-
-            });
-            mediaPlayer.prepare();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void release() {
-        if (mediaPlayer != null) {
-            mediaPlayer.release();
-        }
-    }
-
-    public boolean isPlaying() {
-        try {
-            return mediaPlayer.isPlaying();
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    public void stopAudio() {
-        try {
-            mediaPlayer.reset();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void play() {
-        if (mediaPlayer != null && !isPlaying()) {
-            try {
-                mediaPlayer.start();
-                audioStateLiveData.setValue(AyaAudioHelper.AudioStateCallback.State.PLAYING);
-            } catch (Exception e) {
-                e.printStackTrace();
+            Log.e("TAG", path!!)
+            mediaPlayer!!.setDataSource(path)
+            mediaPlayer.setOnPreparedListener { mp: MediaPlayer? ->
+                _audioStateLiveData.value = AyaAudioHelper.AudioStateCallback.State.PLAYING
+                mediaPlayer.start()
             }
-
+            mediaPlayer.prepare()
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
+    fun release() {
+        mediaPlayer?.release()
+    }
 
-    public void pause() {
-        if (mediaPlayer != null && isPlaying()) {
+    val isPlaying: Boolean
+        get() = try {
+            mediaPlayer!!.isPlaying
+        } catch (e: Exception) {
+            false
+        }
+
+    fun stopAudio() {
+        try {
+            mediaPlayer!!.reset()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun play() {
+        if (mediaPlayer != null && !isPlaying) {
             try {
-                mediaPlayer.pause();
-                audioStateLiveData.setValue(AyaAudioHelper.AudioStateCallback.State.PAUSED);
-            } catch (Exception e) {
-                e.printStackTrace();
+                mediaPlayer.start()
+                _audioStateLiveData.setValue(AyaAudioHelper.AudioStateCallback.State.PLAYING)
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
-
         }
     }
 
-    public LiveData<Integer> getAudioStateLiveData() {
-        return audioStateLiveData;
+    fun pause() {
+        if (mediaPlayer != null && isPlaying) {
+            try {
+                mediaPlayer.pause()
+                _audioStateLiveData.setValue(AyaAudioHelper.AudioStateCallback.State.PAUSED)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun getAudioStateLiveData(): LiveData<Int> {
+        return _audioStateLiveData
     }
 }

@@ -99,7 +99,7 @@ class MyNotesFragment : Fragment(), NoteCallback, AddNoteListener, ItemSelection
 
     private fun bindViewModel() {
         viewModel = ViewModelProvider(this)[NotesViewModel::class.java]
-        viewModel!!.getAllNotes()
+        viewModel!!.allNotes
         viewModel!!.notes.observe(viewLifecycleOwner) { displayedNotes: List<DisplayedNote> ->
             binding!!.progreesBar.visibility = View.GONE
             if (displayedNotes.isNotEmpty()) {
