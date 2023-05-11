@@ -5,7 +5,6 @@ import android.content.Context
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.view.View
 import android.view.Window
 import androidx.fragment.app.DialogFragment
 import androidx.recyclerview.widget.DividerItemDecoration
@@ -18,13 +17,13 @@ import app.quranhub.util.DialogUtils.adjustDialogSize
 
 class OptionDialog : DialogFragment(), OptionClickListener {
 
-    private val dialogView: View? = null
     private var dialog: Dialog? = null
     private var listener: ItemClickListener? = null
     private var suraName: String? = null
     private var adapter: FilterAdapter? = null
     private var options: ArrayList<String>? = null
     private var requestCode = 0
+
     private var binding: DialogSuraListBinding? = null
 
     override fun onAttach(context: Context) {
@@ -75,7 +74,7 @@ class OptionDialog : DialogFragment(), OptionClickListener {
     private fun initializeDialog() {
         dialog = Dialog(requireActivity())
         dialog!!.window!!.requestFeature(Window.FEATURE_NO_TITLE)
-        dialog!!.setContentView(dialogView!!)
+        dialog!!.setContentView(binding!!.root)
         dialog!!.window?.setBackgroundDrawableResource(R.color.transparent_color)
         arguments?.let {
             suraName = it.getString(SURA_NAME_ARGS)
