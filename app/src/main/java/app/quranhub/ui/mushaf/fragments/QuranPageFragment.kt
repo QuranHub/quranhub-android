@@ -48,6 +48,7 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
+import kotlin.math.abs
 
 class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, QuranPageView,
     AddBookmarkListener, ReciterSelectionListener, AudioDownloadListener {
@@ -605,7 +606,7 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
             }
             params.leftMargin = startWidth.toInt()
             params.topMargin = currentAyaY.toInt()
-            params.width = Math.abs(endWidth - startWidth).toInt()
+            params.width = abs(endWidth - startWidth).toInt()
             params.height = lineHeight.toInt()
             shadowView.layoutParams = params
             currentAyaY -= lineHeight
