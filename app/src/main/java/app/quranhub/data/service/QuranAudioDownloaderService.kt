@@ -59,7 +59,7 @@ class QuranAudioDownloaderService : PRDownloaderService() {
         for (ayaId in startAyaId..endAyaId) {
             val aya = ayaDao.findAyaById(ayaId)
             val urlPath = QuranAudioDownloadUtils.getDownloadUrlPath(
-                recitationId, reciterId, aya.sura, aya.suraAya
+                recitationId, reciterId, aya!!.sura, aya.suraAya
             )
             val dirPath = QuranAudioFileUtils.getLocalDirPath(
                 this,
@@ -134,7 +134,7 @@ class QuranAudioDownloaderService : PRDownloaderService() {
                 val sheikhRecitationId = userDatabase.reciterRecitationDao
                     .getSheikhRecitationId(recitationId, reciterId)
                 val quranAudio = QuranAudio(
-                    page = aya.page, sura = aya.sura, aya = aya.suraAya,
+                    page = aya!!.page, sura = aya.sura, aya = aya.suraAya,
                     ayaId = ayaId, filePath = filePath, sheikhRecitationId = sheikhRecitationId
                 )
                 userDatabase.quranAudioDao.insert(quranAudio)
@@ -179,8 +179,8 @@ class QuranAudioDownloaderService : PRDownloaderService() {
             object : AsyncTask<Void?, Void?, Pair<Int?, Int?>?>() {
                 override fun doInBackground(vararg params: Void?): Pair<Int?, Int?>? {
                     val ayaDao = MushafDatabase.getInstance(context).ayaDao
-                    val startAyaId = ayaDao.getFirstAyaInSura(suraId).id
-                    val endAyaId = ayaDao.getLastAyaInSura(suraId).id
+                    val startAyaId = ayaDao.getFirstAyaInSura(suraId)?.id
+                    val endAyaId = ayaDao.getLastAyaInSura(suraId)?.id
                     return Pair(startAyaId, endAyaId)
                 }
 

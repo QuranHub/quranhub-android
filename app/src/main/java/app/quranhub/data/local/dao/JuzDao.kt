@@ -1,19 +1,14 @@
-package app.quranhub.data.local.dao;
+package app.quranhub.data.local.dao
 
-import androidx.room.Dao;
-import androidx.room.Query;
-
-import java.util.List;
-
-import app.quranhub.data.local.entity.Juz;
+import androidx.room.Dao
+import androidx.room.Query
+import app.quranhub.data.local.entity.Juz
 
 @Dao
-public interface JuzDao {
-
+interface JuzDao {
     @Query("SELECT * FROM Juz")
-    List<Juz> getAll();
+    fun getAll(): List<Juz?>?
 
     @Query("SELECT * FROM Juz WHERE id=:id")
-    Juz getById(int id);
-
+    fun getById(id: Int): Juz?
 }

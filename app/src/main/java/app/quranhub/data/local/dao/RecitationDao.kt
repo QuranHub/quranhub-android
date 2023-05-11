@@ -1,34 +1,28 @@
-package app.quranhub.data.local.dao;
+package app.quranhub.data.local.dao
 
-
-import androidx.room.Dao;
-import androidx.room.Delete;
-import androidx.room.Insert;
-import androidx.room.Query;
-
-import java.util.List;
-
-import app.quranhub.data.local.entity.Recitation;
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.Query
+import app.quranhub.data.local.entity.Recitation
 
 @Dao
-public interface RecitationDao {
-
+interface RecitationDao {
     @Query("SELECT * FROM Recitation")
-    List<Recitation> getAll();
+    fun getAll(): List<Recitation?>?
 
     @Query("SELECT * FROM Recitation where id IN (:recitationsIds)")
-    List<Recitation> getAllByIds(int[] recitationsIds);
+    fun getAllByIds(recitationsIds: IntArray?): List<Recitation?>?
 
     @Query("SELECT * FROM Recitation Where id=:recitationId")
-    Recitation getById(int recitationId);
+    fun getById(recitationId: Int): Recitation?
 
     @Insert
-    void insert(Recitation recitation);
+    fun insert(recitation: Recitation?)
 
     @Insert
-    void insertAll(Recitation[] recitations);
+    fun insertAll(recitations: Array<Recitation?>?)
 
     @Delete
-    void delete(Recitation recitation);
-
+    fun delete(recitation: Recitation?)
 }

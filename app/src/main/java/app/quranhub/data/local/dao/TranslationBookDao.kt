@@ -1,39 +1,34 @@
-package app.quranhub.data.local.dao;
+package app.quranhub.data.local.dao
 
-import androidx.lifecycle.LiveData;
-import androidx.room.Dao;
-import androidx.room.Delete;
-import androidx.room.Insert;
-import androidx.room.OnConflictStrategy;
-import androidx.room.Query;
-
-import java.util.List;
-
-import app.quranhub.data.local.entity.TranslationBook;
-import io.reactivex.Single;
+import androidx.lifecycle.LiveData
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import app.quranhub.data.local.entity.TranslationBook
+import io.reactivex.Single
 
 @Dao
-public interface TranslationBookDao {
-
+interface TranslationBookDao {
     @Query("SELECT * FROM TranslationBook")
-    LiveData<List<TranslationBook>> getAll();
+    fun getAll(): LiveData<List<TranslationBook?>?>?
 
     @Query("SELECT * FROM TranslationBook WHERE id IN(:ids)")
-    LiveData<List<TranslationBook>> getAllByIds(int... ids);
+    fun getAllByIds(vararg ids: Int): LiveData<List<TranslationBook?>?>?
 
     @Query("SELECT * FROM TranslationBook WHERE language=:langCode")
-    LiveData<List<TranslationBook>> getByLanguage(String langCode);
+    fun getByLanguage(langCode: String?): LiveData<List<TranslationBook?>?>?
 
     @Query("SELECT * FROM TranslationBook WHERE id=:id")
-    Single<TranslationBook> findById(String id);
+    fun findById(id: String?): Single<TranslationBook?>?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    void insert(TranslationBook translationBook);
+    fun insert(translationBook: TranslationBook?)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    void insertAll(TranslationBook... translationBooks);
+    fun insertAll(vararg translationBooks: TranslationBook?)
 
     @Delete
-    void delete(TranslationBook translationBook);
-
+    fun delete(translationBook: TranslationBook?)
 }

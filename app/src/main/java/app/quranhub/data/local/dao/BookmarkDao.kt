@@ -1,52 +1,48 @@
-package app.quranhub.data.local.dao;
+package app.quranhub.data.local.dao
 
-import androidx.lifecycle.LiveData;
-import androidx.room.Dao;
-import androidx.room.Insert;
-import androidx.room.OnConflictStrategy;
-import androidx.room.Query;
-
-import java.util.List;
-
-import app.quranhub.data.local.entity.AyaBookmark;
-import app.quranhub.data.local.entity.BookmarkType;
-import app.quranhub.ui.mushaf.model.BookmarkModel;
-import io.reactivex.Single;
+import androidx.lifecycle.LiveData
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import app.quranhub.data.local.entity.AyaBookmark
+import app.quranhub.data.local.entity.BookmarkType
+import app.quranhub.ui.mushaf.model.BookmarkModel
+import io.reactivex.Single
 
 @Dao
-public interface BookmarkDao {
-
+interface BookmarkDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    void insertBookmarkType(BookmarkType bookmarkType);
+    fun insertBookmarkType(bookmarkType: BookmarkType?)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    void insertAyaBookmark(AyaBookmark ayaBookmark);
+    fun insertAyaBookmark(ayaBookmark: AyaBookmark?)
 
     @Query("select * from AyaBookmark")
-    Single<List<AyaBookmark>> getAllBookmarks();
+    fun getAllBookmarks(): Single<List<AyaBookmark?>?>?
 
     @Query("select * from BookmarkType")
-    Single<List<BookmarkType>> getBookmarksType();
+    fun getBookmarksType(): Single<List<BookmarkType?>?>?
 
     @Query("select * from AyaBookmark where bookmarkTypeId=:id")
-    LiveData<List<AyaBookmark>> getTypeBookmarks(int id);
+    fun getTypeBookmarks(id: Int): LiveData<List<AyaBookmark?>?>?
 
     @Query("select AyaBookmark.bookmarkTypeId, BookmarkType.colorIndex from AyaBookmark join BookmarkType on AyaBookmark.bookmarkTypeId=BookmarkType.typeId where bookmarkId=:id")
-        // todo make query return bookmarktype and color index to set filter to icon by join statment
-    Single<BookmarkModel> getBookmarkType(int id);
+    fun  // todo make query return bookmarktype and color index to set filter to icon by join statment
+            getBookmarkType(id: Int): Single<BookmarkModel?>?
 
     @Query("delete from AyaBookmark where bookmarkId=:id")
-    void deleteAyaBookmark(int id);
+    fun deleteAyaBookmark(id: Int)
 
     @Query("select * from AyaBookmark where bookmarkTypeId=:filterId")
-    LiveData<List<AyaBookmark>> getFilterBookmaks(int filterId);
+    fun getFilterBookmaks(filterId: Int): LiveData<List<AyaBookmark?>?>?
 
     @Query("UPDATE AyaBookmark SET bookmarkTypeId=:bookmarkTypeId WHERE bookmarkId=:bookmarkId")
-    void changeAyaBookmarkType(int bookmarkId, int bookmarkTypeId);
+    fun changeAyaBookmarkType(bookmarkId: Int, bookmarkTypeId: Int)
 
     @Query("select * from BookmarkType")
-    Single<List<BookmarkType>> getBookmarkTypes();
+    fun getBookmarkTypes(): Single<List<BookmarkType?>?>?
 
     @Query("select * from BookmarkType")
-    LiveData<List<BookmarkType>> getBookmarkTypesLiveData();
+    fun getBookmarkTypesLiveData(): LiveData<List<BookmarkType?>?>?
 }

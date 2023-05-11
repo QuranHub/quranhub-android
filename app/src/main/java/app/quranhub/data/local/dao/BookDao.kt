@@ -1,28 +1,23 @@
-package app.quranhub.data.local.dao;
+package app.quranhub.data.local.dao
 
-import androidx.lifecycle.LiveData;
-import androidx.room.Dao;
-import androidx.room.Insert;
-import androidx.room.OnConflictStrategy;
-import androidx.room.Query;
-
-import java.util.List;
-
-import app.quranhub.data.local.entity.Book;
+import androidx.lifecycle.LiveData
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import app.quranhub.data.local.entity.Book
 
 @Dao
-public interface BookDao {
-
+interface BookDao {
     @Query("select * from Book")
-    LiveData<List<Book>> getAllTranslations();
+    fun getAllTranslations(): LiveData<List<Book?>?>?
 
     @Query("update Book set downloadStatus=:type, downloadId=:downloadId WHERE id=:id")
-    void updateDownlodedTranslation(int id, int type, long downloadId);
+    fun updateDownlodedTranslation(id: Int, type: Int, downloadId: Long)
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    void insertDownloadedTranslation(List<Book> models);
+    fun insertDownloadedTranslation(models: List<Book?>?)
 
     @Query("UPDATE Book SET downloadStatus=:status where downloadId=:downloadId")
-    void updateFinishedDownload(long downloadId, int status);
-
+    fun updateFinishedDownload(downloadId: Long, status: Int)
 }

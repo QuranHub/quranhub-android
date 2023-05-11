@@ -1,40 +1,37 @@
-package app.quranhub.data.local.dao;
+package app.quranhub.data.local.dao
 
-import androidx.room.Dao;
-import androidx.room.Delete;
-import androidx.room.Insert;
-import androidx.room.Query;
-
-import java.util.List;
-
-import app.quranhub.data.local.entity.Reciter;
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.Query
+import app.quranhub.data.local.entity.Reciter
 
 @Dao
-public interface ReciterDao {
-
+interface ReciterDao {
     @Query("SELECT * FROM Reciter")
-    List<Reciter> getAll();
+    fun getAll(): List<Reciter?>?
 
     @Query("SELECT * FROM Reciter where id IN (:recitersIds)")
-    List<Reciter> getAllByIds(int[] recitersIds);
+    fun getAllByIds(recitersIds: IntArray?): List<Reciter?>?
 
-    @Query("SELECT s.id, s.name, s.nationality, s.audio_base_url FROM Reciter as s JOIN ReciterRecitation as sr " +
-            "ON s.id=sr.reciter_id WHERE sr.recitation_id=:recitationId")
-    List<Reciter> getAllForRecitation(int recitationId);
+    @Query(
+        "SELECT s.id, s.name, s.nationality, s.audio_base_url FROM Reciter as s JOIN ReciterRecitation as sr " +
+                "ON s.id=sr.reciter_id WHERE sr.recitation_id=:recitationId"
+    )
+    fun getAllForRecitation(recitationId: Int): List<Reciter>
 
     @Query("SELECT * FROM Reciter Where id=:reciterId")
-    Reciter getById(String reciterId);
+    fun getById(reciterId: String?): Reciter?
 
     @Insert
-    void insert(Reciter reciter);
+    fun insert(reciter: Reciter?)
 
     @Insert
-    void insertAll(Reciter[] reciters);
+    fun insertAll(reciters: Array<Reciter?>?)
 
     @Delete
-    void delete(Reciter reciter);
+    fun delete(reciter: Reciter?)
 
     @Delete
-    void deleteAll(Reciter[] reciters);
-
+    fun deleteAll(reciters: Array<Reciter?>?)
 }

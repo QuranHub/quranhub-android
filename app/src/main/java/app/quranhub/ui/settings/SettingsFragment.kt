@@ -92,7 +92,7 @@ class SettingsFragment : Fragment(), OptionsListDialogFragment.ItemSelectionList
                     val reciter = UserDatabase.getInstance(requireContext())
                         .reciterDao
                         .getById(reciterId)
-                    emitter.onSuccess(reciter.name)
+                    reciter?.name?.let { emitter.onSuccess(it) }
                 })
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())

@@ -29,7 +29,7 @@ object QuranAudioDeleteUtils {
                 val userDatabase = UserDatabase.getInstance(context)
                 val reciters = userDatabase.reciterRecitationDao
                     .getRecitersForRecitation(recitationId)
-                userDatabase.reciterDao.deleteAll(reciters.toTypedArray())
+                userDatabase.reciterDao.deleteAll(reciters?.toTypedArray())
 
                 // 3. delete reciter preference if same recitation
                 val recitationIdPreference = AppPreferencesManager.getRecitationSetting(context)
@@ -96,10 +96,12 @@ object QuranAudioDeleteUtils {
                 val quranAudios = userDatabase.quranAudioDao
                     .getForSura(recitationId, reciterId, suraId)
                 for (q in quranAudios) {
-                    val audioFilePath = context.getExternalFilesDir(null)!!.path + q.filePath
-                    val audioFile = File(audioFilePath)
-                    if (audioFile.exists()) {
-                        audioFile.delete()
+                    q?.let {
+                        val audioFilePath = context.getExternalFilesDir(null)!!.path + it.filePath
+                        val audioFile = File(audioFilePath)
+                        if (audioFile.exists()) {
+                            audioFile.delete()
+                        }
                     }
                 }
 

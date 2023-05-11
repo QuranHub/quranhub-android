@@ -1,55 +1,54 @@
-package app.quranhub.data.local.dao;
+package app.quranhub.data.local.dao
 
-import androidx.room.Dao;
-import androidx.room.Delete;
-import androidx.room.Insert;
-import androidx.room.Query;
-
-import java.util.List;
-
-import app.quranhub.data.local.entity.Reciter;
-import app.quranhub.data.local.entity.ReciterRecitation;
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.Query
+import app.quranhub.data.local.entity.Reciter
+import app.quranhub.data.local.entity.ReciterRecitation
 
 @Dao
-public interface ReciterRecitationDao {
-
+interface ReciterRecitationDao {
     @Query("SELECT * FROM ReciterRecitation")
-    List<ReciterRecitation> getAll();
+    fun getAll(): List<ReciterRecitation?>?
 
     @Query("SELECT * FROM ReciterRecitation where id IN (:sheikhRecitationsIds)")
-    List<ReciterRecitation> getAllByIds(int[] sheikhRecitationsIds);
+    fun getAllByIds(sheikhRecitationsIds: IntArray?): List<ReciterRecitation?>?
 
     @Query("SELECT * FROM ReciterRecitation Where id=:sheikhRecitationId")
-    ReciterRecitation getById(int sheikhRecitationId);
+    fun getById(sheikhRecitationId: Int): ReciterRecitation?
 
     @Query("SELECT * FROM ReciterRecitation WHERE recitation_id=:recitationId AND reciter_id=:reciterId")
-    ReciterRecitation get(int recitationId, String reciterId);
+    operator fun get(recitationId: Int, reciterId: String?): ReciterRecitation?
 
     @Query("SELECT id FROM ReciterRecitation WHERE recitation_id=:recitationId AND reciter_id=:sheikhId")
-    int getSheikhRecitationId(int recitationId, String sheikhId);
+    fun getSheikhRecitationId(recitationId: Int, sheikhId: String?): Int
 
-    @Query("SELECT COUNT(DISTINCT sr.reciter_id) FROM ReciterRecitation as sr JOIN QuranAudio as q " +
-            "ON sr.id=q.sheikh_recitation_id WHERE sr.recitation_id=:recitationId")
-    int getNumOfRecitersWithDownloads(int recitationId);
+    @Query(
+        "SELECT COUNT(DISTINCT sr.reciter_id) FROM ReciterRecitation as sr JOIN QuranAudio as q " +
+                "ON sr.id=q.sheikh_recitation_id WHERE sr.recitation_id=:recitationId"
+    )
+    fun getNumOfRecitersWithDownloads(recitationId: Int): Int
 
     @Query("SELECT s.* FROM Reciter as s JOIN ReciterRecitation as sr ON s.id=sr.reciter_id WHERE recitation_id=:recitationId")
-    List<Reciter> getRecitersForRecitation(int recitationId);
+    fun getRecitersForRecitation(recitationId: Int): List<Reciter?>?
 
-    @Query("SELECT DISTINCT sura FROM Reciter as s JOIN ReciterRecitation as sr JOIN QuranAudio as q " +
-            "ON s.id=sr.reciter_id AND sr.id=q.sheikh_recitation_id WHERE sr.recitation_id=:recitationId " +
-            "AND s.id=:reciterId")
-    List<Integer> getSurasIdsForReciterInRecitation(int recitationId, String reciterId);
+    @Query(
+        "SELECT DISTINCT sura FROM Reciter as s JOIN ReciterRecitation as sr JOIN QuranAudio as q " +
+                "ON s.id=sr.reciter_id AND sr.id=q.sheikh_recitation_id WHERE sr.recitation_id=:recitationId " +
+                "AND s.id=:reciterId"
+    )
+    fun getSurasIdsForReciterInRecitation(recitationId: Int, reciterId: String?): List<Int>
 
     @Insert
-    void insert(ReciterRecitation reciterRecitation);
+    fun insert(reciterRecitation: ReciterRecitation?)
 
     @Insert
-    void insertAll(ReciterRecitation[] reciterRecitations);
+    fun insertAll(reciterRecitations: Array<ReciterRecitation?>?)
 
     @Delete
-    void delete(ReciterRecitation reciterRecitation);
+    fun delete(reciterRecitation: ReciterRecitation?)
 
     @Query("DELETE FROM ReciterRecitation WHERE recitation_id=:recitationId AND reciter_id=:reciterId")
-    void delete(int recitationId, String reciterId);
-
+    fun delete(recitationId: Int, reciterId: String?)
 }

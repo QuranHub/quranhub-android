@@ -1,29 +1,23 @@
-package app.quranhub.data.local.dao;
+package app.quranhub.data.local.dao
 
-
-import androidx.room.Dao;
-import androidx.room.Insert;
-import androidx.room.OnConflictStrategy;
-import androidx.room.Query;
-
-import java.util.List;
-
-import app.quranhub.data.local.entity.Note;
-import io.reactivex.Single;
-
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import app.quranhub.data.local.entity.Note
+import io.reactivex.Single
 
 @Dao
-public interface NoteDao {
-
+interface NoteDao {
     @Query("select * from note")
-    Single<List<Note>> getAllNotes();
+    fun getAllNotes(): Single<List<Note?>?>?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    void insertNote(Note note);
+    fun insertNote(note: Note?)
 
     @Query("select * from note where ayaId=:ayaId")
-    Single<Note> getAyaNote(int ayaId);
+    fun getAyaNote(ayaId: Int): Single<Note?>?
 
     @Query("delete from note where ayaId=:ayaId")
-    void deleteNote(int ayaId);
+    fun deleteNote(ayaId: Int)
 }
