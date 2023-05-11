@@ -1,6 +1,7 @@
 package app.quranhub.data.local.db
 
 import android.content.Context
+import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.Room.databaseBuilder
 import androidx.room.RoomDatabase
@@ -29,8 +30,11 @@ import app.quranhub.data.local.prefs.AppPreferencesManager.persistDbInitialized
 
 @Database(
     entities = [AyaBookmark::class, BookmarkType::class, Book::class, TranslationBook::class, Note::class, Recitation::class, Reciter::class, ReciterRecitation::class, QuranAudio::class, AyaRecorder::class],
-    version = 3,
-    exportSchema = false
+    version = 4,
+    autoMigrations = [
+        AutoMigration(from = 3, to = 4)
+    ],
+    exportSchema = true
 )
 abstract class UserDatabase : RoomDatabase() {
 
