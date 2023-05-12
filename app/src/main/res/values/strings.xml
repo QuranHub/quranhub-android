@@ -571,5 +571,8 @@
 
     <string name="tab_download_quran_images">Quran page images</string>
     <string name="tab_download_audio">Quran Audio</string>
+    <string name="download_quran_images_description">Select a recitation and download the Quran pages images to be able to read offline</string>
+    <string name="download_complete">Download complete!</string>
+    <string name="wait_download">Please wait and don\'t close this screen until download finishes</string>
 
 </resources>

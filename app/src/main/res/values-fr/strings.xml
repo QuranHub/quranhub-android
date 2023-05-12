@@ -551,6 +551,9 @@
     <string name="tooltip_zoom_out_quran_page">Dézoomer sur la page du Coran</string>
     <string name="tab_download_quran_images">Images de pages du Coran</string>
     <string name="tab_download_audio">Audio du Coran</string>
+    <string name="download_quran_images_description">Sélectionnez une récitation et téléchargez les images des pages du Coran pour pouvoir les lire hors ligne</string>
+    <string name="download_complete">Téléchargement terminé !</string>
+    <string name="wait_download">Veuillez patienter et ne pas fermer cette page jusqu\'à ce que le téléchargement soit terminé</string>
 
 
 </resources>

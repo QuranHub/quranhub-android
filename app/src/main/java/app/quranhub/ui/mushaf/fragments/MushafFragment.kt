@@ -440,7 +440,7 @@ class MushafFragment : Fragment(), MushafView, QuranFooterCallbacks, Translation
             Constants.Recitation.WARSH_ID -> Constants.Quran.WARSH_IMG_BASE_URL
             else -> throw RuntimeException("Cannot identify recitation")
         }
-        val quranPageImages: MutableList<String> = ArrayList()
+        val quranPageImages: MutableList<String> = mutableListOf()
         for (i in Constants.Quran.NUM_OF_PAGES downTo 1) {
             val imageName = when (recitationId) {
                 Constants.Recitation.HAFS_ID -> String.format(Locale.US, "%d.jpg", i)

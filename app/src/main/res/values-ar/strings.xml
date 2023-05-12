@@ -558,5 +558,8 @@
     <string name="tooltip_zoom_out_quran_page">تصغير صفحة القرآن</string>
     <string name="tab_download_quran_images">صور صفحات القرآن</string>
     <string name="tab_download_audio">الصوتيات</string>
+    <string name="download_quran_images_description">اختر تلاوة و حمّل صور صفحات القرآن لتتمكن من القراءة دون اتصال بالإنترنت</string>
+    <string name="download_complete">تم التحميل!</string>
+    <string name="wait_download">يرجى الانتظار وعدم إغلاق هذه الشاشة حتى يتم الانتهاء من التحميل</string>
 
 </resources>
