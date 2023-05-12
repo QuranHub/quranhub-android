@@ -16,6 +16,7 @@ import app.quranhub.databinding.FragmentDownloadsBinding
 import app.quranhub.ui.downloads_manager.BaseDownloadsFragment.DownloadsManagerNavigationCallbacks
 import app.quranhub.ui.downloads_manager.adapters.DownloadsAdapter
 import app.quranhub.ui.downloads_manager.model.DisplayableDownload
+import app.quranhub.util.FragmentUtils.isSafeFragment
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
@@ -118,10 +119,14 @@ abstract class BaseDownloadsFragment : Fragment(), Editable, DownloadsAdapter.It
             }
 
             override fun doInBackground(vararg voids: Void?): List<DisplayableDownload> {
+                if (!isSafeFragment(this@BaseDownloadsFragment)) return emptyList()
+
                 return provideDisplayableDownloads()
             }
 
             override fun onPostExecute(downloads: List<DisplayableDownload>) {
+                if (!isSafeFragment(this@BaseDownloadsFragment)) return
+
                 Log.d(TAG, "Provided displayableDownloads=$downloads")
                 displayableDownloads = downloads
                 downloadsAdapter!!.setDisplayableDownloads(displayableDownloads!!)

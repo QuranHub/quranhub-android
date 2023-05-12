@@ -12,6 +12,7 @@ import app.quranhub.util.QuranAudioDeleteUtils.DeleteFinishListener
 import app.quranhub.util.QuranAudioDeleteUtils.deleteRecitationAudio
 
 class DownloadsRecitationsFragment : BaseDownloadsFragment(), DeleteConfirmationCallbacks {
+
     override fun provideDisplayableDownloads(): List<DisplayableDownload> {
 
         val downloads: MutableList<DisplayableDownload> = ArrayList()

@@ -549,6 +549,8 @@
     <string name="tooltip_page_dir">Si la page du Coran actuelle est à gauche ou à droite dans le Mushaf</string>
     <string name="tooltip_zoom_in_quran_page">Zoomer sur la page du Coran</string>
     <string name="tooltip_zoom_out_quran_page">Dézoomer sur la page du Coran</string>
+    <string name="tab_download_quran_images">Images de pages du Coran</string>
+    <string name="tab_download_audio">Audio du Coran</string>
 
 
 </resources>

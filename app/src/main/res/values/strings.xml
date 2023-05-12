@@ -569,4 +569,7 @@
     <string name="tooltip_zoom_in_quran_page">Zoom in Quran page</string>
     <string name="tooltip_zoom_out_quran_page">Zoom out Quran page</string>
 
+    <string name="tab_download_quran_images">Quran page images</string>
+    <string name="tab_download_audio">Quran Audio</string>
+
 </resources>
