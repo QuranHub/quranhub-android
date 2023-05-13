@@ -190,7 +190,7 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
 
     private fun setParentFragment() {
         if (mushafFragment == null) {
-            mushafFragment = parentFragment as MushafFragment?
+            mushafFragment = parentFragment as? MushafFragment
         }
     }
 
@@ -706,7 +706,7 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
     }
 
     fun onAyaAudioNotFound() {
-        mushafFragment!!.togglePauseState(false)
+        mushafFragment?.togglePauseState(false)
         isAyaAudioDownloaded = false
         val reciterId = AppPreferencesManager.getReciterSheikhSetting(requireContext())
         if (reciterId != null) {
@@ -737,9 +737,9 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
     }
 
     override fun onListenClick() {
-        mushafFragment!!.openAyaAudioDialog()
-        mushafFragment!!.checkAyaRecorderState(currentAya!!.id)
-        mushafFragment!!.playAudioService()
+        mushafFragment?.openAyaAudioDialog()
+        currentAya?.let { mushafFragment?.checkAyaRecorderState(it.id) }
+        mushafFragment?.playAudioService()
     }
 
     // get aya position of start repeat interval in current page
