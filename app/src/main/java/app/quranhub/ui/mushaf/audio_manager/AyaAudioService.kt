@@ -52,7 +52,7 @@ class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener 
     private var userDatabase: UserDatabase? = null
     private var currentAyaId = 0
     private var suraVersesNumberArrayList: ArrayList<SuraVersesNumber>? = null
-    private var ayaIdInfoArrayList: ArrayList<AyaIdInfo>? = null
+    private var ayaIdInfoArrayList: MutableList<AyaIdInfo>? = null
     private var suras: Array<String> = arrayOf()
     private var notificationBuilder: NotificationCompat.Builder? = null
     private var pausedNotificationBuilder: NotificationCompat.Builder? = null
@@ -284,7 +284,9 @@ class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener 
             checkAyaAudioDownloaded(currentAyaId)
         } else if (action == ACTION_PAUSE) {
             Log.d(TAG, "pause $currentAyaId")
-            updateNotificationContent(true, ayaIdInfoArrayList!![currentAyaId - 1])
+            ayaIdInfoArrayList?.getOrNull(currentAyaId - 1)?.let {
+                updateNotificationContent(true, it)
+            }
             updateNotificationState(true)
             EventBus.getDefault().post(AudioStateEvent(AudioStateEvent.State.PAUSED))
             pauseAudio()
