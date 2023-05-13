@@ -39,8 +39,8 @@ import app.quranhub.ui.mushaf.dialogs.AyaRecorderDialog
 import app.quranhub.ui.mushaf.dialogs.AyaRecorderDialog.StopRecordingListener
 import app.quranhub.ui.mushaf.dialogs.AyaRecorderPlayerDialog
 import app.quranhub.ui.mushaf.dialogs.AyaRecorderPlayerDialog.AyaRecorderPlayerListener
-import app.quranhub.ui.mushaf.dialogs.AyaRepeatDialog.AyaRepeatListener
-import app.quranhub.ui.mushaf.dialogs.AyaRepeatDialog.Companion.getInstance
+import app.quranhub.ui.mushaf.dialogs.AyaRepeatDialogFragment.AyaRepeatListener
+import app.quranhub.ui.mushaf.dialogs.AyaRepeatDialogFragment.Companion.getInstance
 import app.quranhub.ui.mushaf.dialogs.TranslationsDialogFragment.Companion.newInstance
 import app.quranhub.ui.mushaf.events.QuranPageClickEvent
 import app.quranhub.ui.mushaf.fragments.MushafBottomBarFragment.QuranFooterCallbacks

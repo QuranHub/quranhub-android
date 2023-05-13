@@ -19,7 +19,7 @@ import app.quranhub.ui.mushaf.model.RepeatModel
 import app.quranhub.ui.mushaf.model.SuraVersesNumber
 import app.quranhub.util.DialogUtils.adjustDialogSize
 
-class AyaRepeatDialog : DialogFragment() {
+class AyaRepeatDialogFragment : DialogFragment() {
 
     private var dialog: Dialog? = null
     private var listener: AyaRepeatListener? = null
@@ -31,6 +31,7 @@ class AyaRepeatDialog : DialogFragment() {
     private var fromSuraNumber = 0
     private var toSuraNumber = 0
     private var fromUser = false
+
     private var binding: DialogAyaRepeatBinding? = null
 
     override fun onAttach(context: Context) {
@@ -81,13 +82,15 @@ class AyaRepeatDialog : DialogFragment() {
         binding!!.fromAyaSp.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(
                 parent: AdapterView<*>?,
-                view: View,
+                view: View?,
                 position: Int,
                 id: Long
             ) {
-                if (parent?.getChildAt(0) != null) (parent.getChildAt(0) as TextView).setTextColor(
-                    requireActivity().resources.getColor(R.color.white_color)
-                )
+                if (parent?.getChildAt(0) != null) {
+                    (parent.getChildAt(0) as TextView).setTextColor(
+                        requireActivity().resources.getColor(R.color.white_color)
+                    )
+                }
                 maxFromAyaNumber = suraVersesNumberArrayList!![position].ayas
                 if (fromUser) {
                     binding!!.fromEt.setText("1")
@@ -100,7 +103,7 @@ class AyaRepeatDialog : DialogFragment() {
         binding!!.toAyaSp.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(
                 parent: AdapterView<*>?,
-                view: View,
+                view: View?,
                 position: Int,
                 id: Long
             ) {
@@ -261,11 +264,11 @@ class AyaRepeatDialog : DialogFragment() {
         fun getInstance(
             suraVersesNumberArrayList: ArrayList<SuraVersesNumber>?,
             selectedAya: Aya?
-        ): AyaRepeatDialog {
+        ): AyaRepeatDialogFragment {
             val bundle = Bundle()
             bundle.putParcelable(ARG_SELECTED_SURA, selectedAya)
             bundle.putParcelableArrayList(ARG_SURA_VERSES_NUMBER, suraVersesNumberArrayList)
-            val dialog = AyaRepeatDialog()
+            val dialog = AyaRepeatDialogFragment()
             dialog.arguments = bundle
             return dialog
         }
