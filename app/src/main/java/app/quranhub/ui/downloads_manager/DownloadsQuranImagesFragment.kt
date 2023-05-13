@@ -11,6 +11,7 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import app.quranhub.R
 import app.quranhub.data.Constants
+import app.quranhub.data.local.prefs.AppPreferencesManager
 import app.quranhub.databinding.FragmentDownloadsQuranImagesBinding
 import app.quranhub.util.NetworkUtil
 import com.bumptech.glide.Glide
@@ -25,7 +26,7 @@ class DownloadsQuranImagesFragment : Fragment() {
     private var _binding: FragmentDownloadsQuranImagesBinding? = null
     private val binding get() = _binding!!
 
-    private var selectedRecitationId = Constants.Recitation.HAFS_ID
+    private var recitationId = Constants.Recitation.HAFS_ID
 
     private var totalPagesDownloaded = 0
 
@@ -39,39 +40,60 @@ class DownloadsQuranImagesFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        initUi()
         attachUiListeners()
+    }
+
+    private fun initUi() {
+        val recitationIdSetting = AppPreferencesManager.getRecitationSetting(requireContext())
+        selectRecitationOption(recitationIdSetting)
+    }
+
+    private fun selectRecitationOption(recitationId: Int) {
+        this.recitationId = recitationId
+        when (recitationId) {
+            Constants.Recitation.HAFS_ID -> selectHafsOption()
+            Constants.Recitation.WARSH_ID -> selectWarshOption()
+            else -> error("Cannot identify recitation")
+        }
+    }
+
+    private fun selectHafsOption() {
+        binding.tvHafs.setCompoundDrawablesRelativeWithIntrinsicBounds(
+            0,
+            0,
+            R.drawable.check_gold_ic,
+            0
+        )
+        binding.tvWarsh.setCompoundDrawablesRelativeWithIntrinsicBounds(
+            0,
+            0,
+            0,
+            0
+        )
+    }
+
+    private fun selectWarshOption() {
+        binding.tvWarsh.setCompoundDrawablesRelativeWithIntrinsicBounds(
+            0,
+            0,
+            R.drawable.check_gold_ic,
+            0
+        )
+        binding.tvHafs.setCompoundDrawablesRelativeWithIntrinsicBounds(
+            0,
+            0,
+            0,
+            0
+        )
     }
 
     private fun attachUiListeners() {
         binding.tvHafs.setOnClickListener {
-            binding.tvHafs.setCompoundDrawablesRelativeWithIntrinsicBounds(
-                0,
-                0,
-                R.drawable.check_gold_ic,
-                0
-            )
-            binding.tvWarsh.setCompoundDrawablesRelativeWithIntrinsicBounds(
-                0,
-                0,
-                0,
-                0
-            )
-            selectedRecitationId = Constants.Recitation.HAFS_ID
+            selectRecitationOption(Constants.Recitation.HAFS_ID)
         }
         binding.tvWarsh.setOnClickListener {
-            binding.tvWarsh.setCompoundDrawablesRelativeWithIntrinsicBounds(
-                0,
-                0,
-                R.drawable.check_gold_ic,
-                0
-            )
-            binding.tvHafs.setCompoundDrawablesRelativeWithIntrinsicBounds(
-                0,
-                0,
-                0,
-                0
-            )
-            selectedRecitationId = Constants.Recitation.WARSH_ID
+            selectRecitationOption(Constants.Recitation.WARSH_ID)
         }
         binding.btnDownload.setOnClickListener {
             startDownload()
@@ -80,28 +102,27 @@ class DownloadsQuranImagesFragment : Fragment() {
 
     private fun startDownload() {
         if (!NetworkUtil.isNetworkAvailable(requireContext())) {
-            Toast.makeText(requireContext(), R.string.no_internet, Toast.LENGTH_SHORT)
-                .show()
+            Toast.makeText(requireContext(), R.string.no_internet, Toast.LENGTH_SHORT).show()
             return
         }
 
         totalPagesDownloaded = 0
 
+        binding.root.keepScreenOn = true
         binding.btnDownload.startAnimation()
-
         binding.groupDownloadInfo.isVisible = true
 
-        val quranImageBaseUrl: String = when (selectedRecitationId) {
+        val quranImageBaseUrl: String = when (recitationId) {
             Constants.Recitation.HAFS_ID -> Constants.Quran.HAFS_IMG_BASE_URL
             Constants.Recitation.WARSH_ID -> Constants.Quran.WARSH_IMG_BASE_URL
             else -> throw RuntimeException("Cannot identify recitation")
         }
 
         for (i in 1..Constants.Quran.NUM_OF_PAGES) {
-            val imageName = when (selectedRecitationId) {
+            val imageName = when (recitationId) {
                 Constants.Recitation.HAFS_ID -> String.format(Locale.US, "%d.jpg", i)
                 Constants.Recitation.WARSH_ID -> String.format(Locale.US, "%d.png", i)
-                else -> throw RuntimeException("Cannot identify recitation")
+                else -> error("Cannot identify recitation")
             }
             val imageUrl = quranImageBaseUrl + imageName
 
@@ -142,11 +163,13 @@ class DownloadsQuranImagesFragment : Fragment() {
         )
 
         if (totalPagesDownloaded == Constants.Quran.NUM_OF_PAGES) {
+            // Download complete
             binding.btnDownload.revertAnimation()
             binding.groupDownloadInfo.isVisible = false
+            binding.tvDownloadProgress.text = ""
+            binding.root.keepScreenOn = false
             Toast.makeText(requireContext(), R.string.download_complete, Toast.LENGTH_SHORT).show()
             totalPagesDownloaded = 0
-            binding.tvDownloadProgress.text = ""
         }
     }
 
