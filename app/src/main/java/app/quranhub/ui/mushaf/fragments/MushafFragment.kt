@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
+import android.os.Looper
 import android.text.method.ScrollingMovementMethod
 import android.util.Log
 import android.view.LayoutInflater
@@ -70,7 +71,8 @@ class MushafFragment : Fragment(), MushafView, QuranFooterCallbacks, Translation
     AyaAudioListener, StopRecordingListener, ReciterSelectionListener, AyaRecorderPlayerListener,
     AyaRepeatListener {
 
-    private var binding: FragmentMushafBinding? = null
+    private var _binding: FragmentMushafBinding? = null
+    private val binding: FragmentMushafBinding get() = _binding!!
 
     private var quranPageIndex = 0
     private var initAyaId = 0
@@ -133,9 +135,9 @@ class MushafFragment : Fragment(), MushafView, QuranFooterCallbacks, Translation
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        binding = FragmentMushafBinding.inflate(inflater, container, false)
+        _binding = FragmentMushafBinding.inflate(inflater, container, false)
         initPresenter()
-        return binding!!.root
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -218,7 +220,7 @@ class MushafFragment : Fragment(), MushafView, QuranFooterCallbacks, Translation
 
     private fun checkAudioDialogState() {
         if (isAudioDialogOpen) {
-            binding!!.quranViewpager.post { ayaAudioPopup!!.showPopup(binding!!.quranViewpager) }
+            binding.quranViewpager.post { ayaAudioPopup!!.showPopup(binding.quranViewpager) }
             if (isAudioPlay) {
                 ayaAudioPopup!!.setPlayState()
             }
@@ -229,15 +231,15 @@ class MushafFragment : Fragment(), MushafView, QuranFooterCallbacks, Translation
     // hide quran seekbar in landscape mode
     private fun checkOrientationType() {
         if (isLandscape(requireActivity())) {
-            binding!!.quranSeekbar.visibility = View.GONE
+            binding.quranSeekbar.visibility = View.GONE
         }
     }
 
     // observe on seek bar changes from user to show its progress for page number and sura name
     private fun observeOnQuranSeekbarChange() {
-        seekbarPageHandler = Handler()
-        seekbarPageRunnable = Runnable { binding!!.pageSeekTv.visibility = View.GONE }
-        binding!!.quranSeekbar.setOnSeekBarChangeListener(object : OnSeekBarChangeListener {
+        seekbarPageHandler = Handler(Looper.getMainLooper())
+        seekbarPageRunnable = Runnable { _binding?.pageSeekTv?.visibility = View.GONE }
+        binding.quranSeekbar.setOnSeekBarChangeListener(object : OnSeekBarChangeListener {
             override fun onStartTrackingTouch(seekBar: SeekBar) {
                 seekbarPageHandler!!.removeCallbacks(seekbarPageRunnable!!)
             }
@@ -249,7 +251,7 @@ class MushafFragment : Fragment(), MushafView, QuranFooterCallbacks, Translation
             }
 
             override fun onStopTrackingTouch(seekBar: SeekBar) {
-                binding!!.quranViewpager.currentItem =
+                binding.quranViewpager.currentItem =
                     Constants.Quran.NUM_OF_PAGES - seekBar.progress
                 seekbarPageHandler!!.postDelayed(seekbarPageRunnable!!, 1000)
             }
@@ -262,7 +264,7 @@ class MushafFragment : Fragment(), MushafView, QuranFooterCallbacks, Translation
         if (progress1 == 0) progress1 = 1
         var surahsInPage = ""
         val progressStr = formatNumber(progress1)
-        binding!!.pageSeekTv.visibility = View.VISIBLE
+        binding.pageSeekTv.visibility = View.VISIBLE
         if (pageSuras != null) {
             val numOfSurasInPage = pageSuras!![progress1].size
             for (i in 0 until numOfSurasInPage) {
@@ -272,7 +274,7 @@ class MushafFragment : Fragment(), MushafView, QuranFooterCallbacks, Translation
                 }
             }
         }
-        binding!!.pageSeekTv.text = """
+        binding.pageSeekTv.text = """
              $surahsInPage
              $progressStr
              """.trimIndent()
@@ -295,7 +297,7 @@ class MushafFragment : Fragment(), MushafView, QuranFooterCallbacks, Translation
 
             // Showcase to notify the user about long clicking ayas in screen
             val ayaShowCaseView: FancyShowCaseView = FancyShowCaseView.Builder(requireActivity())
-                .focusOn(binding!!.quranViewpager)
+                .focusOn(binding.quranViewpager)
                 .title(getString(R.string.showcase_title_aya_longclick))
                 .focusCircleRadiusFactor(0.4)
                 .fitSystemWindows(true)
@@ -327,7 +329,7 @@ class MushafFragment : Fragment(), MushafView, QuranFooterCallbacks, Translation
     override fun onDestroyView() {
         presenter!!.onDetach()
         super.onDestroyView()
-        binding = null
+        _binding = null
         if (AppPreferencesManager.getScreenReadingBacklightSetting(requireContext())) {
             // re-enable the screen timeout
             keepScreenOn(requireActivity(), false)
@@ -336,7 +338,7 @@ class MushafFragment : Fragment(), MushafView, QuranFooterCallbacks, Translation
     }
 
     private fun listenViewPagerSwipe() {
-        binding!!.quranViewpager.addOnPageChangeListener(object : ViewPager.OnPageChangeListener {
+        binding.quranViewpager.addOnPageChangeListener(object : ViewPager.OnPageChangeListener {
             override fun onPageScrolled(
                 position: Int,
                 positionOffset: Float,
@@ -393,9 +395,9 @@ class MushafFragment : Fragment(), MushafView, QuranFooterCallbacks, Translation
 
     private fun setCurrentQuranPageFragment() {
         if (quranPageFragment == null) {
-            quranPageFragment = binding!!.quranViewpager.adapter?.instantiateItem(
-                binding!!.quranViewpager,
-                binding!!.quranViewpager.currentItem
+            quranPageFragment = binding.quranViewpager.adapter?.instantiateItem(
+                binding.quranViewpager,
+                binding.quranViewpager.currentItem
             ) as? QuranPageFragment
         }
     }
@@ -414,7 +416,7 @@ class MushafFragment : Fragment(), MushafView, QuranFooterCallbacks, Translation
     }
 
     private fun setSeekbarProgress(position: Int) {
-        binding!!.quranSeekbar.progress = Constants.Quran.NUM_OF_PAGES - position
+        binding.quranSeekbar.progress = Constants.Quran.NUM_OF_PAGES - position
     }
 
     private fun initFragments() {
@@ -423,9 +425,9 @@ class MushafFragment : Fragment(), MushafView, QuranFooterCallbacks, Translation
         recitationId = AppPreferencesManager.getRecitationSetting(requireContext())
         ayaAudioPopup = AyaAudioPopup(requireActivity(), this)
         bookName = getString(R.string.translation_muyassar)
-        binding!!.translationBottomSheet.translationSheetTv.movementMethod =
+        binding.translationBottomSheet.translationSheetTv.movementMethod =
             ScrollingMovementMethod()
-        sheetBehavior = BottomSheetBehavior.from(binding!!.translationBottomSheet.bottomSheet)
+        sheetBehavior = BottomSheetBehavior.from(binding.translationBottomSheet.bottomSheet)
         val fragmentManager = childFragmentManager
         footerbarFragment =
             fragmentManager.findFragmentById(R.id.footerbar_fragment) as MushafBottomBarFragment?
@@ -456,9 +458,9 @@ class MushafFragment : Fragment(), MushafView, QuranFooterCallbacks, Translation
             presenter!!.quranPageZoomScaleFactor,
             initAyaId
         )
-        binding!!.quranViewpager.adapter = pagerAdapter
+        binding.quranViewpager.adapter = pagerAdapter
         if (!isInstanceSaved) {
-            binding!!.quranViewpager.currentItem = quranPageIndex
+            binding.quranViewpager.currentItem = quranPageIndex
         }
         setSeekbarProgress(quranPageIndex)
         // handle bug in viewpager onSelectedPage callback not called when position is 0
@@ -488,10 +490,10 @@ class MushafFragment : Fragment(), MushafView, QuranFooterCallbacks, Translation
     override fun showLoading() {}
     override fun hideLoading() {}
     private fun toggleQuranBars() {
-        if (binding!!.barsGroup.visibility == View.VISIBLE) {
-            binding!!.barsGroup.visibility = View.GONE
+        if (binding.barsGroup.visibility == View.VISIBLE) {
+            binding.barsGroup.visibility = View.GONE
         } else {
-            binding!!.barsGroup.visibility = View.VISIBLE
+            binding.barsGroup.visibility = View.VISIBLE
         }
     }
 
@@ -517,11 +519,11 @@ class MushafFragment : Fragment(), MushafView, QuranFooterCallbacks, Translation
     }
 
     private fun attachListeners() {
-        binding!!.translationBottomSheet.closeBtn.setOnClickListener { v: View? -> onCloseTranslationDiaog() }
-        binding!!.translationBottomSheet.tvBookName.setOnClickListener { v: View? -> onBookNameClicked() }
-        binding!!.translationBottomSheet.moreBtn.setOnClickListener { v: View? -> onClickMore() }
-        binding!!.translationBottomSheet.nextIv.setOnClickListener { v: View? -> onGetNextAyaTafseer() }
-        binding!!.translationBottomSheet.prevIv.setOnClickListener { v: View? -> onClickPrevAya() }
+        binding.translationBottomSheet.closeBtn.setOnClickListener { onCloseTranslationDiaog() }
+        binding.translationBottomSheet.tvBookName.setOnClickListener { onBookNameClicked() }
+        binding.translationBottomSheet.moreBtn.setOnClickListener { onClickMore() }
+        binding.translationBottomSheet.nextIv.setOnClickListener { onGetNextAyaTafseer() }
+        binding.translationBottomSheet.prevIv.setOnClickListener { onClickPrevAya() }
     }
 
     private fun onCloseTranslationDiaog() {
@@ -534,12 +536,12 @@ class MushafFragment : Fragment(), MushafView, QuranFooterCallbacks, Translation
 
     fun openTranslationDialog(selectedAya: Aya) {
         dismissAudioPopup()
-        binding!!.translationBottomSheet.sheetProgreesBar.visibility = View.VISIBLE
+        binding.translationBottomSheet.sheetProgreesBar.visibility = View.VISIBLE
         // show default tafseer from locale db when tafseer lang is arabic
         if (currentTafseerId == null && currentTafseerLang == Constants.Language.ARABIC_CODE) {         // get aya tafseer from default book ("EL-Meyser")
             onGetAyaTafseer(selectedAya.tafseer)
-            binding!!.translationBottomSheet.nextIv.visibility = View.VISIBLE
-            binding!!.translationBottomSheet.prevIv.visibility = View.VISIBLE
+            binding.translationBottomSheet.nextIv.visibility = View.VISIBLE
+            binding.translationBottomSheet.prevIv.visibility = View.VISIBLE
         } else if (book == null) {
             // load translation book from TranslationDB if exist to get aya translation from it
             presenter!!.getCurrentTafseerBook(currentTafseerId)
@@ -553,30 +555,30 @@ class MushafFragment : Fragment(), MushafView, QuranFooterCallbacks, Translation
     }
 
     override fun onGetAyaTafseer(tafseer: String) {
-        binding!!.translationBottomSheet.sheetProgreesBar.visibility = View.GONE
-        binding!!.translationBottomSheet.translationSheetTv.scrollTo(0, 0)
+        binding.translationBottomSheet.sheetProgreesBar.visibility = View.GONE
+        binding.translationBottomSheet.translationSheetTv.scrollTo(0, 0)
         if (!isBottomSheetVisible) {
             sheetBehavior!!.peekHeight =
                 resources.getDimension(com.intuit.sdp.R.dimen._105sdp).toInt()
         }
-        binding!!.translationBottomSheet.translationSheetTv.text = tafseer
+        binding.translationBottomSheet.translationSheetTv.text = tafseer
     }
 
     // load translation book successfully from TranslationDB
     override fun onGetTafseerBook(book: TranslationBook) {
         bookDbName = book.databaseName
-        binding!!.translationBottomSheet.tvBookName.text = book.name
+        binding.translationBottomSheet.tvBookName.text = book.name
         presenter!!.getAyaTafseer(ayaId)
         this.book = book
         bookName = book.name
-        binding!!.translationBottomSheet.nextIv.visibility = View.VISIBLE
-        binding!!.translationBottomSheet.prevIv.visibility = View.VISIBLE
+        binding.translationBottomSheet.nextIv.visibility = View.VISIBLE
+        binding.translationBottomSheet.prevIv.visibility = View.VISIBLE
     }
 
     // selected translation book is not exist in TranslationDB
     override fun onNoBooksExist() {
         onGetAyaTafseer(getString(R.string.no_downloaded_books))
-        binding!!.translationBottomSheet.tvBookName.text = getString(R.string.choose_book)
+        binding.translationBottomSheet.tvBookName.text = getString(R.string.choose_book)
     }
 
     // get Suras for each page in quran to show when user use bottom seekbar
@@ -650,9 +652,9 @@ class MushafFragment : Fragment(), MushafView, QuranFooterCallbacks, Translation
     // open audio dailog actions for selected aya
     fun openAyaAudioDialog() {
         onCloseTranslationDiaog()
-        binding!!.barsGroup.visibility = View.GONE
+        binding.barsGroup.visibility = View.GONE
         if (!isAudioDialogOpen) {
-            binding!!.quranViewpager.post { ayaAudioPopup!!.showPopup(binding!!.quranViewpager) }
+            binding.quranViewpager.post { ayaAudioPopup!!.showPopup(binding.quranViewpager) }
             isAudioDialogOpen = true
         }
     }
@@ -811,14 +813,14 @@ class MushafFragment : Fragment(), MushafView, QuranFooterCallbacks, Translation
 
     override fun onStopRecording(filePath: String?) {
         presenter!!.saveRecorderPath(ayaId, filePath)
-        ayaAudioPopup!!.showPopup(binding!!.quranViewpager)
+        ayaAudioPopup!!.showPopup(binding.quranViewpager)
         ayaAudioPopup!!.setRecordState(true)
         ayaHasRecorder = true
         isAudioDialogOpen = true
     }
 
     override fun onClickDeleteRecorder() {
-        ayaAudioPopup!!.showPopup(binding!!.quranViewpager)
+        ayaAudioPopup!!.showPopup(binding.quranViewpager)
         isAudioDialogOpen = true
         ayaHasRecorder = false
         ayaAudioPopup!!.setRecordState(false)
@@ -829,7 +831,7 @@ class MushafFragment : Fragment(), MushafView, QuranFooterCallbacks, Translation
         isOriented = false
         isAudioPlay = false
         ayaAudioPopup!!.setPauseState()
-        binding!!.quranViewpager.setCurrentItem(page, true)
+        binding.quranViewpager.setCurrentItem(page, true)
     }
 
     // start audio of selected aya after it downloaded its sura audios
@@ -965,7 +967,7 @@ class MushafFragment : Fragment(), MushafView, QuranFooterCallbacks, Translation
     override fun onGetCurrentAyaFromNotification(aya: Aya) {
         initAyaFromNotification = true
         notificationCurrentAya = aya
-        binding!!.quranViewpager.currentItem = Constants.Quran.NUM_OF_PAGES - aya.page
+        binding.quranViewpager.currentItem = Constants.Quran.NUM_OF_PAGES - aya.page
     }
 
     private fun registerEventBus() {
