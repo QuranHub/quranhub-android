@@ -26,7 +26,7 @@ import app.quranhub.ui.common.interfaces.ToolbarActionsListener
 import app.quranhub.ui.mushaf.adapter.TafseerAdapter
 import app.quranhub.ui.mushaf.dialogs.OptionDialog
 import app.quranhub.ui.mushaf.dialogs.OptionDialog.Companion.getInstance
-import app.quranhub.ui.mushaf.dialogs.TranslationsDialogFragment.Companion.newInstance
+import app.quranhub.ui.mushaf.dialogs.TranslationsDialogFragment
 import app.quranhub.ui.mushaf.fragments.TranslationsDataFragment.TranslationSelectionListener
 import app.quranhub.ui.mushaf.model.TafseerModel
 import app.quranhub.ui.mushaf.model.TafseerModel.Companion.map
@@ -46,7 +46,7 @@ class TafseerFragment : Fragment(), OptionDialog.ItemClickListener, TranslationS
     private var ayaNumber = 0
     private var adapter: TafseerAdapter? = null
     private var viewModel: TafseerViewModel? = null
-    private var currentTafsserId: String? = null
+    private var currentTafseerId: String? = null
     private var currentTafseerLang: String? = null
     private var ayasTafseer: List<TafseerModel>? = null
 
@@ -67,7 +67,7 @@ class TafseerFragment : Fragment(), OptionDialog.ItemClickListener, TranslationS
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        argumentsData
+        readArgumentsData()
         savedInstanceState?.let { getPrevState(it) }
         initRecycler()
         bindViewModel()
@@ -105,7 +105,7 @@ class TafseerFragment : Fragment(), OptionDialog.ItemClickListener, TranslationS
 
     private fun bindViewModel() {
         viewModel = ViewModelProvider(this)[TafseerViewModel::class.java]
-        if (currentTafsserId != null || currentTafseerLang == "ar") {
+        if (currentTafseerId != null || currentTafseerLang == "ar") {
             tafseers
         } else {
             binding!!.progreesBar.visibility = View.GONE
@@ -155,7 +155,7 @@ class TafseerFragment : Fragment(), OptionDialog.ItemClickListener, TranslationS
     // get aya tafseer from default book ("EL-Meyser")
     private val tafseers: Unit
         get() {
-            if (currentTafsserId == null && currentTafseerLang == "ar") {         // get aya tafseer from default book ("EL-Meyser")
+            if (currentTafseerId == null && currentTafseerLang == "ar") {         // get aya tafseer from default book ("EL-Meyser")
                 viewModel!!.getSuraTafseers(suraNumber)
             } else {
                 viewModel!!.getSuraAyahs(suraNumber)
@@ -174,26 +174,25 @@ class TafseerFragment : Fragment(), OptionDialog.ItemClickListener, TranslationS
         })
     }
 
-    private val argumentsData: Unit
-        get() {
-            currentTafsserId = getQuranTranslationBook(requireActivity())
-            currentTafseerLang = getQuranTranslationLanguage(requireActivity())
-            if (arguments != null) {
-                suraName = requireArguments().getString(ARG_SURA_NAME)
-                suraNumber = requireArguments().getInt(ARG_SURA_NUMBER)
-                bookDbName = requireArguments().getString(ARG_BOOK_DB_NAME)
-                bookName = requireArguments().getString(ARG_BOOK_NAME)
-                ayaNumber = requireArguments().getInt("ARG_AYA_NUMBER")
-                binding!!.bookTv.text = bookName
-                binding!!.suraTv.text = suraName
-            }
-            val currentTranslationLanguageIndex = Constants.Language.CODES.indexOf(
-                getQuranTranslationLanguage(requireContext())
-            )
-            binding!!.langTv.text = getString(
-                Constants.Language.NAMES_STR_IDS[currentTranslationLanguageIndex]
-            )
+    private fun readArgumentsData() {
+        currentTafseerId = getQuranTranslationBook(requireActivity())
+        currentTafseerLang = getQuranTranslationLanguage(requireActivity())
+        if (arguments != null) {
+            suraName = requireArguments().getString(ARG_SURA_NAME)
+            suraNumber = requireArguments().getInt(ARG_SURA_NUMBER)
+            bookDbName = requireArguments().getString(ARG_BOOK_DB_NAME)
+            bookName = requireArguments().getString(ARG_BOOK_NAME)
+            ayaNumber = requireArguments().getInt("ARG_AYA_NUMBER")
+            binding!!.bookTv.text = bookName
+            binding!!.suraTv.text = suraName
         }
+        val currentTranslationLanguageIndex = Constants.Language.CODES.indexOf(
+            getQuranTranslationLanguage(requireContext())
+        )
+        binding!!.langTv.text = getString(
+            Constants.Language.NAMES_STR_IDS[currentTranslationLanguageIndex]
+        )
+    }
 
     private fun onOpenSuraFilter() {
         val optionsArr = resources.getStringArray(R.array.sura_name)
@@ -207,7 +206,7 @@ class TafseerFragment : Fragment(), OptionDialog.ItemClickListener, TranslationS
 
     private fun onOpenBooksFilter() {
         val transLang = getQuranTranslationLanguage(requireContext())
-        val translationsDialog = newInstance(
+        val translationsDialog = TranslationsDialogFragment.newInstance(
             transLang, this
         )
         translationsDialog.show(parentFragmentManager, "trans_book_dialog")
@@ -235,7 +234,7 @@ class TafseerFragment : Fragment(), OptionDialog.ItemClickListener, TranslationS
         bookDbName = translationBook.databaseName
         tafseers
         //viewModel.getSuraTafseers(translationBook.getDatabaseName(), suraNumber);
-        currentTafsserId = translationBook.id
+        currentTafseerId = translationBook.id
         binding!!.bookTv.text = translationBook.name
     }
 

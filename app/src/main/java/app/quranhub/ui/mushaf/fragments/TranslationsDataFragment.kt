@@ -13,7 +13,7 @@ import androidx.lifecycle.LiveData
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import app.quranhub.R
-import app.quranhub.data.local.db.UserDatabase.Companion.getInstance
+import app.quranhub.data.local.db.UserDatabase
 import app.quranhub.data.local.entity.TranslationBook
 import app.quranhub.data.local.prefs.AppPreferencesManager.getQuranTranslationBook
 import app.quranhub.data.local.prefs.AppPreferencesManager.persistBookDbName
@@ -102,7 +102,7 @@ class TranslationsDataFragment : Fragment(), Searchable, TranslationsAdapter.Ite
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        translationBooksLiveData = getInstance(requireContext())
+        translationBooksLiveData = UserDatabase.getInstance(requireContext())
             .translationBookDao
             .getByLanguage(languageCode)
         setupTranslationBooksLiveDataObserver()

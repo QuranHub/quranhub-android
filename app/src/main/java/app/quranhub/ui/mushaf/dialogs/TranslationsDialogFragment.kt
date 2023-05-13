@@ -31,7 +31,7 @@ class TranslationsDialogFragment : DialogFragment(), TranslationSelectionListene
         listener = if (targetFragment is TranslationSelectionListener) {
             targetFragment as TranslationSelectionListener?
         } else {
-            throw RuntimeException(
+            error(
                 "${targetFragment!!.javaClass.simpleName} must implement TranslationsDialogFragment#TranslationSelectionListener"
             )
         }

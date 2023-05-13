@@ -15,9 +15,9 @@ data class TranslationsResponse(var translations: List<TranslationData>?) {
         if (translations != null) {
             translationBooks = ArrayList()
             for (t in translations!!) {
-                if (languageCode == null || t.language.lowercase(Locale.getDefault()) == languageCode.lowercase(
-                        Locale.getDefault()
-                    )
+                if (
+                    languageCode == null ||
+                    t.language.lowercase(Locale.getDefault()) == languageCode.lowercase(Locale.getDefault())
                 ) {
                     val book = TranslationBook(
                         t.id,
