@@ -29,6 +29,8 @@ object QuranAudioDownloadUtils {
             sb.append("quran-audio-hafs-sudais")
         } else if (sheikhId == "alafasy" && recitationId == Constants.Recitation.HAFS_ID) {
             sb.append("quran-audio-hafs-alafasy")
+        } else if (sheikhId == "almuaiqly" && recitationId == Constants.Recitation.HAFS_ID) {
+            sb.append("quran-audio-hafs-almuaiqly")
         } else if (sheikhId == "yassin_aljazaery" && recitationId == Constants.Recitation.WARSH_ID) {
             sb.append("quran-audio-warsh-aljazaery")
         } else if (sheikhId == "ibrahim_aldosary" && recitationId == Constants.Recitation.WARSH_ID) {
