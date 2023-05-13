@@ -153,13 +153,16 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
         setZoomScale()
         setParentFragment()
         recitationId = AppPreferencesManager.getRecitationSetting(requireContext())
-        currentPageAyas
+        getCurrentPageAyas()
+
         binding.containerSv.viewTreeObserver.addOnGlobalLayoutListener(object :
             OnGlobalLayoutListener {
             override fun onGlobalLayout() {
-                if (binding.containerSv.viewTreeObserver != null) binding.containerSv.viewTreeObserver.removeOnGlobalLayoutListener(
-                    this
-                )
+                if (_binding == null) return
+
+                if (binding.containerSv.viewTreeObserver != null) {
+                    binding.containerSv.viewTreeObserver.removeOnGlobalLayoutListener(this)
+                }
 
                 // get quran iv container width and lineHeight
                 quranImageContainerWidth = binding.containerSv.width
@@ -180,7 +183,7 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
                 showQuranPage()
             }
         })
-        binding.pageIv.setOnClickListener { v: View? -> onQuranPageClick() }
+        binding.pageIv.setOnClickListener { onQuranPageClick() }
     }
 
     private fun setZoomScale() {
@@ -276,13 +279,12 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
 
     private fun getScaledX(x: Int) = x * imageScaleFactor
 
-    private val currentPageAyas: Unit
-        get() {
-            ayaShadowsViews = ArrayList()
-            presenter = QuranPagePresenterImp(activity)
-            presenter!!.onAttach(this)
-            presenter!!.getPageAyas(quranPageNum)
-        }
+    private fun getCurrentPageAyas() {
+        ayaShadowsViews = ArrayList()
+        presenter = QuranPagePresenterImp(activity)
+        presenter!!.onAttach(this)
+        presenter!!.getPageAyas(quranPageNum)
+    }
 
     private fun initBookmarkDialog() {
         bookmarkDialog = AddBookmarkDialog()
