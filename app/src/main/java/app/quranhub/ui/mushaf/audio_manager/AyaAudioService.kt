@@ -268,10 +268,12 @@ class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener 
     }
 
     private fun setAyaIdInfo() {
-        ayaIdInfoArrayList = ArrayList()
-        for (suraVersesNumber in suraVersesNumberArrayList!!) {
-            for (i in 1..suraVersesNumber.ayas) {
-                ayaIdInfoArrayList!!.add(AyaIdInfo(i, suraVersesNumber.id))
+        suraVersesNumberArrayList?.let {
+            ayaIdInfoArrayList = ArrayList()
+            for (suraVersesNumber in it) {
+                for (i in 1..suraVersesNumber.ayas) {
+                    ayaIdInfoArrayList!!.add(AyaIdInfo(i, suraVersesNumber.id))
+                }
             }
         }
     }
