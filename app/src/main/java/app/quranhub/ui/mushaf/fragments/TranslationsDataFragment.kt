@@ -9,7 +9,10 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.flowWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import app.quranhub.R
@@ -19,21 +22,19 @@ import app.quranhub.data.local.prefs.AppPreferencesManager.getQuranTranslationBo
 import app.quranhub.data.local.prefs.AppPreferencesManager.persistBookDbName
 import app.quranhub.data.local.prefs.AppPreferencesManager.persistBookName
 import app.quranhub.data.local.prefs.AppPreferencesManager.persistQuranTranslationBook
-import app.quranhub.data.remote.ApiClient.client
 import app.quranhub.data.remote.TranslationDownloader
 import app.quranhub.data.remote.TranslationDownloader.TranslationDownloadCallback
-import app.quranhub.data.remote.api.TranslationsApi
-import app.quranhub.data.remote.model.TranslationsResponse
+import app.quranhub.data.repository.TranslationsRepository
 import app.quranhub.databinding.FragmentTranslationsDataBinding
 import app.quranhub.ui.common.interfaces.Searchable
 import app.quranhub.ui.mushaf.adapter.TranslationsAdapter
 import app.quranhub.ui.mushaf.model.DisplayableTranslation
 import app.quranhub.util.FragmentUtils.isSafeFragment
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import pub.devrel.easypermissions.EasyPermissions
 import pub.devrel.easypermissions.EasyPermissions.PermissionCallbacks
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 
 /**
  * A simple [Fragment] subclass.
@@ -53,6 +54,8 @@ class TranslationsDataFragment : Fragment(), Searchable, TranslationsAdapter.Ite
     var remoteTranslationBooks: List<TranslationBook>? = null
     var translationBooksLiveData: LiveData<List<TranslationBook?>?>? = null
     var translationDownloaders: MutableList<TranslationDownloader>? = null
+
+    private val translationsRepository = TranslationsRepository()
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -114,47 +117,33 @@ class TranslationsDataFragment : Fragment(), Searchable, TranslationsAdapter.Ite
     }
 
     private fun fetchTranslationBooks() {
-        val translationsApi = client!!.create(
-            TranslationsApi::class.java
-        )
-        val translationsCall = translationsApi.allTranslations
-        translationsCall!!.enqueue(object : Callback<TranslationsResponse?> {
-            override fun onResponse(
-                call: Call<TranslationsResponse?>,
-                response: Response<TranslationsResponse?>
-            ) {
-                if (isSafeFragment(this@TranslationsDataFragment)) {
-                    val translationsResponse = response.body()
-                    if (translationsResponse != null) {
-                        remoteTranslationBooks =
-                            translationsResponse.getTranslationBooksForLanguage(languageCode)
-                        if (remoteTranslationBooks != null) {
-                            for (book in remoteTranslationBooks!!) {
-                                val d = DisplayableTranslation(book)
-                                if (!displayableTranslations!!.contains(d)) {
-                                    // only add if it's not there
-                                    displayableTranslations!!.add(d)
-                                }
-                            }
-                            binding!!.progressTranslation.visibility = View.GONE
-                            adapter!!.setTranslations(displayableTranslations)
-                        }
-                    }
-                }
-            }
+        viewLifecycleOwner.lifecycleScope.launch {
+            translationsRepository.getTranslationsForLanguage(languageCode!!)
+                .flowWithLifecycle(viewLifecycleOwner.lifecycle, Lifecycle.State.STARTED)
+                .catch {
+                    Log.e(TAG, "Error fetching translations", it)
 
-            override fun onFailure(call: Call<TranslationsResponse?>, t: Throwable) {
-                Log.d(TAG, "onFailure - cause:  " + t.message)
-                if (isSafeFragment(this@TranslationsDataFragment)) {
-                    //progressBar.setVisibility(View.GONE);
+                    binding!!.progressTranslation.visibility = View.GONE
+
                     Toast.makeText(
                         context,
                         getString(R.string.error_translations_web_service),
                         Toast.LENGTH_LONG
                     ).show()
                 }
-            }
-        })
+                .collectLatest {
+                    remoteTranslationBooks = it
+                    for (book in remoteTranslationBooks!!) {
+                        val d = DisplayableTranslation(book)
+                        if (!displayableTranslations!!.contains(d)) {
+                            // only add if it's not there
+                            displayableTranslations!!.add(d)
+                        }
+                    }
+                    binding!!.progressTranslation.visibility = View.GONE
+                    adapter!!.setTranslations(displayableTranslations)
+                }
+        }
     }
 
     private fun setupTranslationBooksLiveDataObserver() {

@@ -2,7 +2,6 @@ package app.quranhub.data.remote
 
 import android.content.Context
 import android.util.Log
-import app.quranhub.data.Constants
 import app.quranhub.data.local.db.UserDatabase
 import app.quranhub.data.local.entity.TranslationBook
 import app.quranhub.util.NetworkUtil
@@ -26,7 +25,7 @@ class TranslationDownloader(
 
     fun download() {
         // TODO refactor to use foreground service
-        val downloadUrl = Constants.API_BASE_URL + translationBook.fileDownloadPath
+        val downloadUrl = translationBook.fileDownloadPath
         val dbPath = appContext.getDatabasePath(translationBook.databaseName)
         Log.d(TAG, "download: downloadUrl = $downloadUrl , dbPath = $dbPath")
 
