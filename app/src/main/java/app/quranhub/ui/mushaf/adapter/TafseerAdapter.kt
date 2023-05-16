@@ -45,11 +45,10 @@ class TafseerAdapter(private val context: Context) :
         }
         holder.binding.numlinesTv.post {
             val lineCount = holder.binding.numlinesTv.lineCount
-            holder.binding.numlinesTv.visibility = View.GONE
-            if (lineCount < 5) {
-                holder.binding.numlinesTv.visibility = View.GONE
+            if (lineCount <= 4) {
+                holder.binding.moreTv.visibility = View.GONE
             } else {
-                holder.binding.numlinesTv.visibility = View.VISIBLE
+                holder.binding.moreTv.visibility = View.VISIBLE
             }
         }
         if (AppPreferencesManager.getAppLangSetting(context) != "ar" && AppPreferencesManager.getQuranTranslationLanguage(
