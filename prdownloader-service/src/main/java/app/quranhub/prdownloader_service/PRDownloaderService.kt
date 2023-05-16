@@ -118,7 +118,9 @@ abstract class PRDownloaderService : Service(), DownloadCallbacks {
     }
 
     @CallSuper
-    override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent == null) return START_STICKY
+
         if (!isInitialized) {
             throw RuntimeException(
                 "The service was not initialized. You must override" +
