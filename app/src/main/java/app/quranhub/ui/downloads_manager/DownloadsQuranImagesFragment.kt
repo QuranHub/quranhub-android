@@ -153,6 +153,8 @@ class DownloadsQuranImagesFragment : Fragment() {
     private fun onImageLoaded(pageNum: Int, isSuccessful: Boolean = true) {
         Log.d("TAG", "onImageLoaded: $pageNum , success: $isSuccessful")
 
+        if (_binding == null) return
+
         totalPagesDownloaded += 1
 
         binding.tvDownloadProgress.text = String.format(
