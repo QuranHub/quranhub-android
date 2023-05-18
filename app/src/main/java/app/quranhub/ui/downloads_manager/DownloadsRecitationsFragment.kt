@@ -8,12 +8,15 @@ import app.quranhub.data.local.db.UserDatabase
 import app.quranhub.ui.downloads_manager.dialogs.DeleteConfirmationDialogFragment.Companion.newInstance
 import app.quranhub.ui.downloads_manager.dialogs.DeleteConfirmationDialogFragment.DeleteConfirmationCallbacks
 import app.quranhub.ui.downloads_manager.model.DisplayableDownload
+import app.quranhub.util.FragmentUtils
 import app.quranhub.util.QuranAudioDeleteUtils.DeleteFinishListener
 import app.quranhub.util.QuranAudioDeleteUtils.deleteRecitationAudio
 
 class DownloadsRecitationsFragment : BaseDownloadsFragment(), DeleteConfirmationCallbacks {
 
     override fun provideDisplayableDownloads(): List<DisplayableDownload> {
+
+        if (!FragmentUtils.isSafeFragment(this)) return emptyList()
 
         val downloads: MutableList<DisplayableDownload> = ArrayList()
 
