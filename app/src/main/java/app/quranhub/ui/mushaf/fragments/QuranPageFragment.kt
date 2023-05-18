@@ -160,7 +160,7 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
             override fun onGlobalLayout() {
                 if (_binding == null) return
 
-                if (binding.containerSv.viewTreeObserver != null) {
+                if (_binding?.containerSv?.viewTreeObserver != null) {
                     binding.containerSv.viewTreeObserver.removeOnGlobalLayoutListener(this)
                 }
 
@@ -225,8 +225,8 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
                 }
 
                 // scroll to selected aya after landscape orientation
-                binding.containerSv.post {
-                    binding.containerSv.scrollTo(0, (currentAyaY * imageScaleFactor).toInt())
+                _binding?.containerSv?.post {
+                    _binding?.containerSv?.scrollTo(0, (currentAyaY * imageScaleFactor).toInt())
                 }
             }
             noteDialogOpen = savedInstanceState.getBoolean("open_dialog")
@@ -292,6 +292,7 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
 
     @SuppressLint("ClickableViewAccessibility")
     private fun initOnLongClickQuranPage() {
+        if (_binding == null) return
         binding.pageIv.setOnTouchListener { _: View?, event: MotionEvent ->
             longClickXLocation = event.x.toInt()
             longClickYLocation = event.y.toInt()
@@ -410,6 +411,7 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
         }
 
         // make width fit in mobile screen and lineHeight scale
+        if (_binding == null) return
         val params = binding.pageIv.layoutParams as RelativeLayout.LayoutParams
         if (quranPageOriginalWidth != quranImageContainerWidth) {
             imageScaleFactor =
