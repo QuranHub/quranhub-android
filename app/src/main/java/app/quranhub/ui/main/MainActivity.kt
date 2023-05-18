@@ -31,6 +31,7 @@ import app.quranhub.util.DrawerUtils.Mus7afDrawerItemClickListener
 import app.quranhub.util.DrawerUtils.initDrawer
 import app.quranhub.util.SharedPrefsUtils.getBoolean
 import app.quranhub.util.SharedPrefsUtils.getInteger
+import app.quranhub.util.addCrashlyticsCustomKeys
 import com.mikepenz.materialdrawer.Drawer
 import com.mikepenz.materialdrawer.Drawer.OnDrawerListener
 
@@ -45,6 +46,8 @@ class MainActivity : BaseActivity(), ToolbarActionsListener, Mus7afDrawerItemCli
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(R.style.AppTheme_NoActionBar)
         super.onCreate(savedInstanceState)
+
+        addCrashlyticsCustomKeys(this)
 
         // Redirect to `FirstTimeWizardActivity` if not already done
         if (!AppPreferencesManager.isFirstTimeWizardDone(this)) {
