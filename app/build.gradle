@@ -99,7 +99,7 @@ dependencies {
     implementation 'com.thebluealliance:spectrum:0.7.1'
     implementation 'androidx.viewpager:viewpager:1.0.0'
     implementation 'com.intuit.sdp:sdp-android:1.1.1'
-    implementation 'com.intuit.ssp:ssp-android:1.1.0'
+    implementation 'com.intuit.ssp:ssp-android:1.1.1'
     implementation 'me.toptas.fancyshowcase:fancyshowcaseview:1.1.5'
     implementation 'br.com.simplepass:loading-button-android:2.2.0'
 
