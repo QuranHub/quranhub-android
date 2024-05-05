@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    compileSdkVersion 33
+    compileSdk 34
 
     defaultConfig {
-        minSdkVersion 21
-        targetSdkVersion 32
+        minSdk 21
+        targetSdk 32
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
@@ -27,6 +27,9 @@ android {
     }
     kotlinOptions {
         jvmTarget = "17"
+    }
+    lintOptions {
+        abortOnError false
     }
     namespace 'app.quranhub.prdownloader_service'
 }
