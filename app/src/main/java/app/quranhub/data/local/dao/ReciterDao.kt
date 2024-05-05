@@ -24,14 +24,14 @@ interface ReciterDao {
     fun getById(reciterId: String?): Reciter?
 
     @Insert
-    fun insert(reciter: Reciter?)
+    fun insert(reciter: Reciter)
 
     @Insert
-    fun insertAll(reciters: Array<Reciter?>?)
+    fun insertAll(reciters: Array<Reciter>)
 
     @Delete
-    fun delete(reciter: Reciter?)
+    fun delete(reciter: Reciter)
 
     @Delete
-    fun deleteAll(reciters: Array<Reciter?>?)
+    fun deleteAll(reciters: Array<Reciter>)
 }

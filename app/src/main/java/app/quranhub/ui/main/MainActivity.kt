@@ -140,7 +140,7 @@ class MainActivity : BaseActivity(), ToolbarActionsListener, Mus7afDrawerItemCli
 
     // handle new intent get in stack single-top when click on audio notification
     @SuppressLint("MissingSuperCall")
-    override fun onNewIntent(intent: Intent?) {
+    override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
 
         if (getIntent().extras != null && getIntent().extras!!.getBoolean(AyaAudioService.FROM_NOTIFICATION)

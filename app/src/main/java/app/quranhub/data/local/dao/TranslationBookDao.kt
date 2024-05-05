@@ -24,11 +24,11 @@ interface TranslationBookDao {
     fun findById(id: String?): Single<TranslationBook?>?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insert(translationBook: TranslationBook?)
+    fun insert(translationBook: TranslationBook)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insertAll(vararg translationBooks: TranslationBook?)
+    fun insertAll(vararg translationBooks: TranslationBook)
 
     @Delete
-    fun delete(translationBook: TranslationBook?)
+    fun delete(translationBook: TranslationBook)
 }

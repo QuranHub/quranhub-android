@@ -18,11 +18,11 @@ interface RecitationDao {
     fun getById(recitationId: Int): Recitation?
 
     @Insert
-    fun insert(recitation: Recitation?)
+    fun insert(recitation: Recitation)
 
     @Insert
-    fun insertAll(recitations: Array<Recitation?>?)
+    fun insertAll(recitations: Array<Recitation>)
 
     @Delete
-    fun delete(recitation: Recitation?)
+    fun delete(recitation: Recitation)
 }

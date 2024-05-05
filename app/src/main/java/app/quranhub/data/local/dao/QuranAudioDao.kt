@@ -32,16 +32,16 @@ interface QuranAudioDao {
     fun getForSura(recitationId: Int, reciterId: String?, suraId: Int): List<QuranAudio?>
 
     @Insert
-    fun insert(quranAudio: QuranAudio?)
+    fun insert(quranAudio: QuranAudio)
 
     @Insert
-    fun insertAll(quranAudios: Array<QuranAudio?>?)
+    fun insertAll(quranAudios: Array<QuranAudio>)
 
     @Delete
-    fun delete(quranAudio: QuranAudio?)
+    fun delete(quranAudio: QuranAudio)
 
     @Delete
-    fun deleteAll(quranAudios: Array<QuranAudio?>?)
+    fun deleteAll(quranAudios: Array<QuranAudio>)
 
     @Query(
         "DELETE FROM QuranAudio WHERE (sheikh_recitation_id = " +
@@ -64,7 +64,7 @@ interface QuranAudioDao {
     fun getAyaRecorderPath(ayaId: Int, recitation: Int): Single<String?>?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insertAyaRecorder(recorder: AyaRecorder?)
+    fun insertAyaRecorder(recorder: AyaRecorder)
 
     @Query("delete from AyaRecorder where ayaId=:ayaId and recitation=:recitation")
     fun deleteAyaVoiceRecorder(ayaId: Int, recitation: Int)

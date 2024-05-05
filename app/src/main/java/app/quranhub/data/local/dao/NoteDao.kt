@@ -13,7 +13,7 @@ interface NoteDao {
     fun getAllNotes(): Single<List<Note?>?>?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insertNote(note: Note?)
+    fun insertNote(note: Note)
 
     @Query("select * from note where ayaId=:ayaId")
     fun getAyaNote(ayaId: Int): Single<Note?>?

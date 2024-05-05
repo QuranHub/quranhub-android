@@ -41,13 +41,13 @@ interface ReciterRecitationDao {
     fun getSurasIdsForReciterInRecitation(recitationId: Int, reciterId: String?): List<Int>
 
     @Insert
-    fun insert(reciterRecitation: ReciterRecitation?)
+    fun insert(reciterRecitation: ReciterRecitation)
 
     @Insert
-    fun insertAll(reciterRecitations: Array<ReciterRecitation?>?)
+    fun insertAll(reciterRecitations: Array<ReciterRecitation>)
 
     @Delete
-    fun delete(reciterRecitation: ReciterRecitation?)
+    fun delete(reciterRecitation: ReciterRecitation)
 
     @Query("DELETE FROM ReciterRecitation WHERE recitation_id=:recitationId AND reciter_id=:reciterId")
     fun delete(recitationId: Int, reciterId: String?)

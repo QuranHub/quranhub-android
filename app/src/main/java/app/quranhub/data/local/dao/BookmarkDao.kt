@@ -13,10 +13,10 @@ import io.reactivex.Single
 @Dao
 interface BookmarkDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    fun insertBookmarkType(bookmarkType: BookmarkType?)
+    fun insertBookmarkType(bookmarkType: BookmarkType)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insertAyaBookmark(ayaBookmark: AyaBookmark?)
+    fun insertAyaBookmark(ayaBookmark: AyaBookmark)
 
     @Query("select * from AyaBookmark")
     fun getAllBookmarks(): Single<List<AyaBookmark?>?>?

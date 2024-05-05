@@ -16,7 +16,7 @@ interface BookDao {
     fun updateDownlodedTranslation(id: Int, type: Int, downloadId: Long)
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    fun insertDownloadedTranslation(models: List<Book?>?)
+    fun insertDownloadedTranslation(models: List<Book>)
 
     @Query("UPDATE Book SET downloadStatus=:status where downloadId=:downloadId")
     fun updateFinishedDownload(downloadId: Long, status: Int)

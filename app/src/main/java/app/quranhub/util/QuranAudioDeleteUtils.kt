@@ -29,7 +29,9 @@ object QuranAudioDeleteUtils {
                 val userDatabase = UserDatabase.getInstance(context)
                 val reciters = userDatabase.reciterRecitationDao
                     .getRecitersForRecitation(recitationId)
-                userDatabase.reciterDao.deleteAll(reciters?.toTypedArray())
+                reciters?.filterNotNull()?.let {
+                    userDatabase.reciterDao.deleteAll(it.toTypedArray())
+                }
 
                 // 3. delete reciter preference if same recitation
                 val recitationIdPreference = AppPreferencesManager.getRecitationSetting(context)
