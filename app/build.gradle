@@ -65,7 +65,7 @@ android {
             enableSplit = false
         }
     }
-    lint {
+    lintOptions {
         abortOnError false
     }
     namespace 'app.quranhub'
