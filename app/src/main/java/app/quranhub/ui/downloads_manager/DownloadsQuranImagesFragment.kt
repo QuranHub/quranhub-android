@@ -130,16 +130,20 @@ class DownloadsQuranImagesFragment : Fragment() {
                 .load(imageUrl)
                 .addListener(object : RequestListener<Drawable> {
                     override fun onLoadFailed(
-                        e: GlideException?, model: Any?,
-                        target: Target<Drawable>?, isFirstResource: Boolean
+                        e: GlideException?,
+                        model: Any?,
+                        target: Target<Drawable>,
+                        isFirstResource: Boolean
                     ): Boolean {
                         onImageLoaded(i, false)
                         return false
                     }
 
                     override fun onResourceReady(
-                        resource: Drawable?, model: Any?,
-                        target: Target<Drawable>?, dataSource: DataSource?,
+                        resource: Drawable,
+                        model: Any,
+                        target: Target<Drawable>?,
+                        dataSource: DataSource,
                         isFirstResource: Boolean
                     ): Boolean {
                         onImageLoaded(i)
