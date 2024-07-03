@@ -1,14 +1,14 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
 buildscript {
-    val kotlin_version by extra("2.0.0")
+    val kotlinVersion by extra("2.0.0")
     repositories {
         google()
         mavenCentral()
     }
     dependencies {
         classpath("com.android.tools.build:gradle:8.5.0")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
         classpath("com.google.gms:google-services:4.4.2")
         classpath("com.google.firebase:firebase-crashlytics-gradle:3.0.2")
         classpath("com.google.firebase:perf-plugin:1.4.2")
