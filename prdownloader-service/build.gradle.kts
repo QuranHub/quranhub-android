@@ -1,10 +1,11 @@
 plugins {
     id("com.android.library")
-    id("kotlin-android")
-    id("kotlin-parcelize")
+    id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.parcelize")
 }
 
 android {
+    namespace = "app.quranhub.prdownloader_service"
     compileSdk = 34
 
     defaultConfig {
@@ -34,7 +35,6 @@ android {
     lint {
         abortOnError = false
     }
-    namespace = "app.quranhub.prdownloader_service"
 }
 
 dependencies {

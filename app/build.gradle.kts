@@ -1,14 +1,15 @@
 plugins {
     id("com.android.application")
-    id("kotlin-android")
-    id("kotlin-parcelize")
-    id("kotlin-kapt")
+    id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.parcelize")
+    id("org.jetbrains.kotlin.kapt")
     id("com.google.gms.google-services")
     id("com.google.firebase.crashlytics")
     id("com.google.firebase.firebase-perf")
 }
 
 android {
+    namespace = "app.quranhub"
     compileSdk = 34
 
     defaultConfig {
@@ -29,7 +30,7 @@ android {
     }
 
     buildTypes {
-        getByName("release") {
+        release {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -38,7 +39,7 @@ android {
 
             manifestPlaceholders["enableCrashlytics"] = true
         }
-        getByName("debug") {
+        debug {
             isMinifyEnabled = false
 
             manifestPlaceholders["enableCrashlytics"] = false
@@ -67,7 +68,6 @@ android {
     lint {
         abortOnError = false
     }
-    namespace = "app.quranhub"
 }
 
 dependencies {
