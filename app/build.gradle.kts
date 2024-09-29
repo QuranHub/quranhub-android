@@ -86,7 +86,7 @@ dependencies {
     // UI-related
     implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
-    implementation("com.github.mikepenz:MaterialDrawer:v6.1.3")
+    implementation("com.github.mikepenz:MaterialDrawer:6.1.2")
     implementation("androidx.cardview:cardview:1.0.0")
     implementation("androidx.recyclerview:recyclerview:1.3.2")
     implementation("androidx.legacy:legacy-support-v4:1.0.0")
