@@ -92,7 +92,7 @@ dependencies {
     implementation("androidx.legacy:legacy-support-v4:1.0.0")
     implementation("com.github.barteksc:AndroidPdfViewerV2:4050f24cd9")  // TODO: Update to latest version
     implementation("at.blogc:expandabletextview:1.0.5")
-    implementation("com.github.thoughtbot.expandable-recycler-view:expandablerecyclerview:v1.4")
+    implementation("com.github.thoughtbot.expandable-recycler-view:expandablerecyclerview:1.4")
     implementation("com.simplecityapps:recyclerview-fastscroll:2.0.1")
     implementation("com.thebluealliance:spectrum:0.7.1")
     implementation("androidx.viewpager:viewpager:1.0.0")
