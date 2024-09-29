@@ -49,7 +49,7 @@
             app:tabGravity="fill"
             app:tabIndicatorColor="@android:color/transparent"
             app:tabMode="fixed"
-            app:tabSelectedTextColor="@color/primary"
+            app:tabSelectedTextColor="@color/colorPrimary"
             app:tabTextAppearance="@style/CustomTabText"
             app:tabTextColor="@android:color/white">
 

@@ -71,7 +71,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/_12sdp"
                 android:text="@string/add_custom_bookmark"
-                android:textColor="@color/primary"
+                android:textColor="@color/colorPrimary"
                 android:textSize="@dimen/text_14"
                 android:textStyle="bold"
                 app:layout_constraintBottom_toBottomOf="@+id/add_type_iv"

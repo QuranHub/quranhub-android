@@ -18,7 +18,7 @@
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="@dimen/_12sdp"
         android:gravity="center_vertical"
-        android:textColor="@color/primary"
+        android:textColor="@color/colorPrimary"
         android:textSize="@dimen/text_14"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent"

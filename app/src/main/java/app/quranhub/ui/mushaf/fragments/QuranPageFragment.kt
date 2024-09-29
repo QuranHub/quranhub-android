@@ -39,10 +39,10 @@ import app.quranhub.ui.mushaf.presenter.QuranPagePresenter
 import app.quranhub.ui.mushaf.presenter.QuranPagePresenterImp
 import app.quranhub.ui.mushaf.view.QuranPageView
 import app.quranhub.util.FragmentUtils.isSafeFragment
-import app.quranhub.util.GlideApp
 import app.quranhub.util.ImageUtil
 import app.quranhub.util.IntentUtils
 import app.quranhub.util.ScreenUtils
+import com.bumptech.glide.Glide
 import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.engine.GlideException
@@ -654,7 +654,7 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
     }
 
     private fun showQuranPage() {
-        GlideApp.with(requireActivity()).load(quranImageUrl)
+        Glide.with(requireActivity()).load(quranImageUrl)
             .diskCacheStrategy(DiskCacheStrategy.ALL).listener(object : RequestListener<Drawable?> {
                 override fun onLoadFailed(
                     e: GlideException?,
