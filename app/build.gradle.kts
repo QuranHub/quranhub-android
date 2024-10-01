@@ -17,7 +17,7 @@ android {
     defaultConfig {
         applicationId = "app.quranhub"
         minSdk = 21
-        targetSdk = 34
+        targetSdk = 32
         versionCode = 11
         versionName = "1.3.1"
 

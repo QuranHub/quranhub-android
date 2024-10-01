@@ -14,7 +14,6 @@ import app.quranhub.ui.downloads_manager.DownloadsManagerActivity
 import app.quranhub.ui.first_wizard.FirstTimeWizardActivity
 import app.quranhub.ui.mushaf.audio_manager.AyaAudioService
 import app.quranhub.ui.mushaf.fragments.BookmarksFragment
-import app.quranhub.ui.mushaf.fragments.BooksLibraryFragment
 import app.quranhub.ui.mushaf.fragments.MushafFragment
 import app.quranhub.ui.mushaf.fragments.MyNotesFragment
 import app.quranhub.ui.mushaf.fragments.QuranTopicsFragment
@@ -22,6 +21,7 @@ import app.quranhub.ui.mushaf.fragments.SearchFragment
 import app.quranhub.ui.mushaf.fragments.SuraGuz2IndexFragment
 import app.quranhub.ui.mushaf.fragments.TafseerFragment
 import app.quranhub.ui.mushaf.fragments.TopicAyasFragment
+import app.quranhub.ui.mushaf.fragments.TranslationsLibraryFragment
 import app.quranhub.ui.mushaf.listener.QuranNavigationCallbacks
 import app.quranhub.ui.mushaf.model.TopicCategory
 import app.quranhub.ui.settings.SettingsActivity
@@ -220,7 +220,7 @@ class MainActivity : BaseActivity(), ToolbarActionsListener, Mus7afDrawerItemCli
 
     override fun openLibrary() {
         checkPrevFragment()
-        val fragment = BooksLibraryFragment()
+        val fragment = TranslationsLibraryFragment()
         val transaction = supportFragmentManager.beginTransaction()
         transaction.replace(R.id.container, fragment)
         transaction.commit()

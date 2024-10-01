@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ui.mushaf.fragments.BooksLibraryFragment">
+    tools:context=".ui.mushaf.fragments.TranslationsLibraryFragment">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/toolbar_layout"
@@ -44,17 +44,6 @@
             app:layout_constraintBottom_toBottomOf="@id/hamburger_iv"
             app:layout_constraintStart_toEndOf="@+id/hamburger_iv"
             app:layout_constraintTop_toTopOf="@+id/hamburger_iv" />
-
-        <ImageButton
-            android:id="@+id/edit_btn"
-            android:layout_width="@dimen/app_bar_icon_dimen"
-            android:layout_height="@dimen/app_bar_icon_dimen"
-            android:layout_marginEnd="@dimen/dimen_16"
-            android:background="?selectableItemBackgroundBorderless"
-            android:src="@drawable/edit_gold_ic"
-            android:visibility="invisible"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@id/guideline_top" />
 
         <EditText
             android:id="@+id/et_search"

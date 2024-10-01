@@ -9,17 +9,20 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import app.quranhub.R
-import app.quranhub.databinding.FragmentBooksLibraryBinding
+import app.quranhub.data.local.entity.TranslationBook
+import app.quranhub.data.local.prefs.AppPreferencesManager.getQuranTranslationLanguage
+import app.quranhub.databinding.FragmentTranslationsLibraryBinding
 import app.quranhub.ui.common.interfaces.ToolbarActionsListener
+import app.quranhub.ui.main.MainActivity
+import app.quranhub.ui.mushaf.fragments.TranslationsDataFragment.TranslationSelectionListener
 
-class BooksLibraryFragment : Fragment() {
+class TranslationsLibraryFragment : Fragment(), TranslationSelectionListener {
 
-    private var libraryFragment: LibraryFragment? = null
+    private var translationsDataFragment: TranslationsDataFragment? = null
     private var inputSearch: String? = ""
     private var navDrawerListener: ToolbarActionsListener? = null
-    private var isEditable = false
 
-    private var binding: FragmentBooksLibraryBinding? = null
+    private var binding: FragmentTranslationsLibraryBinding? = null
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -32,7 +35,7 @@ class BooksLibraryFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        binding = FragmentBooksLibraryBinding.inflate(inflater, container, false)
+        binding = FragmentTranslationsLibraryBinding.inflate(inflater, container, false)
         return binding!!.root
     }
 
@@ -46,23 +49,17 @@ class BooksLibraryFragment : Fragment() {
     private fun attachListeners() {
         observeOnInputSearch()
         binding!!.hamburgerIv.setOnClickListener { v: View? -> onNavHamburgerClick() }
-        binding!!.editBtn.setOnClickListener { v: View? -> onEditClick() }
     }
 
     private fun restoreSavedInstanceState(savedInstanceState: Bundle?) {
         if (savedInstanceState != null) {
             inputSearch = savedInstanceState.getString(STATE_INPUT_SEARCH)
-            isEditable = savedInstanceState.getBoolean(STATE_EDITABLE)
-            if (isEditable) {
-                binding!!.editBtn.setImageResource(R.drawable.check_gold_ic)
-            }
         }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putString(STATE_INPUT_SEARCH, inputSearch)
-        outState.putBoolean(STATE_EDITABLE, isEditable)
     }
 
     private fun observeOnInputSearch() {
@@ -70,7 +67,7 @@ class BooksLibraryFragment : Fragment() {
             override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
                 inputSearch = s.toString()
-                libraryFragment!!.search(inputSearch)
+                translationsDataFragment?.search(inputSearch)
             }
 
             override fun afterTextChanged(s: Editable) {}
@@ -80,13 +77,15 @@ class BooksLibraryFragment : Fragment() {
     private fun addFragment() {
         binding!!.etSearch.text.clear()
         inputSearch = ""
-        binding!!.editBtn.visibility = View.INVISIBLE
-        libraryFragment =
-            childFragmentManager.findFragmentByTag(FRAGMENT_LIBRARY) as LibraryFragment?
-        if (libraryFragment == null) {
-            libraryFragment = LibraryFragment()
+
+        translationsDataFragment =
+            childFragmentManager.findFragmentByTag(FRAGMENT_TRANSLATION_DATA) as TranslationsDataFragment?
+        if (translationsDataFragment == null) {
+            translationsDataFragment = TranslationsDataFragment.newInstance(
+                getQuranTranslationLanguage(requireContext())
+            )
             childFragmentManager.beginTransaction()
-                .replace(R.id.data_container, libraryFragment!!, FRAGMENT_LIBRARY)
+                .replace(R.id.data_container, translationsDataFragment!!, FRAGMENT_TRANSLATION_DATA)
                 .commit()
         }
     }
@@ -95,13 +94,9 @@ class BooksLibraryFragment : Fragment() {
         navDrawerListener!!.onNavDrawerClick()
     }
 
-    private fun onEditClick() {
-        if (isEditable) {
-            binding!!.editBtn.setImageResource(R.drawable.edit_gold_ic)
-        } else {
-            binding!!.editBtn.setImageResource(R.drawable.check_gold_ic)
-        }
-        isEditable = !isEditable
+    override fun onTranslationSelected(translationBook: TranslationBook) {
+        val activity = activity as MainActivity?
+        activity?.openTafseerScreen(translationBook.databaseName, translationBook.name)
     }
 
     override fun onDestroyView() {
@@ -110,8 +105,7 @@ class BooksLibraryFragment : Fragment() {
     }
 
     companion object {
-        private const val FRAGMENT_LIBRARY = "FRAGMENT_LIBRARY"
+        private const val FRAGMENT_TRANSLATION_DATA = "FRAGMENT_TRANSLATION_DATA"
         private const val STATE_INPUT_SEARCH = "STATE_INPUT_SEARCH"
-        private const val STATE_EDITABLE = "STATE_EDITABLE"
     }
 }
