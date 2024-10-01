@@ -24,8 +24,8 @@ public class QuranPagePresenterImp extends BasePresenterImp<QuranPageView> imple
 
     private static final String TAG = QuranPagePresenterImp.class.getSimpleName();
 
-    private Context context;
-    private QuranPageInteractor interactor;
+    private final Context context;
+    private final QuranPageInteractor interactor;
 
     public QuranPagePresenterImp(Context context) {
         this.interactor = new QuranPageInteractorImp(context, this);

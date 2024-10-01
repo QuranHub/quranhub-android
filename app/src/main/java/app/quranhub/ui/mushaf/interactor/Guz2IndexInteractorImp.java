@@ -13,9 +13,9 @@ import app.quranhub.ui.mushaf.model.HizbQuarterDataModel;
 public class Guz2IndexInteractorImp implements Guz2IndexInteractor {
 
     @NonNull
-    private Context context;
+    private final Context context;
     @NonNull
-    private MushafDatabase mushafDatabase;
+    private final MushafDatabase mushafDatabase;
 
 
     public Guz2IndexInteractorImp(@NonNull Context appConext) {

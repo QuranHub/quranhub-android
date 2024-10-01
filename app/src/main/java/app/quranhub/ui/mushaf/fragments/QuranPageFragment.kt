@@ -682,7 +682,7 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
                         binding.loadFailedContainer.root.visibility = View.GONE
                         isPageShown = true
                         if (nightMode) {
-                            resource?.let { ImageUtil.invertDrawable(it) }
+                            resource.let { ImageUtil.invertDrawable(it) }
                         }
 
                         // auto play aya audio if audio player is playing  after image is loaded

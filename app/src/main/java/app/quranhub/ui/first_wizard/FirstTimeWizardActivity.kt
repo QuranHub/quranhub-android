@@ -274,7 +274,7 @@ class FirstTimeWizardActivity : BaseActivity(), OnOptionClickListener {
         }
     }
 
-    private inner class WizardStepPagerAdapter internal constructor(fm: FragmentManager?) :
+    private inner class WizardStepPagerAdapter(fm: FragmentManager?) :
         FragmentStatePagerAdapter(
             fm!!
         ) {

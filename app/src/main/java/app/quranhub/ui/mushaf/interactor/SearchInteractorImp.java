@@ -18,10 +18,10 @@ import io.reactivex.schedulers.Schedulers;
 
 public class SearchInteractorImp implements SearchInteractor {
 
-    private Context context;
+    private final Context context;
     @NonNull
-    private MushafDatabase mushafDatabase;
-    private SearchInteractor.TopicListener listener;
+    private final MushafDatabase mushafDatabase;
+    private final SearchInteractor.TopicListener listener;
 
     public SearchInteractorImp(@NonNull Context context, SearchInteractor.TopicListener listener) {
         this.context = context;

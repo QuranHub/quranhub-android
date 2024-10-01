@@ -20,10 +20,10 @@ import io.reactivex.schedulers.Schedulers;
 
 public class SubjectInteractorImp implements SubjectInteractor {
 
-    private Context context;
+    private final Context context;
     @NonNull
-    private MushafDatabase mushafDatabase;
-    private SubjectInteractor.SubjectListener listener;
+    private final MushafDatabase mushafDatabase;
+    private final SubjectInteractor.SubjectListener listener;
 
     public SubjectInteractorImp(@NonNull Context context, SubjectInteractor.SubjectListener listener) {
         this.context = context;

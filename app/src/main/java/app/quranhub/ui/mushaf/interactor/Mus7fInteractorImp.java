@@ -25,13 +25,13 @@ import io.reactivex.schedulers.Schedulers;
 public class Mus7fInteractorImp implements Mus7fInteractor {
 
 
-    private MushafDatabase mushafDatabase;
-    private UserDatabase userDatabase;
+    private final MushafDatabase mushafDatabase;
+    private final UserDatabase userDatabase;
     private TranslationDatabase translationDatabase;
-    private Mus7fInteractor.ResultListener resultListener;
+    private final Mus7fInteractor.ResultListener resultListener;
     private final String TAG = "Mus7fInteractorImp";
-    private Context context;
-    private int chosenRecitation;
+    private final Context context;
+    private final int chosenRecitation;
     private String chosenSheikh;
 
 

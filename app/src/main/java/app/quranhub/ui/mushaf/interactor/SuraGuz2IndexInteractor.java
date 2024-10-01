@@ -8,7 +8,7 @@ public interface SuraGuz2IndexInteractor {
 
     void getSuraIndex();
 
-    public interface GetIndexListener {
+    interface GetIndexListener {
         void onGetIndex(List<SuraIndexModelMapper> indexList);
 
         void onGetIndexFailed(String msg);

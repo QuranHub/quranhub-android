@@ -17,7 +17,6 @@ import app.quranhub.ui.mushaf.fragments.BookmarksFragment
 import app.quranhub.ui.mushaf.fragments.BooksLibraryFragment
 import app.quranhub.ui.mushaf.fragments.MushafFragment
 import app.quranhub.ui.mushaf.fragments.MyNotesFragment
-import app.quranhub.ui.mushaf.fragments.PdfViewerFragment
 import app.quranhub.ui.mushaf.fragments.QuranTopicsFragment
 import app.quranhub.ui.mushaf.fragments.SearchFragment
 import app.quranhub.ui.mushaf.fragments.SuraGuz2IndexFragment
@@ -253,19 +252,6 @@ class MainActivity : BaseActivity(), ToolbarActionsListener, Mus7afDrawerItemCli
         transaction.replace(R.id.container, fragment)
         transaction.commit()
         currentFragment = "notes"
-    }
-
-    fun openPdfFragment(fileName: String?) {
-        checkPrevFragment()
-        val bundle = Bundle()
-        bundle.putString("file_name", fileName)
-        val pdfViewerFragment = PdfViewerFragment()
-        pdfViewerFragment.arguments = bundle
-        val transaction = supportFragmentManager.beginTransaction()
-        transaction.replace(R.id.container, pdfViewerFragment)
-        transaction.addToBackStack(null)
-        transaction.commit()
-        currentFragment = "pdf_viewer"
     }
 
     override fun openSettings() {

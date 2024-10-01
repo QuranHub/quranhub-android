@@ -17,7 +17,7 @@ android {
     defaultConfig {
         applicationId = "app.quranhub"
         minSdk = 21
-        targetSdk = 32
+        targetSdk = 34
         versionCode = 11
         versionName = "1.3.1"
 
@@ -90,7 +90,6 @@ dependencies {
     implementation("androidx.cardview:cardview:1.0.0")
     implementation("androidx.recyclerview:recyclerview:1.3.2")
     implementation("androidx.legacy:legacy-support-v4:1.0.0")
-    implementation("com.github.barteksc:AndroidPdfViewerV2:4050f24cd9")  // TODO: Update to latest version
     implementation("at.blogc:expandabletextview:1.0.5")
     implementation("com.github.thoughtbot.expandable-recycler-view:expandablerecyclerview:v1.4")
     implementation("com.simplecityapps:recyclerview-fastscroll:2.0.1")

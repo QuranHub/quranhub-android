@@ -52,7 +52,7 @@ class BookmarksListViewModel(private val application: Application) : AndroidView
 
         // TODO refactor AsyncTask
         object : AsyncTask<DisplayableBookmark?, Void?, List<DisplayableBookmark>>() {
-            protected override fun doInBackground(vararg bookmarks: DisplayableBookmark?): List<DisplayableBookmark> {
+            override fun doInBackground(vararg bookmarks: DisplayableBookmark?): List<DisplayableBookmark> {
                 // TODO simplify the DB queries
                 val dao = getInstance(application)
                     .hizbQuarterDao

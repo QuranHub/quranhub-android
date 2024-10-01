@@ -14,9 +14,9 @@ import app.quranhub.ui.mushaf.model.TafseerModel;
 
 public class TafseerInteractorImp implements TafseerInteractor {
 
-    private Context context;
+    private final Context context;
     @NonNull
-    private MushafDatabase mushafDatabase;
+    private final MushafDatabase mushafDatabase;
     private TranslationDatabase translationDatabase;
 
 

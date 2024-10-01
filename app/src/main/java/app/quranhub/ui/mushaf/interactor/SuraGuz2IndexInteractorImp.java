@@ -18,10 +18,10 @@ public class SuraGuz2IndexInteractorImp implements SuraGuz2IndexInteractor {
 
     private static final String TAG = SuraGuz2IndexInteractorImp.class.getSimpleName();
 
-    private MushafDatabase mushafDatabase;
+    private final MushafDatabase mushafDatabase;
 
-    private SuraGuz2IndexInteractor.GetIndexListener listener;
-    private Context context;
+    private final SuraGuz2IndexInteractor.GetIndexListener listener;
+    private final Context context;
 
     public SuraGuz2IndexInteractorImp(SuraGuz2IndexInteractor.GetIndexListener listener, Context context) {
         mushafDatabase = MushafDatabase.getInstance(context);

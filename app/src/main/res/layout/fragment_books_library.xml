@@ -33,39 +33,17 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="@id/guideline_top" />
 
-        <com.google.android.material.tabs.TabLayout
-            android:id="@+id/tabLayout"
-            android:layout_width="@dimen/tab_bar_width"
-            android:layout_height="@dimen/tab_bar_height"
-            android:layout_marginStart="@dimen/dimen_16"
-            android:layout_marginEnd="@dimen/dimen_16"
-            android:layout_marginBottom="@dimen/dimen_16"
-            android:background="@drawable/tabs_container"
-            app:layout_constraintBottom_toTopOf="@id/et_search"
-            app:layout_constraintEnd_toStartOf="@id/edit_btn"
-            app:layout_constraintStart_toEndOf="@id/hamburger_iv"
-            app:layout_constraintTop_toTopOf="@id/guideline_top"
-            app:tabBackground="@drawable/tab"
-            app:tabGravity="fill"
-            app:tabIndicator="@null"
-            app:tabMode="fixed"
-            app:tabSelectedTextColor="@color/color_primary"
-            app:tabTextAppearance="@style/CustomTabText"
-            app:tabTextColor="@android:color/white">
-
-            <com.google.android.material.tabs.TabItem
-                android:id="@+id/library_tab"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:text="@string/translation_text" />
-
-            <com.google.android.material.tabs.TabItem
-                android:id="@+id/book_tab"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:text="@string/books" />
-
-        </com.google.android.material.tabs.TabLayout>
+        <TextView
+            android:id="@+id/tv_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/dimen_24"
+            android:text="@string/library_menu"
+            android:textColor="@android:color/white"
+            android:textSize="18sp"
+            app:layout_constraintBottom_toBottomOf="@id/hamburger_iv"
+            app:layout_constraintStart_toEndOf="@+id/hamburger_iv"
+            app:layout_constraintTop_toTopOf="@+id/hamburger_iv" />
 
         <ImageButton
             android:id="@+id/edit_btn"
@@ -94,7 +72,8 @@
             android:textSize="@dimen/text_14"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent" />
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tv_title" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

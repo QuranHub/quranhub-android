@@ -177,7 +177,7 @@ class QuranAudioDownloaderService : PRDownloaderService() {
             suraId: Int
         ) {
             object : AsyncTask<Void?, Void?, Pair<Int?, Int?>?>() {
-                override fun doInBackground(vararg params: Void?): Pair<Int?, Int?>? {
+                override fun doInBackground(vararg params: Void?): Pair<Int?, Int?> {
                     val ayaDao = MushafDatabase.getInstance(context).ayaDao
                     val startAyaId = ayaDao.getFirstAyaInSura(suraId)?.id
                     val endAyaId = ayaDao.getLastAyaInSura(suraId)?.id

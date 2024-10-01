@@ -11,14 +11,9 @@ import androidx.fragment.app.Fragment
 import app.quranhub.R
 import app.quranhub.databinding.FragmentBooksLibraryBinding
 import app.quranhub.ui.common.interfaces.ToolbarActionsListener
-import app.quranhub.ui.mushaf.fragments.BookDataFragment.Companion.getInstance
-import com.google.android.material.tabs.TabLayout
-import com.google.android.material.tabs.TabLayout.OnTabSelectedListener
 
 class BooksLibraryFragment : Fragment() {
 
-    private var selectedTab = LIBRARY_TAB
-    private var bookDataFragment: BookDataFragment? = null
     private var libraryFragment: LibraryFragment? = null
     private var inputSearch: String? = ""
     private var navDrawerListener: ToolbarActionsListener? = null
@@ -44,12 +39,11 @@ class BooksLibraryFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         restoreSavedInstanceState(savedInstanceState)
-        addFragment(selectedTab)
+        addFragment()
         attachListeners()
     }
 
     private fun attachListeners() {
-        listenOnSelectedTab()
         observeOnInputSearch()
         binding!!.hamburgerIv.setOnClickListener { v: View? -> onNavHamburgerClick() }
         binding!!.editBtn.setOnClickListener { v: View? -> onEditClick() }
@@ -57,7 +51,6 @@ class BooksLibraryFragment : Fragment() {
 
     private fun restoreSavedInstanceState(savedInstanceState: Bundle?) {
         if (savedInstanceState != null) {
-            selectedTab = savedInstanceState.getInt(STATE_SELECTED_TAB)
             inputSearch = savedInstanceState.getString(STATE_INPUT_SEARCH)
             isEditable = savedInstanceState.getBoolean(STATE_EDITABLE)
             if (isEditable) {
@@ -68,7 +61,6 @@ class BooksLibraryFragment : Fragment() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putInt(STATE_SELECTED_TAB, selectedTab)
         outState.putString(STATE_INPUT_SEARCH, inputSearch)
         outState.putBoolean(STATE_EDITABLE, isEditable)
     }
@@ -78,53 +70,24 @@ class BooksLibraryFragment : Fragment() {
             override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
                 inputSearch = s.toString()
-                if (binding!!.tabLayout.selectedTabPosition == LIBRARY_TAB && libraryFragment != null) {
-                    libraryFragment!!.search(inputSearch)
-                } else if (binding!!.tabLayout.selectedTabPosition == BOOKS_TAB && bookDataFragment != null) {
-                    bookDataFragment!!.search(inputSearch)
-                }
+                libraryFragment!!.search(inputSearch)
             }
 
             override fun afterTextChanged(s: Editable) {}
         })
     }
 
-    private fun listenOnSelectedTab() {
-        binding!!.tabLayout.addOnTabSelectedListener(object : OnTabSelectedListener {
-            override fun onTabSelected(tab: TabLayout.Tab) {
-                addFragment(binding!!.tabLayout.selectedTabPosition)
-            }
-
-            override fun onTabUnselected(tab: TabLayout.Tab) {}
-            override fun onTabReselected(tab: TabLayout.Tab) {}
-        })
-    }
-
-    private fun addFragment(tab: Int) {
-        selectedTab = tab
-        binding!!.tabLayout.getTabAt(selectedTab)!!.select()
+    private fun addFragment() {
         binding!!.etSearch.text.clear()
         inputSearch = ""
-        if (tab == LIBRARY_TAB) {
-            binding!!.editBtn.visibility = View.INVISIBLE
-            libraryFragment =
-                childFragmentManager.findFragmentByTag(FRAGMENT_LIBRARY) as LibraryFragment?
-            if (libraryFragment == null) {
-                libraryFragment = LibraryFragment()
-                childFragmentManager.beginTransaction()
-                    .replace(R.id.data_container, libraryFragment!!, FRAGMENT_LIBRARY)
-                    .commit()
-            }
-        } else if (tab == BOOKS_TAB) {
-            binding!!.editBtn.visibility = View.VISIBLE
-            bookDataFragment =
-                childFragmentManager.findFragmentByTag(FRAGMENT_BOOKS) as BookDataFragment?
-            if (bookDataFragment == null) {
-                bookDataFragment = getInstance(true)
-                childFragmentManager.beginTransaction()
-                    .replace(R.id.data_container, bookDataFragment!!, FRAGMENT_BOOKS)
-                    .commit()
-            }
+        binding!!.editBtn.visibility = View.INVISIBLE
+        libraryFragment =
+            childFragmentManager.findFragmentByTag(FRAGMENT_LIBRARY) as LibraryFragment?
+        if (libraryFragment == null) {
+            libraryFragment = LibraryFragment()
+            childFragmentManager.beginTransaction()
+                .replace(R.id.data_container, libraryFragment!!, FRAGMENT_LIBRARY)
+                .commit()
         }
     }
 
@@ -135,10 +98,8 @@ class BooksLibraryFragment : Fragment() {
     private fun onEditClick() {
         if (isEditable) {
             binding!!.editBtn.setImageResource(R.drawable.edit_gold_ic)
-            bookDataFragment!!.toggleNormalMode()
         } else {
             binding!!.editBtn.setImageResource(R.drawable.check_gold_ic)
-            bookDataFragment!!.toggleEditAction()
         }
         isEditable = !isEditable
     }
@@ -149,12 +110,8 @@ class BooksLibraryFragment : Fragment() {
     }
 
     companion object {
-        private const val FRAGMENT_BOOKS = "FRAGMENT_BOOKS"
         private const val FRAGMENT_LIBRARY = "FRAGMENT_LIBRARY"
-        private const val STATE_SELECTED_TAB = "STATE_SELECTED_TAB"
         private const val STATE_INPUT_SEARCH = "STATE_INPUT_SEARCH"
         private const val STATE_EDITABLE = "STATE_EDITABLE"
-        private const val LIBRARY_TAB = 0
-        private const val BOOKS_TAB = 1
     }
 }

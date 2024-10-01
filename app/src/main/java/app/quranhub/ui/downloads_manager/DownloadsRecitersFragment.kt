@@ -58,8 +58,8 @@ class DownloadsRecitersFragment : BaseDownloadsFragment(), DeleteConfirmationCal
                 retrieveLocalReciters()
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to retrieve reciters from RecitationsRepository.");
-            retrieveLocalReciters();
+            Log.e(TAG, "Failed to retrieve reciters from RecitationsRepository.")
+            retrieveLocalReciters()
         }
 
         // process reciters list

@@ -25,10 +25,10 @@ import io.reactivex.schedulers.Schedulers;
 
 public class NotesInteractorImp implements NotesInteractor {
 
-    private Context context;
+    private final Context context;
     @NonNull
-    private UserDatabase userDatabase;
-    private MushafDatabase mushafDatabase;
+    private final UserDatabase userDatabase;
+    private final MushafDatabase mushafDatabase;
 
 
     public NotesInteractorImp(@NonNull Context context) {

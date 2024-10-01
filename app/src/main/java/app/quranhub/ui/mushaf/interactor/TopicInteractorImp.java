@@ -17,10 +17,10 @@ import io.reactivex.schedulers.Schedulers;
 
 public class TopicInteractorImp implements TopicInteractor {
 
-    private Context context;
+    private final Context context;
     @NonNull
-    private MushafDatabase mushafDatabase;
-    private TopicInteractor.TopicListener listener;
+    private final MushafDatabase mushafDatabase;
+    private final TopicInteractor.TopicListener listener;
 
     public TopicInteractorImp(@NonNull Context context, TopicInteractor.TopicListener listener) {
         this.context = context;

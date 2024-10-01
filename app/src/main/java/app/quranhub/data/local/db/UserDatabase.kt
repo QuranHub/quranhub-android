@@ -3,11 +3,12 @@ package app.quranhub.data.local.db
 import android.content.Context
 import androidx.room.AutoMigration
 import androidx.room.Database
+import androidx.room.DeleteTable
 import androidx.room.Room.databaseBuilder
 import androidx.room.RoomDatabase
+import androidx.room.migration.AutoMigrationSpec
 import androidx.sqlite.db.SupportSQLiteDatabase
 import app.quranhub.data.Constants
-import app.quranhub.data.local.dao.BookDao
 import app.quranhub.data.local.dao.BookmarkDao
 import app.quranhub.data.local.dao.NoteDao
 import app.quranhub.data.local.dao.QuranAudioDao
@@ -17,7 +18,6 @@ import app.quranhub.data.local.dao.ReciterRecitationDao
 import app.quranhub.data.local.dao.TranslationBookDao
 import app.quranhub.data.local.entity.AyaBookmark
 import app.quranhub.data.local.entity.AyaRecorder
-import app.quranhub.data.local.entity.Book
 import app.quranhub.data.local.entity.BookmarkType
 import app.quranhub.data.local.entity.Note
 import app.quranhub.data.local.entity.QuranAudio
@@ -29,10 +29,11 @@ import app.quranhub.data.local.prefs.AppPreferencesManager.isDbInitialized
 import app.quranhub.data.local.prefs.AppPreferencesManager.persistDbInitialized
 
 @Database(
-    entities = [AyaBookmark::class, BookmarkType::class, Book::class, TranslationBook::class, Note::class, Recitation::class, Reciter::class, ReciterRecitation::class, QuranAudio::class, AyaRecorder::class],
-    version = 4,
+    entities = [AyaBookmark::class, BookmarkType::class, TranslationBook::class, Note::class, Recitation::class, Reciter::class, ReciterRecitation::class, QuranAudio::class, AyaRecorder::class],
+    version = 5,
     autoMigrations = [
-        AutoMigration(from = 3, to = 4)
+        AutoMigration(from = 3, to = 4),
+        AutoMigration(from = 4, to = 5, spec = UserDatabase.Migration4To5Spec::class)
     ],
     exportSchema = true
 )
@@ -40,7 +41,6 @@ abstract class UserDatabase : RoomDatabase() {
 
     abstract val bookmarkDao: BookmarkDao
 
-    abstract val bookDao: BookDao
 
     abstract val translationBookDao: TranslationBookDao
 
@@ -121,4 +121,11 @@ abstract class UserDatabase : RoomDatabase() {
             db.execSQL("INSERT INTO Recitation VALUES (" + Constants.Recitation.WARSH_ID + ", \"ورش عن نافع\")")
         }
     }
+
+    @DeleteTable.Entries(
+        DeleteTable(
+            tableName = "Book"
+        )
+    )
+    class Migration4To5Spec : AutoMigrationSpec
 }

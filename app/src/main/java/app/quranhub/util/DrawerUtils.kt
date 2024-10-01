@@ -95,14 +95,19 @@ object DrawerUtils {
                     .withTextColorRes(R.color.drawer_text_color)
                     .withSelectedIcon(R.drawable.topics_gold_sidemenu_ic)
                     .withSelectedTextColorRes(R.color.drawer_selected_tint),
-                //                        new PrimaryDrawerItem()
-                //                                .withName(activity.getString(R.string.library_menu))
-                //                                .withTypeface(Typeface.createFromAsset(activity.getAssets(), "fonts/droid_arabic_kufi.ttf"))
-                //                                .withIcon(R.drawable.library_green_sidemenu_ic)
-                //                                .withIdentifier(IDENTIFIER_LIBRARY)
-                //                                .withTextColorRes(R.color.drawer_text_color)
-                //                                .withSelectedIcon(R.drawable.library_gold_sidemenu_ic)
-                //                                .withSelectedTextColorRes(R.color.drawer_selected_tint),
+                PrimaryDrawerItem()
+                    .withName(activity.getString(R.string.library_menu))
+                    .withTypeface(
+                        Typeface.createFromAsset(
+                            activity.assets,
+                            "fonts/droid_arabic_kufi.ttf"
+                        )
+                    )
+                    .withIcon(R.drawable.library_green_sidemenu_ic)
+                    .withIdentifier(IDENTIFIER_LIBRARY.toLong())
+                    .withTextColorRes(R.color.drawer_text_color)
+                    .withSelectedIcon(R.drawable.library_gold_sidemenu_ic)
+                    .withSelectedTextColorRes(R.color.drawer_selected_tint),
                 PrimaryDrawerItem()
                     .withName(activity.getString(R.string.fwasil_menu))
                     .withTypeface(

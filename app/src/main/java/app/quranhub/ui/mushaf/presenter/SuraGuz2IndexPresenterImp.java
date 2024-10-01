@@ -14,8 +14,8 @@ import app.quranhub.ui.mushaf.view.SuraGuz2IndexView;
 public class SuraGuz2IndexPresenterImp<T extends BaseView> extends BasePresenterImp<T> implements SuraGuz2IndexPresenter<T>, SuraGuz2IndexInteractor.GetIndexListener {
 
 
-    private SuraGuz2IndexInteractor interactor;
-    private Context context;
+    private final SuraGuz2IndexInteractor interactor;
+    private final Context context;
 
     public SuraGuz2IndexPresenterImp(Context context) {
         this.interactor = new SuraGuz2IndexInteractorImp(this, context);

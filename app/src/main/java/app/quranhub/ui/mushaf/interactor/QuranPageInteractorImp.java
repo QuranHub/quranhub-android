@@ -25,11 +25,11 @@ public class QuranPageInteractorImp implements QuranPageInteractor {
 
     private static final String TAG = QuranPageInteractorImp.class.getSimpleName();
 
-    private MushafDatabase mushafDatabase;
-    private UserDatabase userDatabase;
+    private final MushafDatabase mushafDatabase;
+    private final UserDatabase userDatabase;
 
-    private QuranPageInteractor.ResultListener resultListener;
-    private Context context;
+    private final QuranPageInteractor.ResultListener resultListener;
+    private final Context context;
     private int recitationId;
     private String sheikhId;
 

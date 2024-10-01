@@ -13,6 +13,6 @@ object FragmentUtils {
     @JvmStatic
     fun isSafeFragment(fragment: Fragment): Boolean {
         return !(fragment.isRemoving || fragment.activity == null || fragment.isDetached
-                || !fragment.isAdded || fragment.view == null);
+                || !fragment.isAdded || fragment.view == null)
     }
 }

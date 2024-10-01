@@ -24,9 +24,9 @@ public class Mus7fPresenterImp extends BasePresenterImp<MushafView>
     private static final String TAG = Mus7fPresenterImp.class.getSimpleName();
 
     @NonNull
-    private Mus7fInteractor interactor;
+    private final Mus7fInteractor interactor;
     @NonNull
-    private Context context;
+    private final Context context;
 
     public Mus7fPresenterImp(@NonNull Context context) {
         this.context = context;

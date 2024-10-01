@@ -28,12 +28,12 @@ public class BookmarksInteractorImp implements BookmarksInteractor {
     private static final String TAG = BookmarksInteractorImp.class.getSimpleName();
 
     @NonNull
-    private UserDatabase userDatabase;
+    private final UserDatabase userDatabase;
     @NonNull
-    private MushafDatabase mushafDatabase;
+    private final MushafDatabase mushafDatabase;
 
     @NonNull
-    private Context context;
+    private final Context context;
 
     public BookmarksInteractorImp(@NonNull Context context) {
         this.context = context;
