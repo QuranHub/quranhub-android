@@ -18,8 +18,8 @@ android {
         applicationId = "app.quranhub"
         minSdk = 21
         targetSdk = 32
-        versionCode = 11
-        versionName = "1.3.1"
+        versionCode = 12
+        versionName = "1.4.0"
 
         multiDexEnabled = true
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
