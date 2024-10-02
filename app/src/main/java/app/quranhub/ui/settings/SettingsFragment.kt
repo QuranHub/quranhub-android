@@ -24,7 +24,6 @@ import app.quranhub.ui.settings.custom.MushafSettingSwitch
 import app.quranhub.util.LocaleUtils.setAppLanguage
 import io.reactivex.Single
 import io.reactivex.SingleEmitter
-import io.reactivex.SingleOnSubscribe
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
@@ -87,13 +86,12 @@ class SettingsFragment : Fragment(), OptionsListDialogFragment.ItemSelectionList
         // quranReaderSetting
         val reciterId = AppPreferencesManager.getReciterSheikhSetting(requireContext())
         if (reciterId != null) {
-            val disposable = Single.create(
-                SingleOnSubscribe { emitter: SingleEmitter<String?> ->
-                    val reciter = UserDatabase.getInstance(requireContext())
-                        .reciterDao
-                        .getById(reciterId)
-                    reciter?.name?.let { emitter.onSuccess(it) }
-                })
+            val disposable = Single.create { emitter: SingleEmitter<String?> ->
+                val reciter = UserDatabase.getInstance(requireContext())
+                    .reciterDao
+                    .getById(reciterId)
+                reciter?.name?.let { emitter.onSuccess(it) }
+            }
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { reciterName: String? ->
@@ -104,7 +102,7 @@ class SettingsFragment : Fragment(), OptionsListDialogFragment.ItemSelectionList
     }
 
     private fun setSettingsViewsListeners() {
-        binding!!.settingAppLang.setOnClickListener { v: View? ->
+        binding!!.settingAppLang.setOnClickListener {
             // TODO apply MVP or MVVM
             val currentAppLanguageIndex = Constants.Language.CODES.indexOf(
                 AppPreferencesManager.getAppLangSetting(requireContext())
@@ -119,7 +117,7 @@ class SettingsFragment : Fragment(), OptionsListDialogFragment.ItemSelectionList
                 requireActivity().supportFragmentManager, "AppLangDialog"
             )
         }
-        binding!!.settingTranslationLang.setOnClickListener { v: View? ->
+        binding!!.settingTranslationLang.setOnClickListener {
             // TODO apply MVP or MVVM
             val currentTranslationLanguageIndex = Constants.Language.CODES.indexOf(
                 AppPreferencesManager.getQuranTranslationLanguage(requireContext())
@@ -151,7 +149,7 @@ class SettingsFragment : Fragment(), OptionsListDialogFragment.ItemSelectionList
                 AppPreferencesManager.persistLastReadPageSetting(requireContext(), checked)
             }
         })
-        binding!!.settingRecitation.setOnClickListener { v: View? ->
+        binding!!.settingRecitation.setOnClickListener {
             // TODO apply MVP or MVVM
             val selectedRecitationSettingIndex =
                 AppPreferencesManager.getRecitationSetting(requireContext())
@@ -164,7 +162,7 @@ class SettingsFragment : Fragment(), OptionsListDialogFragment.ItemSelectionList
             )
             recitationDialog.show(requireActivity().supportFragmentManager, "RecitationDialog")
         }
-        binding!!.settingQuranReader.setOnClickListener { v: View? ->
+        binding!!.settingQuranReader.setOnClickListener {
             // TODO apply MVP or MVVM
             val recitationId = AppPreferencesManager.getRecitationSetting(requireContext())
             val reciterId = AppPreferencesManager.getReciterSheikhSetting(requireContext())
@@ -172,19 +170,27 @@ class SettingsFragment : Fragment(), OptionsListDialogFragment.ItemSelectionList
                 .newInstance(recitationId, reciterId)
             recitersDialog.show(childFragmentManager, "QuranRecitersDialogFragment")
         }
-        binding!!.settingAudioDownloadManager.setOnClickListener { v: View? ->
+        binding!!.settingAudioDownloadManager.setOnClickListener {
             // TODO apply MVP or MVVM
             startActivity(Intent(requireContext(), DownloadsManagerActivity::class.java))
         }
-        binding!!.settingHelp.setOnClickListener { v: View? -> }
-        binding!!.settingAboutAppVersion.setOnClickListener { v: View? ->
+        binding!!.settingAboutAppVersion.setOnClickListener {
             // TODO aboutAppVersionSetting click listener
             Toast.makeText(
                 requireContext(), "v" + BuildConfig.VERSION_NAME,
                 Toast.LENGTH_SHORT
             ).show()
         }
-        binding!!.settingShareApp.setOnClickListener { v: View? -> }
+        binding!!.settingShareApp.setOnClickListener {
+            // TODO shareAppSetting click listener
+            val shareIntent = Intent(Intent.ACTION_SEND)
+            shareIntent.type = "text/plain"
+            shareIntent.putExtra(
+                Intent.EXTRA_TEXT,
+                "https://play.google.com/store/apps/details?id=app.quranhub"
+            )
+            startActivity(Intent.createChooser(shareIntent, getString(R.string.share_app_title)))
+        }
     }
 
     override fun onItemSelected(requestCode: Int, itemIndex: Int) {

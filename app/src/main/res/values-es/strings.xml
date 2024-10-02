@@ -73,7 +73,6 @@
     <string name="setting_reading_alarm">Hora de alerta </string>
     <string name="setting_quran_reader">Sonido del recitador automático </string>
     <string name="setting_audio_download_manager">Gestión de descargar los sonidos </string>
-    <string name="setting_help">Ayuda </string>
     <string name="setting_about_app_version">Sobre la versión de la aplicación</string>
     <string name="setting_share_app">Compartir la aplicación</string>
     <string name="data_failed">Fallo en obtener los datos </string>
@@ -471,6 +470,7 @@
         <item>La Tercera cuarto</item>
         <item>La Cuarta cuarto</item>
     </string-array>
+    <string name="share_app_title">Compartir enlace de descarga de la aplicación</string>
 
 
 </resources>

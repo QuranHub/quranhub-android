@@ -73,7 +73,6 @@
     <string name="setting_reading_alarm">lokacin Alam</string>
     <string name="setting_quran_reader">sautin karatun atomatic</string>
     <string name="setting_audio_download_manager">mai sauke sauti</string>
-    <string name="setting_help">taimako</string>
     <string name="setting_about_app_version">a kan aikace-aikace</string>
     <string name="setting_share_app">ka raba wannan aikace-aikace</string>
     <string name="data_failed">an kasa samun bayanai</string>
@@ -471,4 +470,5 @@
         <item>Mawaka ne masu zane-zane a zamanin Annabci</item>
         <item>Rashin Tsarki</item>
     </string-array>
+    <string name="share_app_title">Raba hanyar saukar da manhaja</string>
 </resources>

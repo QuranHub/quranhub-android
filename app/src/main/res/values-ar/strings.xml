@@ -431,7 +431,6 @@
     <string name="setting_reading_alarm">وقت التنبيه</string>
     <string name="setting_quran_reader">صوت القارئ التلقائي</string>
     <string name="setting_audio_download_manager">إدارة تنزيلات الأصوات</string>
-    <string name="setting_help">المساعدة</string>
     <string name="setting_about_app_version">عن نسخة التطبيق</string>
     <string name="setting_share_app">شارك التطبيق</string>
     <string name="data_failed">فشل فى جلب البيانات</string>
@@ -561,5 +560,6 @@
     <string name="download_quran_images_description">اختر تلاوة و حمّل صور صفحات القرآن لتتمكن من القراءة دون اتصال بالإنترنت</string>
     <string name="download_complete">تم التحميل!</string>
     <string name="wait_download">يرجى الانتظار وعدم إغلاق هذه الشاشة حتى يتم الانتهاء من التحميل</string>
+    <string name="share_app_title">مشاركة رابط تحميل التطبيق</string>
 
 </resources>

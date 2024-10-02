@@ -430,7 +430,6 @@
     <string name="setting_reading_alarm">Alarm time</string>
     <string name="setting_quran_reader">Automatic Quran reader</string>
     <string name="setting_audio_download_manager">Audio download manager</string>
-    <string name="setting_help">Help</string>
     <string name="setting_about_app_version">About app version</string>
     <string name="setting_share_app">Share the app</string>
     <string name="data_failed">Failed to get data!</string>
@@ -574,5 +573,7 @@
     <string name="download_quran_images_description">Select a recitation and download the Quran pages images to be able to read offline</string>
     <string name="download_complete">Download complete!</string>
     <string name="wait_download">Please wait and don\'t close this screen until download finishes</string>
+
+    <string name="share_app_title">Share app download link</string>
 
 </resources>

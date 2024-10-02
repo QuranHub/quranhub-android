@@ -73,7 +73,6 @@
     <string name="setting_reading_alarm">تنبیہہ کا وقت</string>
     <string name="setting_quran_reader">آٹومیٹک قاری کی آواز</string>
     <string name="setting_audio_download_manager">آواز ڈاؤن لوڈز کی ترتیبات </string>
-    <string name="setting_help">مدد</string>
     <string name="setting_about_app_version">ایپ کے ورژن کے بارے میں</string>
     <string name="setting_share_app">ایپ شیئر کیجیے</string>
     <string name="data_failed">ڈیٹا حاصل نہیں ہوسکا</string>
@@ -467,5 +466,6 @@
         <item>رسالت کے دور میں شعراء آرٹسٹ ہیں</item>
         <item>نجاست</item>
     </string-array>
+    <string name="share_app_title">ایپ ڈاؤن لوڈ لنک شیئر کریں</string>
 
 </resources>

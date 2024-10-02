@@ -75,7 +75,6 @@
     <string name="setting_reading_alarm">Temps d\'alarme</string>
     <string name="setting_quran_reader">Lecteur de voix automatique</string>
     <string name="setting_audio_download_manager">Gérer les téléchargements de sons</string>
-    <string name="setting_help">Aide</string>
     <string name="setting_about_app_version">À propos de la version de l\'application</string>
     <string name="setting_share_app">Partager l\'application</string>
     <string name="data_failed">Impossible de récupérer les données</string>
@@ -554,6 +553,6 @@
     <string name="download_quran_images_description">Sélectionnez une récitation et téléchargez les images des pages du Coran pour pouvoir les lire hors ligne</string>
     <string name="download_complete">Téléchargement terminé !</string>
     <string name="wait_download">Veuillez patienter et ne pas fermer cette page jusqu\'à ce que le téléchargement soit terminé</string>
-
+    <string name="share_app_title">Partager le lien de téléchargement de l\'application</string>
 
 </resources>

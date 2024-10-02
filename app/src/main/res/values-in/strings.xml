@@ -75,7 +75,6 @@
     <string name="setting_reading_alarm">waktu pengingat</string>
     <string name="setting_quran_reader">suara qari\' secara otomatis</string>
     <string name="setting_audio_download_manager">pengaturan pengunduhan suara</string>
-    <string name="setting_help">bantuan</string>
     <string name="setting_about_app_version">tentang nuskhah aplikasi</string>
     <string name="setting_share_app"> bergabung dengan aplikasi</string>
     <string name="data_failed">gagal dalam pengambilan keterangan</string>
@@ -557,6 +556,7 @@
     <string name="download_quran_images_description">Pilih bacaan dan unduh gambar halaman Al-Quran untuk dapat membaca secara offline</string>
     <string name="download_complete">Unduhan selesai!</string>
     <string name="wait_download">Harap tunggu dan jangan tutup layar ini sampai unduhan selesai</string>
+    <string name="share_app_title">Bagikan tautan unduhan aplikasi</string>
 
 
 </resources>
