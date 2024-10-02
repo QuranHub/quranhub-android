@@ -97,7 +97,7 @@ dependencies {
     implementation("androidx.viewpager:viewpager:1.0.0")
     implementation("com.intuit.sdp:sdp-android:1.1.1")
     implementation("com.intuit.ssp:ssp-android:1.1.1")
-    implementation("com.github.faruktoptas:FancyShowCaseView:1.1.5")
+    implementation("com.github.faruktoptas:FancyShowCaseView:1.3.9")
     implementation("com.github.dmytrodanylyk:circular-progress-button:1.4")
 
     // Networking
