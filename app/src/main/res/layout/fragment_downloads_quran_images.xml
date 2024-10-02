@@ -49,20 +49,20 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/tvHafs" />
 
-        <com.github.leandroborgesferreira.loadingbutton.customViews.CircularProgressButton
+        <com.dd.CircularProgressButton
             android:id="@+id/btnDownload"
-            style="@style/Widget.AppCompat.Button.Colored"
             android:layout_width="0dp"
             android:layout_height="64dp"
             android:layout_margin="@dimen/_16sdp"
-            android:backgroundTint="@color/color_accent"
-            android:text="@string/download"
             android:textAllCaps="false"
             android:textColor="@color/white_color"
+            android:textSize="18sp"
+            app:cpb_cornerRadius="16dp"
+            app:cpb_textComplete="@string/download_complete"
+            app:cpb_textIdle="@string/download"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tvWarsh"
-            app:spinning_bar_color="@color/white_color" />
+            app:layout_constraintTop_toBottomOf="@id/tvWarsh" />
 
         <TextView
             android:id="@+id/tvDownloadProgress"

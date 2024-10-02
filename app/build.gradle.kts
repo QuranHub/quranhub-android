@@ -98,7 +98,7 @@ dependencies {
     implementation("com.intuit.sdp:sdp-android:1.1.1")
     implementation("com.intuit.ssp:ssp-android:1.1.1")
     implementation("com.github.faruktoptas:FancyShowCaseView:1.1.5")
-    implementation("com.github.leandroborgesferreira:loading-button-android:2.3.0")
+    implementation("com.github.dmytrodanylyk:circular-progress-button:1.4")
 
     // Networking
     implementation("com.squareup.retrofit2:retrofit:2.11.0")

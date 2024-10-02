@@ -2,6 +2,8 @@ package app.quranhub.ui.downloads_manager
 
 import android.graphics.drawable.Drawable
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -29,6 +31,8 @@ class DownloadsQuranImagesFragment : Fragment() {
     private var recitationId = Constants.Recitation.HAFS_ID
 
     private var totalPagesDownloaded = 0
+
+    private val handler = Handler(Looper.getMainLooper())
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -101,6 +105,10 @@ class DownloadsQuranImagesFragment : Fragment() {
     }
 
     private fun startDownload() {
+        if (totalPagesDownloaded > 0) {
+            // A download is already in progress
+            return
+        }
         if (!NetworkUtil.isNetworkAvailable(requireContext())) {
             Toast.makeText(requireContext(), R.string.no_internet, Toast.LENGTH_SHORT).show()
             return
@@ -109,7 +117,7 @@ class DownloadsQuranImagesFragment : Fragment() {
         totalPagesDownloaded = 0
 
         binding.root.keepScreenOn = true
-        binding.btnDownload.startAnimation()
+        binding.btnDownload.progress = 0
         binding.groupDownloadInfo.isVisible = true
 
         val quranImageBaseUrl: String = when (recitationId) {
@@ -129,16 +137,6 @@ class DownloadsQuranImagesFragment : Fragment() {
             Glide.with(requireContext())
                 .load(imageUrl)
                 .addListener(object : RequestListener<Drawable> {
-                    override fun onLoadFailed(
-                        e: GlideException?,
-                        model: Any?,
-                        target: Target<Drawable>,
-                        isFirstResource: Boolean
-                    ): Boolean {
-                        onImageLoaded(i, false)
-                        return false
-                    }
-
                     override fun onResourceReady(
                         resource: Drawable,
                         model: Any,
@@ -147,6 +145,16 @@ class DownloadsQuranImagesFragment : Fragment() {
                         isFirstResource: Boolean
                     ): Boolean {
                         onImageLoaded(i)
+                        return false
+                    }
+
+                    override fun onLoadFailed(
+                        e: GlideException?,
+                        model: Any?,
+                        target: Target<Drawable>,
+                        isFirstResource: Boolean
+                    ): Boolean {
+                        onImageLoaded(i, false)
                         return false
                     }
                 })
@@ -168,14 +176,21 @@ class DownloadsQuranImagesFragment : Fragment() {
             Constants.Quran.NUM_OF_PAGES
         )
 
-        if (totalPagesDownloaded == Constants.Quran.NUM_OF_PAGES) {
+        val progress: Int =
+            ((totalPagesDownloaded.toFloat() / Constants.Quran.NUM_OF_PAGES) * 100).toInt()
+        binding.btnDownload.progress = progress
+
+        if (progress == 100) {
             // Download complete
-            binding.btnDownload.revertAnimation()
             binding.groupDownloadInfo.isVisible = false
             binding.tvDownloadProgress.text = ""
             binding.root.keepScreenOn = false
             Toast.makeText(requireContext(), R.string.download_complete, Toast.LENGTH_SHORT).show()
             totalPagesDownloaded = 0
+
+            handler.postDelayed({
+                binding.btnDownload.progress = 0
+            }, 1500)
         }
     }
 
