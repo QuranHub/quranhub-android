@@ -18,8 +18,7 @@ The QuranHub Android mobile app provides the following features:
 - Verse bookmarking, and sharing.
 - Ability to add text & audio notes to verses.
 - Advanced search in the Quran.
-- Quran reader (mus'haf) night mode for easier reading in the Quran.
-- Islamic library with various books to download as PDF files and view inside the app.
+- Quran reader (mus'haf) night mode for easier reading of the Quran.
 - Quran topics with their verses in the Quran.
 
 Download the app from the Google Play Store:  
@@ -34,7 +33,7 @@ See the project's *releases page* for a list of versions with their changelogs.
 
 **[View Releases](https://github.com/QuranHub/quranhub-android/releases)**
 
-If you Watch this repository, GitHub will send you an email every time we publish an update.
+If you watch this repository, GitHub will send you an email every time we publish an update.
 
 ## Contributing
 When contributing to this repository, please first discuss the change you wish to make via issue, email, or any other method with the owners of this repository before making a change.
@@ -48,7 +47,7 @@ Also, refer to the repository's [project boards](https://github.com/QuranHub/qur
 2.  Create your feature branch:  `git checkout -b my-new-feature`
 3.  Commit your changes:  `git add .`  `git commit -m 'Add some feature'`
 4.  Push to the branch:  `git push origin my-new-feature`
-5.  Create new Pull Request.
+5.  Create a new Pull Request.
 
 #### Code Style Guidelines
 We follow the code style guidelines outlined in [Ribot's Project & Code Guidelines](https://github.com/ribot/android-guidelines/blob/master/project_and_code_guidelines.md).
