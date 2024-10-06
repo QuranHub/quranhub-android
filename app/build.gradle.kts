@@ -12,12 +12,12 @@ plugins {
 
 android {
     namespace = "app.quranhub"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "app.quranhub"
         minSdk = 21
-        targetSdk = 32
+        targetSdk = 35
         versionCode = 12
         versionName = "1.4.0"
 
