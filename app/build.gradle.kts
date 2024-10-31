@@ -81,7 +81,7 @@ dependencies {
     implementation("androidx.multidex:multidex:2.0.1")
     implementation("pub.devrel:easypermissions:3.0.0")
     implementation("org.greenrobot:eventbus:3.3.1")
-    implementation("androidx.annotation:annotation:1.9.0")
+    implementation("androidx.annotation:annotation:1.9.1")
 
     // UI-related
     implementation("com.google.android.material:material:1.12.0")
