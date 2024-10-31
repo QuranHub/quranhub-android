@@ -114,7 +114,7 @@ dependencies {
     implementation("androidx.room:room-rxjava2:2.6.1")
 
     // Lifecycle, ViewModel & LiveData
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.6")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.8.6")
     implementation("androidx.lifecycle:lifecycle-common-java8:2.8.6")
 
