@@ -1,10 +1,12 @@
 package app.quranhub.ui.mushaf.audio_manager
 
 import android.annotation.SuppressLint
+import android.app.ForegroundServiceStartNotAllowedException
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
@@ -16,7 +18,9 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.util.Log
+import android.widget.Toast
 import androidx.core.app.NotificationCompat
+import androidx.core.app.ServiceCompat
 import app.quranhub.R
 import app.quranhub.data.Constants
 import app.quranhub.data.local.db.UserDatabase
@@ -246,13 +250,41 @@ class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener 
     }
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
-        startForeground(NOTIFICATION_ID, notificationBuilder!!.build())
+        promoteToForegroundService()
+
         getIntentExtra(intent)
         Log.d(TAG, "onStartCommand: $currentAyaId")
         setAudioState(intent.action!!)
 
         // we don't want the service to restart if killed
         return START_NOT_STICKY
+    }
+
+    private fun promoteToForegroundService() {
+        try {
+            ServiceCompat.startForeground(
+                this,
+                NOTIFICATION_ID,
+                notificationBuilder!!.build(),
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
+                } else {
+                    0
+                },
+            )
+        } catch (e: Exception) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+                && e is ForegroundServiceStartNotAllowedException
+            ) {
+                // App not in a valid state to start foreground service
+                // (e.g. started from bg)
+                Log.e(TAG, "Foreground service start not allowed")
+            }
+            Toast.makeText(
+                this, R.string.msg_quran_audio_service_failed_to_start,
+                Toast.LENGTH_SHORT
+            ).show()
+        }
     }
 
     private fun getIntentExtra(intent: Intent) {

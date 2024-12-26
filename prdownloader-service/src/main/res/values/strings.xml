@@ -6,4 +6,5 @@
 
     <string name="download_service_notification_channel_name">File downloads</string>
     <string name="download_service_notification_channel_description">Notifications about ongoing file downloads</string>
+    <string name="msg_download_service_failed_to_start">Failed to start the download</string>
 </resources>

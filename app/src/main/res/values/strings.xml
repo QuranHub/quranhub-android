@@ -576,4 +576,6 @@
 
     <string name="share_app_title">Share app download link</string>
 
+    <string name="msg_quran_audio_service_failed_to_start">Failed to start the Quran audio</string>
+
 </resources>

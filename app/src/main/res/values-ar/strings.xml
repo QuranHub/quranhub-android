@@ -561,5 +561,6 @@
     <string name="download_complete">تم التحميل!</string>
     <string name="wait_download">يرجى الانتظار وعدم إغلاق هذه الشاشة حتى يتم الانتهاء من التحميل</string>
     <string name="share_app_title">مشاركة رابط تحميل التطبيق</string>
+    <string name="msg_quran_audio_service_failed_to_start">حدث فشل في بدء تشغيل صوتيات القرآن</string>
 
 </resources>

@@ -1,15 +1,20 @@
 package app.quranhub.prdownloader_service
 
+import android.app.ForegroundServiceStartNotAllowedException
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
+import android.widget.Toast
 import androidx.annotation.CallSuper
 import androidx.core.app.NotificationCompat
+import androidx.core.app.ServiceCompat
 import com.downloader.Error
 import com.downloader.OnDownloadListener
 import com.downloader.PRDownloader
@@ -133,10 +138,8 @@ abstract class PRDownloaderService : Service(), DownloadCallbacks {
             object : Thread() {
                 override fun run() {
                     val downloadRequestInfos = provideDownloadRequestInfos(intent)
-                    if (downloadRequestInfos != null) {
-                        for (dInfo in downloadRequestInfos) {
-                            downloadFile(dInfo)
-                        }
+                    for (dInfo in downloadRequestInfos) {
+                        downloadFile(dInfo)
                     }
                     if (downloadCount.get() == 0) stopSelf() // handle if no download started
                 }
@@ -283,7 +286,34 @@ abstract class PRDownloaderService : Service(), DownloadCallbacks {
         // display indeterminate progress bar
         builder.setProgress(0, 0, true)
         val notification = builder.build()
-        startForeground(NOTIFICATION_ID, notification)
+        promoteToForegroundService(notification)
+    }
+
+    private fun promoteToForegroundService(notification: Notification) {
+        try {
+            ServiceCompat.startForeground(
+                this,
+                NOTIFICATION_ID,
+                notification,
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+                } else {
+                    0
+                },
+            )
+        } catch (e: Exception) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+                && e is ForegroundServiceStartNotAllowedException
+            ) {
+                // App not in a valid state to start foreground service
+                // (e.g. started from bg)
+                Log.e(TAG, "Foreground service start not allowed")
+            }
+            Toast.makeText(
+                this, R.string.msg_download_service_failed_to_start,
+                Toast.LENGTH_SHORT
+            ).show()
+        }
     }
 
     private fun createNotificationChannel() {

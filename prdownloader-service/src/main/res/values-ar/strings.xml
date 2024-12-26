@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="download_notification_title_quran_audio">تحميل الملفات</string>
+    <string name="download_notification_content_text">جاري التحميل</string>
+    <string name="download_notification_cancel_button_title">إلغاء</string>
+    <string name="download_service_notification_channel_name">تحميل الملفات</string>
+    <string name="download_service_notification_channel_description">إشعارات أثناء تحميل الملفات بالتطبيق</string>
+    <string name="msg_download_service_failed_to_start">حدث فشل في بدء التحميل</string>
+</resources>
