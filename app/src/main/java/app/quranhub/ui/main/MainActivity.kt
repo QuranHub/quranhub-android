@@ -42,11 +42,15 @@ class MainActivity : BaseActivity(), ToolbarActionsListener, Mus7afDrawerItemCli
     private var onDrawerListener: OnDrawerListener? = null
     private var isDismissAllow = true
 
+    private lateinit var notificationPermissionDelegate: NotificationPermissionDelegate
+
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(R.style.AppTheme_NoActionBar)
         super.onCreate(savedInstanceState)
 
         addCrashlyticsCustomKeys(this)
+
+        notificationPermissionDelegate = NotificationPermissionDelegate(this)
 
         // Redirect to `FirstTimeWizardActivity` if not already done
         if (!AppPreferencesManager.isFirstTimeWizardDone(this)) {
@@ -99,6 +103,8 @@ class MainActivity : BaseActivity(), ToolbarActionsListener, Mus7afDrawerItemCli
     override fun onStart() {
         super.onStart()
         isActivityActive = true
+
+        notificationPermissionDelegate.askNotificationPermission()
     }
 
     override fun onStop() {
