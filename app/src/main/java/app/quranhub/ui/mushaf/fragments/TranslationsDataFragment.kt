@@ -1,6 +1,5 @@
 package app.quranhub.ui.mushaf.fragments
 
-import android.Manifest
 import android.content.Context
 import android.os.Bundle
 import android.util.Log
@@ -33,8 +32,6 @@ import app.quranhub.util.FragmentUtils.isSafeFragment
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import pub.devrel.easypermissions.EasyPermissions
-import pub.devrel.easypermissions.EasyPermissions.PermissionCallbacks
 
 /**
  * A simple [Fragment] subclass.
@@ -43,7 +40,7 @@ import pub.devrel.easypermissions.EasyPermissions.PermissionCallbacks
  */
 // TODO apply MVVM
 class TranslationsDataFragment : Fragment(), Searchable, TranslationsAdapter.ItemClickListener,
-    PermissionCallbacks, TranslationDownloadCallback {
+    TranslationDownloadCallback {
 
     private val searchText = ""
     private var languageCode: String? = null
@@ -51,9 +48,9 @@ class TranslationsDataFragment : Fragment(), Searchable, TranslationsAdapter.Ite
     private var binding: FragmentTranslationsDataBinding? = null
     private var displayableTranslations: MutableList<DisplayableTranslation>? = null
     private var adapter: TranslationsAdapter? = null
-    var remoteTranslationBooks: List<TranslationBook>? = null
-    var translationBooksLiveData: LiveData<List<TranslationBook?>?>? = null
-    var translationDownloaders: MutableList<TranslationDownloader>? = null
+    private var remoteTranslationBooks: List<TranslationBook>? = null
+    private var translationBooksLiveData: LiveData<List<TranslationBook?>?>? = null
+    private var translationDownloaders: MutableList<TranslationDownloader>? = null
 
     private val translationsRepository = TranslationsRepository()
 
@@ -195,24 +192,6 @@ class TranslationsDataFragment : Fragment(), Searchable, TranslationsAdapter.Ite
         listener = null
     }
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this)
-    }
-
-    override fun onPermissionsGranted(requestCode: Int, perms: List<String>) {
-        //Download the file once permission is granted
-        translationDownloaders!![translationDownloaders!!.size - 1].download()
-    }
-
-    override fun onPermissionsDenied(requestCode: Int, perms: List<String>) {
-        Log.d(TAG, "Permission has been denied")
-    }
-
     override fun onTranslationClick(translationBook: TranslationBook?, clickedItemIndex: Int) {
         Log.d(TAG, "Clicked translation book: $translationBook")
         persistQuranTranslationBook(requireContext(), translationBook!!.id)
@@ -228,23 +207,7 @@ class TranslationsDataFragment : Fragment(), Searchable, TranslationsAdapter.Ite
         Log.d(TAG, "onDownloadTranslationClick: translationBook = $translationBook")
         val downloader = TranslationDownloader(translationBook!!, requireContext(), this)
         translationDownloaders!!.add(downloader)
-
-        // check if app has permission to write to the external storage.
-        if (EasyPermissions.hasPermissions(
-                requireContext(),
-                Manifest.permission.WRITE_EXTERNAL_STORAGE
-            )
-        ) {
-            downloader.download()
-        } else {
-            // if permission is not present request for the same.
-            EasyPermissions.requestPermissions(
-                this,
-                getString(R.string.translation_dowload_permission_rationale),
-                WRITE_REQUEST_CODE,
-                Manifest.permission.READ_EXTERNAL_STORAGE
-            )
-        }
+        downloader.download()
     }
 
     override fun onCancelDownloadTranslationClick(
@@ -291,7 +254,6 @@ class TranslationsDataFragment : Fragment(), Searchable, TranslationsAdapter.Ite
         private val TAG = TranslationsDataFragment::class.java.simpleName
 
         private const val ARG_LANGUAGE_CODE = "ARG_LANGUAGE_CODE"
-        private const val WRITE_REQUEST_CODE = 0
         private const val STATE_SEARCH_TEXT = "STATE_SEARCH_TEXT"
 
         /**
