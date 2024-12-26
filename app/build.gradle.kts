@@ -18,7 +18,7 @@ android {
         applicationId = "app.quranhub"
         minSdk = libs.versions.minSdkVersion.get().toInt()
         targetSdk = libs.versions.targetSdkVersion.get().toInt()
-        versionCode = 12
+        versionCode = 13
         versionName = "1.4.0"
 
         multiDexEnabled = true
