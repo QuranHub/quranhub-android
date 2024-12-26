@@ -1,4 +1,7 @@
 [versions]
+compileSdkVersion = "35"
+targetSdkVersion = "35"
+minSdkVersion = "21"
 kotlin = "2.1.0"
 androidGradlePlugin = "8.7.3"
 ksp = "2.1.0-1.0.29"
