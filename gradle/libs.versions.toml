@@ -42,7 +42,7 @@ sdpAndroid = "1.1.1"
 sspAndroid = "1.1.1"
 junit = "4.13.2"
 androidxJunit = "1.3.0"
-espressoCore = "3.6.1"
+espressoCore = "3.7.0"
 
 [libraries]
 core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
