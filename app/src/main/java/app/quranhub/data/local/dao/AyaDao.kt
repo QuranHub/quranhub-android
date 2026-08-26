@@ -20,13 +20,13 @@ interface AyaDao {
     fun getAllByIds(vararg ayaIds: Int): List<Aya?>?
 
     @Query("SELECT * FROM Aya WHERE id=:ayaId")
-    fun findById(ayaId: Int): Single<Aya?>?
+    fun findById(ayaId: Int): Single<Aya>
 
     @Query("SELECT * FROM Aya WHERE id=:ayaId")
     fun findAyaById(ayaId: Int): Aya?
 
     @Query("SELECT * FROM Aya WHERE page=:pageNum")
-    fun getAllInPage(pageNum: Int): Single<List<Aya?>?>?
+    fun getAllInPage(pageNum: Int): Single<List<Aya>>
 
     @Query("SELECT * FROM Aya WHERE page=:page AND id=:ayaId LIMIT 1")
     fun getPageAya(page: Int, ayaId: Int): Aya?
@@ -38,16 +38,16 @@ interface AyaDao {
     fun getFirstAyaInPage(pageNum: Int): Aya?
 
     @Query("SELECT id, sura, pure_text, text, page, sura_aya, juz FROM Aya WHERE id IN (select aya from AyaQuranSubject where subject=:categoryId)")
-    fun getCategoryAyas(categoryId: Int): Single<List<SearchModel?>?>?
+    fun getCategoryAyas(categoryId: Int): Single<List<SearchModel>>
 
     @Query("SELECT id, sura, pure_text, page, sura_aya, juz FROM Aya WHERE pure_text like '%' || :input || '%'")
-    fun getSimpleSearchResult(input: String?): Single<List<SearchModel?>?>?
+    fun getSimpleSearchResult(input: String?): Single<List<SearchModel>>
 
     @Query("SELECT id, sura, pure_text, page, sura_aya, juz FROM Aya WHERE pure_text like '%' || :input || '%' and sura=:suraNumber")
-    fun getSuraSearchResult(input: String?, suraNumber: Int): Single<List<SearchModel?>?>?
+    fun getSuraSearchResult(input: String?, suraNumber: Int): Single<List<SearchModel>>
 
     @Query("SELECT id, sura, pure_text, page, sura_aya, juz FROM Aya WHERE pure_text like '%' || :input || '%' and juz=:juzNumber")
-    fun getJuzSearchResult(input: String?, juzNumber: Int): Single<List<SearchModel?>?>?
+    fun getJuzSearchResult(input: String?, juzNumber: Int): Single<List<SearchModel>>
 
     @Query("SELECT distinct sura FROM Aya where juz=:juz ")
     fun getSurasInChapter(juz: Int): LiveData<List<Int?>?>?
@@ -57,7 +57,7 @@ interface AyaDao {
         inputSearch: String?,
         selectedSura: Int,
         selectedJuz: Int
-    ): Single<List<SearchModel?>?>?
+    ): Single<List<SearchModel>>
 
     @Query(
         "SELECT id, sura, pure_text, text, page, sura_aya, juz FROM Aya WHERE pure_text like '%' || :inputSearch || '%' " +
@@ -69,7 +69,7 @@ interface AyaDao {
         selectedJuz: Int,
         startHezbInterval: Int,
         endHezbInterval: Int
-    ): Single<List<SearchModel?>?>?
+    ): Single<List<SearchModel>>
 
     @Query(
         "SELECT id, sura, pure_text, text, page, sura_aya, juz FROM Aya WHERE pure_text like '%' || :inputSearch || '%' " +
@@ -82,16 +82,16 @@ interface AyaDao {
         selectedJuz: Int,
         startHezbInterval: Int,
         endHezbInterval: Int
-    ): Single<List<SearchModel?>?>?
+    ): Single<List<SearchModel>>
 
     @Query("select sura, sura_aya, pure_text,text, page from aya where id IN(:ayaIds)")
-    fun getNoteData(ayaIds: List<Int?>?): Single<List<MyNoteModel?>?>?
+    fun getNoteData(ayaIds: List<Int?>?): Single<List<MyNoteModel>>
 
     @Query("select DISTINCT (page), sura from aya ")
-    fun getSuraPage(): Single<List<PageSuras?>?>?
+    fun getSuraPage(): Single<List<PageSuras>>
 
     @Query("select page from aya where id=:ayaId")
-    fun getAyaPage(ayaId: Int): Single<Int?>?
+    fun getAyaPage(ayaId: Int): Single<Int>
 
     @Query("SELECT * FROM Aya where id=(SELECT MIN(id) FROM Aya WHERE sura=:sura)")
     fun getFirstAyaInSura(sura: Int): Aya?

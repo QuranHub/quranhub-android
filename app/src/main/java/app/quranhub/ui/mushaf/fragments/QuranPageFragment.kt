@@ -671,7 +671,7 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
                 }
 
                 override fun onResourceReady(
-                    resource: Drawable,
+                    resource: Drawable?,
                     model: Any,
                     target: Target<Drawable?>?,
                     dataSource: DataSource,
@@ -682,7 +682,7 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
                         binding.loadFailedContainer.root.visibility = View.GONE
                         isPageShown = true
                         if (nightMode) {
-                            resource.let { ImageUtil.invertDrawable(it) }
+                            resource?.let { ImageUtil.invertDrawable(it) }
                         }
 
                         // auto play aya audio if audio player is playing  after image is loaded

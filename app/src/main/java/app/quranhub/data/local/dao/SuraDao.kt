@@ -11,17 +11,17 @@ import io.reactivex.Single
 @Dao
 interface SuraDao {
     @Query("SELECT * FROM Sura")
-    fun getAll(): Single<List<Sura?>?>?
+    fun getAll(): Single<List<Sura>>
 
     @Query("SELECT * FROM Sura WHERE id=:suraId")
     fun findById(suraId: Int): Sura?
 
     @Query("SELECT juz, sura from aya where page=:currentPage LIMIT 1")
-    fun getQuranPageInfo(currentPage: Int): Single<QuranPageInfo?>?
+    fun getQuranPageInfo(currentPage: Int): Single<QuranPageInfo>
 
     @Query("select sura.id, sura.ayas, sura.type, aya.juz, aya.page, aya.sura from sura join aya on aya.sura=sura.id and aya.sura_aya=1")
-    fun getSuraIndexInfo(): Single<List<SuraIndexModel?>?>?
+    fun getSuraIndexInfo(): Single<List<SuraIndexModel>>
 
     @Query("select id, ayas from sura")
-    fun getSuraVersesNumber(): Single<List<SuraVersesNumber?>?>?
+    fun getSuraVersesNumber(): Single<List<SuraVersesNumber>>
 }

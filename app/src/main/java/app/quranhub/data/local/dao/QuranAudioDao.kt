@@ -16,7 +16,7 @@ interface QuranAudioDao {
     fun getAll(): List<QuranAudio?>?
 
     @Query("SELECT file_path FROM QURANAUDIO where aya_id=:id")
-    fun getAllAyaAudioPathTest(id: Int): Single<String?>?
+    fun getAllAyaAudioPathTest(id: Int): Single<String>
 
     @Query("SELECT * FROM QuranAudio where id IN (:quranAudioIds) ORDER BY aya_id")
     fun getAllByIds(quranAudioIds: IntArray?): List<QuranAudio?>?
@@ -61,7 +61,7 @@ interface QuranAudioDao {
     fun getAyaAudioPath(ayaId: Int, recitation: Int, sheikh: String?): Single<String>
 
     @Query("select recorderPath from ayarecorder where ayaId=:ayaId and recitation=:recitation")
-    fun getAyaRecorderPath(ayaId: Int, recitation: Int): Single<String?>?
+    fun getAyaRecorderPath(ayaId: Int, recitation: Int): Single<String>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertAyaRecorder(recorder: AyaRecorder)

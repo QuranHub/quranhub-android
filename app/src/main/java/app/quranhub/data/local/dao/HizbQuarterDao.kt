@@ -10,7 +10,7 @@ import io.reactivex.Single
 @Dao
 interface HizbQuarterDao {
     @Query("SELECT * FROM HizbQuarter")
-    fun getAll(): Single<List<HizbQuarter?>?>?
+    fun getAll(): Single<List<HizbQuarter>>
 
     @Query("SELECT * FROM HizbQuarter WHERE id=:id")
     fun getById(id: Int): HizbQuarter?

@@ -10,13 +10,13 @@ import io.reactivex.Single
 @Dao
 interface NoteDao {
     @Query("select * from note")
-    fun getAllNotes(): Single<List<Note?>?>?
+    fun getAllNotes(): Single<List<Note>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertNote(note: Note)
 
     @Query("select * from note where ayaId=:ayaId")
-    fun getAyaNote(ayaId: Int): Single<Note?>?
+    fun getAyaNote(ayaId: Int): Single<Note>
 
     @Query("delete from note where ayaId=:ayaId")
     fun deleteNote(ayaId: Int)

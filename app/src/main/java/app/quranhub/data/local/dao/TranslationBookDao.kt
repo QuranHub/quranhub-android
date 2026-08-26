@@ -21,7 +21,7 @@ interface TranslationBookDao {
     fun getByLanguage(langCode: String?): LiveData<List<TranslationBook?>?>?
 
     @Query("SELECT * FROM TranslationBook WHERE id=:id")
-    fun findById(id: String?): Single<TranslationBook?>?
+    fun findById(id: String?): Single<TranslationBook>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(translationBook: TranslationBook)

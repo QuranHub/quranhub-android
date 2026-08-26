@@ -2,15 +2,11 @@ package app.quranhub.util
 
 import android.content.Context
 import android.os.Build
-import com.google.firebase.crashlytics.ktx.crashlytics
-import com.google.firebase.crashlytics.ktx.setCustomKeys
-import com.google.firebase.ktx.Firebase
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 
 fun addCrashlyticsCustomKeys(context: Context) {
     val appInstaller = getAppInstaller(context)
-    Firebase.crashlytics.setCustomKeys {
-        key("App Installer", appInstaller)
-    }
+    FirebaseCrashlytics.getInstance().setCustomKey("App Installer", appInstaller)
 }
 
 /**

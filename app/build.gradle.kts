@@ -1,8 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.parcelize)
-    alias(libs.plugins.kotlin.kapt)
     alias(libs.plugins.ksp)
     alias(libs.plugins.google.services)
     alias(libs.plugins.crashlytics)
@@ -50,9 +48,6 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = "17"
-    }
 
     buildFeatures {
         viewBinding = true
@@ -80,6 +75,7 @@ dependencies {
     implementation(libs.easypermissions)
     implementation(libs.eventbus)
     implementation(libs.androidx.annotation)
+    implementation(libs.kotlin.parcelize.runtime)
 
     // UI-related
     implementation(libs.material)
@@ -101,7 +97,7 @@ dependencies {
     // Networking
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
-    implementation(libs.retrofit.rxjava2.adapter)
+    implementation(libs.retrofit.adapter.rxjava2)
     implementation(libs.glide)
     ksp(libs.glide.ksp)
     implementation(project(":prdownloader-service"))
@@ -122,10 +118,10 @@ dependencies {
 
     // Firebase
     implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.analytics.ktx)
-    implementation(libs.firebase.firestore.ktx)
+    implementation(libs.firebase.analytics)
+    implementation(libs.firebase.firestore)
     implementation(libs.firebase.messaging)
-    implementation(libs.firebase.crashlytics.ktx)
+    implementation(libs.firebase.crashlytics)
     implementation(libs.firebase.perf)
 
     // Testing

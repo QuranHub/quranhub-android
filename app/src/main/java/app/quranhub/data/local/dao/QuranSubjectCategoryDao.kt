@@ -8,7 +8,7 @@ import io.reactivex.Single
 @Dao
 interface QuranSubjectCategoryDao {
     @Query("SELECT * FROM QuranSubjectCategory")
-    fun getAll(): Single<List<QuranSubjectCategory?>?>?
+    fun getAll(): Single<List<QuranSubjectCategory>>
 
     @Query("SELECT * FROM QuranSubjectCategory WHERE id IN(:ids)")
     fun getAllByIds(vararg ids: Int): List<QuranSubjectCategory?>?

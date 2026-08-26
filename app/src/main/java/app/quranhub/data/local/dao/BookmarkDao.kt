@@ -19,17 +19,17 @@ interface BookmarkDao {
     fun insertAyaBookmark(ayaBookmark: AyaBookmark)
 
     @Query("select * from AyaBookmark")
-    fun getAllBookmarks(): Single<List<AyaBookmark?>?>?
+    fun getAllBookmarks(): Single<List<AyaBookmark>>
 
     @Query("select * from BookmarkType")
-    fun getBookmarksType(): Single<List<BookmarkType?>?>?
+    fun getBookmarksType(): Single<List<BookmarkType>>
 
     @Query("select * from AyaBookmark where bookmarkTypeId=:id")
     fun getTypeBookmarks(id: Int): LiveData<List<AyaBookmark?>?>?
 
     @Query("select AyaBookmark.bookmarkTypeId, BookmarkType.colorIndex from AyaBookmark join BookmarkType on AyaBookmark.bookmarkTypeId=BookmarkType.typeId where bookmarkId=:id")
     fun  // todo make query return bookmarktype and color index to set filter to icon by join statment
-            getBookmarkType(id: Int): Single<BookmarkModel?>?
+            getBookmarkType(id: Int): Single<BookmarkModel>
 
     @Query("delete from AyaBookmark where bookmarkId=:id")
     fun deleteAyaBookmark(id: Int)
@@ -41,7 +41,7 @@ interface BookmarkDao {
     fun changeAyaBookmarkType(bookmarkId: Int, bookmarkTypeId: Int)
 
     @Query("select * from BookmarkType")
-    fun getBookmarkTypes(): Single<List<BookmarkType?>?>?
+    fun getBookmarkTypes(): Single<List<BookmarkType>>
 
     @Query("select * from BookmarkType")
     fun getBookmarkTypesLiveData(): LiveData<List<BookmarkType?>?>?

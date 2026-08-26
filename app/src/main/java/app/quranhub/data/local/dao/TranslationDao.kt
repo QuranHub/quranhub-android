@@ -10,13 +10,13 @@ import io.reactivex.Single
 interface TranslationDao {
 
     @Query("SELECT * FROM translation")
-    fun getAll(): Single<List<Translation?>?>?
+    fun getAll(): Single<List<Translation>>
 
     @Query("SELECT * FROM translation where `sura`=:suraNumber")
     fun getAyasTafseer(suraNumber: Int): LiveData<List<Translation?>?>?
 
     @Query("SELECT text FROM translation WHERE `index`=:index")
-    fun findByIndex(index: Int): Single<String?>?
+    fun findByIndex(index: Int): Single<String>
 
     @Query("SELECT * FROM translation WHERE sura=:sura AND aya=:aya LIMIT 1")
     fun findForAya(sura: Int, aya: Int): Translation?

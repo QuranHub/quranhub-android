@@ -4,7 +4,7 @@ import app.quranhub.data.local.entity.TranslationBook
 import app.quranhub.data.model.TranslationModel
 import app.quranhub.util.NetworkUtil
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.ktx.dataObjects
+import com.google.firebase.firestore.dataObjects
 import kotlinx.coroutines.flow.map
 
 class TranslationsRepository {
