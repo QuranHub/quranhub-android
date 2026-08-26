@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Environment
 import android.util.Log
+import androidx.room.EmptyResultSetException
 import app.quranhub.data.Constants
 import app.quranhub.data.local.db.MushafDatabase
 import app.quranhub.data.local.db.TranslationDatabase
@@ -83,8 +84,12 @@ class Mus7fInteractorImp(
         mushafDatabase.ayaDao.getAyaPage(fromAya)
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
-            .subscribe({ res -> resultListener.onGetAyaPage(res) }, {
-                Log.d(TAG, "Failed getFromAyaPage: ")
+            .subscribe({ res -> resultListener.onGetAyaPage(res) }, { error ->
+                if (error is EmptyResultSetException) {
+                    Log.d(TAG, "getFromAyaPage: Aya not found")
+                } else {
+                    Log.e(TAG, "Failed getFromAyaPage: ", error)
+                }
             })
     }
 
@@ -94,13 +99,13 @@ class Mus7fInteractorImp(
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({ result ->
-                if (result != null) {
-                    resultListener.onGetPageInfo(result)
-                } else {
-                    resultListener.onErrorOccurred()
-                }
+                resultListener.onGetPageInfo(result)
             }, { error ->
-                Log.d(TAG, "getPageInfo: $error")
+                if (error is EmptyResultSetException) {
+                    Log.d(TAG, "getPageInfo: Page info not found")
+                } else {
+                    Log.e(TAG, "getPageInfo: ", error)
+                }
                 resultListener.onErrorOccurred()
             })
     }
@@ -126,7 +131,12 @@ class Mus7fInteractorImp(
                 .subscribeOn(Schedulers.io())
                 .subscribe({ res ->
                     resultListener.onGetAyaTafseer(res)
-                }, {
+                }, { error ->
+                    if (error is EmptyResultSetException) {
+                        Log.d(TAG, "getAyaTafseer: Tafseer not found")
+                    } else {
+                        Log.e(TAG, "getAyaTafseer: ", error)
+                    }
                     resultListener.onErrorOccurred()
                 })
         }
@@ -140,8 +150,12 @@ class Mus7fInteractorImp(
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({ path ->
                 resultListener.onAyaHasRecorder(path)
-            }, {
-                Log.e(TAG, "checkAyaHasRecorder: No recorder exist")
+            }, { error ->
+                if (error is EmptyResultSetException) {
+                    Log.d(TAG, "checkAyaHasRecorder: No recorder exist")
+                } else {
+                    Log.e(TAG, "checkAyaHasRecorder: Error", error)
+                }
             })
     }
 
@@ -163,8 +177,12 @@ class Mus7fInteractorImp(
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({ result ->
                 resultListener.onGetAya(result)
-            }, {
-                Log.e(TAG, "onError: getAya")
+            }, { error ->
+                if (error is EmptyResultSetException) {
+                    Log.d(TAG, "getAya: Aya not found")
+                } else {
+                    Log.e(TAG, "onError: getAya", error)
+                }
             })
     }
 

@@ -3,6 +3,7 @@ package app.quranhub.ui.mushaf.interactor
 import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
+import androidx.room.EmptyResultSetException
 import app.quranhub.R
 import app.quranhub.data.local.db.MushafDatabase
 import app.quranhub.data.local.db.UserDatabase
@@ -68,13 +69,13 @@ class QuranPageInteractorImp(
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({ type ->
-                if (type != null) {
-                    resultListener.onGetBookmarkType(type)
+                resultListener.onGetBookmarkType(type)
+            }, { error ->
+                if (error is EmptyResultSetException) {
+                    Log.d(TAG, "getBookmarkType: No bookmark for this aya")
                 } else {
-                    Log.d(TAG, "getBookmarkType: No type")
+                    Log.e(TAG, "getBookmarkType: Error", error)
                 }
-            }, {
-                Log.d(TAG, "getBookmarkType: Error")
             })
     }
 
@@ -120,7 +121,12 @@ class QuranPageInteractorImp(
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({ result ->
                 resultListener.onGetAyaNote(result)
-            }, {
+            }, { error ->
+                if (error is EmptyResultSetException) {
+                    Log.d(TAG, "checkAyaNote: No note for this aya")
+                } else {
+                    Log.e(TAG, "checkAyaNote: Error", error)
+                }
             })
     }
 
