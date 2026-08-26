@@ -281,7 +281,7 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
 
     private fun getCurrentPageAyas() {
         ayaShadowsViews = ArrayList()
-        presenter = QuranPagePresenterImp(activity)
+        presenter = QuranPagePresenterImp(requireContext())
         presenter!!.onAttach(this)
         presenter!!.getPageAyas(quranPageNum)
     }
@@ -466,8 +466,9 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
     }
 
     override fun addCustomBookmark(type: BookmarkType?) {
-        if (currentAya != null) {
-            presenter!!.insertCustomBookmark(currentAya, type)
+        val aya = currentAya
+        if (aya != null && type != null) {
+            presenter!!.insertCustomBookmark(aya, type)
         }
     }
 
@@ -641,7 +642,9 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
 
     override fun onAddNote(note: Note?, isEditable: Boolean) {
         requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-        presenter!!.addNote(note)
+        if (note != null) {
+            presenter!!.addNote(note)
+        }
         if (isEditable) {
             Toast.makeText(activity, getString(R.string.note_edited), Toast.LENGTH_LONG).show()
         } else {

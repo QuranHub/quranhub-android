@@ -95,7 +95,7 @@ class SuraGuz2IndexFragment : Fragment(), SuraGuz2IndexView,
     }
 
     private fun initPresenter() {
-        presenter = SuraGuz2IndexPresenterImp<SuraGuz2IndexView>(activity)
+        presenter = SuraGuz2IndexPresenterImp<SuraGuz2IndexView>(requireContext())
         (presenter as? SuraGuz2IndexPresenterImp<SuraGuz2IndexView>)?.onAttach(this)
     }
 

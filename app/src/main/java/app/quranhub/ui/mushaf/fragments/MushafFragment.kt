@@ -544,7 +544,7 @@ class MushafFragment : Fragment(), MushafView, QuranFooterCallbacks, Translation
             binding.translationBottomSheet.prevIv.visibility = View.VISIBLE
         } else if (book == null) {
             // load translation book from TranslationDB if exist to get aya translation from it
-            presenter!!.getCurrentTafseerBook(currentTafseerId)
+            presenter!!.getCurrentTafseerBook(currentTafseerId!!)
         } else {
             presenter!!.getAyaTafseer(selectedAya.id)
         }
@@ -812,7 +812,7 @@ class MushafFragment : Fragment(), MushafView, QuranFooterCallbacks, Translation
     }
 
     override fun onStopRecording(filePath: String?) {
-        presenter!!.saveRecorderPath(ayaId, filePath)
+        presenter!!.saveRecorderPath(ayaId, filePath!!)
         ayaAudioPopup!!.showPopup(binding.quranViewpager)
         ayaAudioPopup!!.setRecordState(true)
         ayaHasRecorder = true
