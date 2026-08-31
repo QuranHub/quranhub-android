@@ -76,6 +76,7 @@ dependencies {
     implementation(libs.eventbus)
     implementation(libs.androidx.annotation)
     implementation(libs.kotlin.parcelize.runtime)
+    implementation(libs.kotlinx.coroutines.android)
 
     // UI-related
     implementation(libs.material)
@@ -104,6 +105,7 @@ dependencies {
 
     // Room
     implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
     ksp(libs.room.compiler)
     implementation(libs.room.rxjava2)
 

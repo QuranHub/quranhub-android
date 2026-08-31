@@ -3,6 +3,7 @@ compileSdkVersion = "37"
 targetSdkVersion = "36"
 minSdkVersion = "23"
 kotlin = "2.4.10"
+coroutines = "1.10.2"
 androidGradlePlugin = "9.3.2"
 ksp = "2.3.11"
 googleServices = "4.5.0"
@@ -60,6 +61,7 @@ recyclerview = { module = "androidx.recyclerview:recyclerview", version.ref = "r
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
 room-rxjava2 = { module = "androidx.room:room-rxjava2", version.ref = "room" }
+room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
 viewpager = { module = "androidx.viewpager:viewpager", version.ref = "viewpager" }
 circular-progress-button = { module = "com.github.dmytrodanylyk:circular-progress-button", version.ref = "circularProgressButton" }
 easypermissions = { module = "pub.devrel:easypermissions", version.ref = "easypermissions" }
@@ -88,6 +90,7 @@ sdp-android = { module = "com.intuit.sdp:sdp-android", version.ref = "sdpAndroid
 ssp-android = { module = "com.intuit.ssp:ssp-android", version.ref = "sspAndroid" }
 spectrum = { module = "com.thebluealliance:spectrum", version.ref = "spectrum" }
 kotlin-parcelize-runtime = { module = "org.jetbrains.kotlin:kotlin-parcelize-runtime", version.ref = "kotlin" }
+kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 junit = { module = "junit:junit", version.ref = "junit" }
 androidx-junit = { module = "androidx.test.ext:junit", version.ref = "androidxJunit" }
 espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "espressoCore" }
