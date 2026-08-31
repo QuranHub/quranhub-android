@@ -1,12 +1,7 @@
 package app.quranhub.ui.mushaf.interactor
 
-import app.quranhub.ui.mushaf.model.SuraIndexModelMapper
+import app.quranhub.ui.mushaf.model.SuraIndexModel
 
 interface SuraGuz2IndexInteractor {
-    fun getSuraIndex()
-
-    interface GetIndexListener {
-        fun onGetIndex(indexList: List<SuraIndexModelMapper>)
-        fun onGetIndexFailed(msg: String)
-    }
+    suspend fun getSuraIndex(): List<SuraIndexModel>
 }

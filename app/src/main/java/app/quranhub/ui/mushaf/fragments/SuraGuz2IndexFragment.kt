@@ -3,12 +3,10 @@ package app.quranhub.ui.mushaf.fragments
 import android.content.Context
 import android.os.Bundle
 import android.text.Editable
-import android.text.TextUtils
 import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.fragment.app.Fragment
 import app.quranhub.R
 import app.quranhub.databinding.FragmentSuraGuz2IndexBinding
@@ -16,40 +14,31 @@ import app.quranhub.ui.common.dialogs.OptionsListDialogFragment
 import app.quranhub.ui.common.dialogs.OptionsListDialogFragment.Companion.getInstance
 import app.quranhub.ui.common.interfaces.ToolbarActionsListener
 import app.quranhub.ui.mushaf.adapter.Guz2IndexAdapter
-import app.quranhub.ui.mushaf.listener.QuranNavigationCallbacks
-import app.quranhub.ui.mushaf.model.SuraIndexModelMapper
-import app.quranhub.ui.mushaf.presenter.SuraGuz2IndexPresenter
-import app.quranhub.ui.mushaf.presenter.SuraGuz2IndexPresenterImp
-import app.quranhub.ui.mushaf.view.SuraGuz2IndexView
-import app.quranhub.util.ScreenUtils.dismissKeyboard
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayout.OnTabSelectedListener
 import java.util.Arrays
 
-class SuraGuz2IndexFragment : Fragment(), SuraGuz2IndexView,
+class SuraGuz2IndexFragment : Fragment(),
     OptionsListDialogFragment.ItemSelectionListener {
 
     private var toolbarActionsListener: ToolbarActionsListener? = null
-    private var quranNavigationCallbacks: QuranNavigationCallbacks? = null
     private var selectedTab = SURA_INDEX_TAB
     private var suraIndexFragment: SuraIndexFragment? = null
     private var guz2IndexFragment: Guz2IndexFragment? = null
-    private var presenter: SuraGuz2IndexPresenter<*>? = null
     private var inputSearch: String? = ""
     private var selectedGUZ2Filter = Guz2IndexAdapter.FILTER_GUZ2_ALL
 
     private var binding: FragmentSuraGuz2IndexBinding? = null
 
+    val currentSearchQuery: String?
+        get() = inputSearch
+
     override fun onAttach(context: Context) {
         super.onAttach(context)
-        if (context is ToolbarActionsListener && context is QuranNavigationCallbacks) {
+        if (context is ToolbarActionsListener) {
             toolbarActionsListener = context
-            quranNavigationCallbacks = context
         } else {
-            error(
-                "The parent activity must implement ToolbarActionsListener" +
-                        " & QuranNavigationCallbacks interfaces."
-            )
+            error("The parent activity must implement ToolbarActionsListener interface.")
         }
     }
 
@@ -71,7 +60,6 @@ class SuraGuz2IndexFragment : Fragment(), SuraGuz2IndexView,
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         restoreSavedInstanceState(savedInstanceState)
-        initPresenter()
         addIndexFragment(selectedTab)
         attachListeners()
     }
@@ -91,12 +79,6 @@ class SuraGuz2IndexFragment : Fragment(), SuraGuz2IndexView,
     override fun onDetach() {
         super.onDetach()
         toolbarActionsListener = null
-        quranNavigationCallbacks = null
-    }
-
-    private fun initPresenter() {
-        presenter = SuraGuz2IndexPresenterImp<SuraGuz2IndexView>(requireContext())
-        (presenter as? SuraGuz2IndexPresenterImp<SuraGuz2IndexView>)?.onAttach(this)
     }
 
     private fun restoreSavedInstanceState(savedInstanceState: Bundle?) {
@@ -153,7 +135,6 @@ class SuraGuz2IndexFragment : Fragment(), SuraGuz2IndexView,
             }
             binding!!.filterBtn.visibility = View.INVISIBLE
             binding!!.etSearch.visibility = View.VISIBLE
-            presenter!!.getSuraIndex()
         } else if (tab == GUZ2_INDEX_TAB) {
             guz2IndexFragment =
                 childFragmentManager.findFragmentByTag(FRAGMENT_GUZ2_INDEX) as Guz2IndexFragment?
@@ -187,30 +168,6 @@ class SuraGuz2IndexFragment : Fragment(), SuraGuz2IndexView,
         }
     }
 
-    fun navigateToSelectedSura(suraPage: Int) {
-        dismissKeyboard(requireActivity(), binding!!.etSearch)
-        quranNavigationCallbacks!!.gotoQuranPage(suraPage)
-    }
-
-    override fun onGetIndex(indexList: List<SuraIndexModelMapper>) {
-        suraIndexFragment!!.setAdapterData(indexList)
-        if (!TextUtils.isEmpty(inputSearch)) {
-            suraIndexFragment!!.onSearchSura(inputSearch)
-        }
-    }
-
-    override fun showMessage(message: String) {
-        Toast.makeText(activity, message, Toast.LENGTH_LONG).show()
-    }
-
-    override fun showLoading() {
-        binding!!.progreesBar.visibility = View.VISIBLE
-    }
-
-    override fun hideLoading() {
-        binding!!.progreesBar.visibility = View.GONE
-    }
-
     override fun onItemSelected(requestCode: Int, itemIndex: Int) { // filter dialog callback
         if (requestCode == RC_GUZ2_FILTER && guz2IndexFragment != null) {
             selectedGUZ2Filter = itemIndex
@@ -219,8 +176,6 @@ class SuraGuz2IndexFragment : Fragment(), SuraGuz2IndexView,
     }
 
     companion object {
-        private val TAG = SuraGuz2IndexFragment::class.java.simpleName
-
         private const val ARG_SELECTED_TAB = "ARG_SELECTED_TAB"
         private const val STATE_SELECTED_TAB = "STATE_SELECTED_TAB"
         private const val STATE_INPUT_SEARCH = "STATE_INPUT_SEARCH"

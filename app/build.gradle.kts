@@ -112,6 +112,7 @@ dependencies {
     // Lifecycle, ViewModel & LiveData
     implementation(libs.lifecycle.viewmodel.ktx)
     implementation(libs.lifecycle.livedata.ktx)
+    implementation(libs.lifecycle.runtime.ktx)
     implementation(libs.lifecycle.common.java8)
 
     // ReactiveX

@@ -2,37 +2,48 @@ package app.quranhub.ui.mushaf.viewmodel
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.viewModelScope
 import app.quranhub.ui.mushaf.interactor.Guz2IndexInteractor
 import app.quranhub.ui.mushaf.interactor.Guz2IndexInteractorImp
 import app.quranhub.ui.mushaf.model.HizbQuarterDataModel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 class Guz2IndexViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val guz2IndexInteractor: Guz2IndexInteractor
-    private var _hizbQuarterDataModelsLiveData: LiveData<List<HizbQuarterDataModel>>? = null
-    private val indexItemClickEvent = MutableLiveData<IndexItemClickEvent>()
+    data class JuzIndexUiState(
+        val loading: Boolean = true,
+        val items: List<HizbQuarterDataModel> = emptyList()
+    )
+
+    class IndexItemClickEvent(val page: Int)
+
+    private val guz2IndexInteractor: Guz2IndexInteractor = Guz2IndexInteractorImp(application)
+
+    private val _uiState = MutableStateFlow(JuzIndexUiState())
+    val uiState: StateFlow<JuzIndexUiState> = _uiState.asStateFlow()
+
+    private val _indexItemClickEvents = Channel<IndexItemClickEvent>(Channel.BUFFERED)
+    val indexItemClickEvents: Flow<IndexItemClickEvent> = _indexItemClickEvents.receiveAsFlow()
 
     init {
-        guz2IndexInteractor = Guz2IndexInteractorImp(application)
-    }
-
-    fun getHizbQuarterDataModelsLiveData(): LiveData<List<HizbQuarterDataModel>> {
-        if (_hizbQuarterDataModelsLiveData == null) {
-            _hizbQuarterDataModelsLiveData = guz2IndexInteractor.allHizbQuarterDataModel
+        viewModelScope.launch {
+            guz2IndexInteractor.allHizbQuarterDataModel.collect { hizbQuarterDataModels ->
+                _uiState.update { it.copy(loading = false, items = hizbQuarterDataModels) }
+            }
         }
-        return _hizbQuarterDataModelsLiveData!!
-    }
-
-    fun indexItemClickEvent(): LiveData<IndexItemClickEvent> {
-        return indexItemClickEvent
     }
 
     fun notifyIndexItemClick(clickedItemIndex: Int) {
-        val (_, _, _, startPage) = _hizbQuarterDataModelsLiveData!!.value!![clickedItemIndex]
-        indexItemClickEvent.value = IndexItemClickEvent(startPage)
+        val startPage = _uiState.value.items[clickedItemIndex].startPage
+        viewModelScope.launch {
+            _indexItemClickEvents.send(IndexItemClickEvent(startPage))
+        }
     }
-
-    class IndexItemClickEvent(var page: Int)
 }

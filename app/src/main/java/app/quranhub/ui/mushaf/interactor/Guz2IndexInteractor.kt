@@ -1,8 +1,8 @@
 package app.quranhub.ui.mushaf.interactor
 
-import androidx.lifecycle.LiveData
 import app.quranhub.ui.mushaf.model.HizbQuarterDataModel
+import kotlinx.coroutines.flow.Flow
 
 interface Guz2IndexInteractor {
-    val allHizbQuarterDataModel: LiveData<List<HizbQuarterDataModel>>
+    val allHizbQuarterDataModel: Flow<List<HizbQuarterDataModel>>
 }

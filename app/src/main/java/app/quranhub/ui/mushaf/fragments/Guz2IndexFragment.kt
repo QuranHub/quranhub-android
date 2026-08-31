@@ -2,12 +2,14 @@ package app.quranhub.ui.mushaf.fragments
 
 import android.content.Context
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import app.quranhub.databinding.FragmentGuz2IndexBinding
@@ -17,6 +19,7 @@ import app.quranhub.ui.mushaf.listener.QuranNavigationCallbacks
 import app.quranhub.ui.mushaf.model.HizbQuarterDataModel
 import app.quranhub.ui.mushaf.viewmodel.Guz2IndexViewModel
 import app.quranhub.ui.mushaf.viewmodel.Guz2IndexViewModel.IndexItemClickEvent
+import kotlinx.coroutines.launch
 
 /**
  * Fragment that displays a list containing Juz' index with its Hizb & Hizb Quarters.
@@ -64,20 +67,21 @@ class Guz2IndexFragment : Fragment(), IndexItemClickListener {
         }
         initGuz2IndexRecyclerView()
         guz2IndexViewModel = ViewModelProvider(this)[Guz2IndexViewModel::class.java]
-        guz2IndexViewModel!!.getHizbQuarterDataModelsLiveData()
-            .observe(viewLifecycleOwner) { hizbQuarterDataModels: List<HizbQuarterDataModel> ->
-                Log.d(TAG, "hizbQuarterDataModels = $hizbQuarterDataModels")
-                if (binding!!.guz2IndexProgressBar.visibility == View.VISIBLE) {
-                    binding!!.guz2IndexProgressBar.visibility = View.GONE
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    guz2IndexViewModel!!.uiState.collect { uiState ->
+                        binding!!.guz2IndexProgressBar.visibility =
+                            if (uiState.loading) View.VISIBLE else View.GONE
+                        adapter!!.setHizbQuarterDataModels(uiState.items.toMutableList())
+                    }
                 }
-                adapter!!.setHizbQuarterDataModels(hizbQuarterDataModels.toMutableList())
+                launch {
+                    guz2IndexViewModel!!.indexItemClickEvents.collect { indexItemClickEvent: IndexItemClickEvent ->
+                        quranNavigationCallbacks!!.gotoQuranPage(indexItemClickEvent.page)
+                    }
+                }
             }
-        guz2IndexViewModel!!.indexItemClickEvent().observe(
-            viewLifecycleOwner
-        ) { indexItemClickEvent: IndexItemClickEvent ->
-            quranNavigationCallbacks!!.gotoQuranPage(
-                indexItemClickEvent.page
-            )
         }
     }
 
@@ -119,7 +123,6 @@ class Guz2IndexFragment : Fragment(), IndexItemClickListener {
     }
 
     companion object {
-        private val TAG = Guz2IndexFragment::class.java.simpleName
         private const val ARG_FILTER_GUZ2 = "ARG_FILTER_GUZ2"
         private const val STATE_FILTER_GUZ2 = "STATE_FILTER_GUZ2"
 
