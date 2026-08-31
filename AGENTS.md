@@ -33,3 +33,17 @@ QuranHub Android app: a Quran reader (Hafs & Warsh mushaf, audio recitations, ta
 - Code style follows Ribot's Android guidelines (see README); versioning is SemVer.
 - Release builds have `isMinifyEnabled = false` — ProGuard rules exist but are effectively unused.
 - App release version lives in `app/build.gradle.kts` (`versionCode`/`versionName`), not in a catalog.
+
+## Agent skills
+
+### Issue tracker
+
+Issues are tracked in GitHub Issues on QuranHub/quranhub-android (via the `gh` CLI). See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default five-role triage vocabulary (labels equal their names). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: root `CONTEXT.md` + `docs/adr/`. See `docs/agents/domain.md`.
