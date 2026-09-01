@@ -19,7 +19,7 @@ interface BookmarkDao {
     fun insertAyaBookmark(ayaBookmark: AyaBookmark)
 
     @Query("select * from AyaBookmark")
-    fun getAllBookmarks(): Single<List<AyaBookmark>>
+    suspend fun getAllBookmarks(): List<AyaBookmark>
 
     @Query("select * from BookmarkType")
     fun getBookmarksType(): Single<List<BookmarkType>>
@@ -34,9 +34,6 @@ interface BookmarkDao {
     @Query("delete from AyaBookmark where bookmarkId=:id")
     fun deleteAyaBookmark(id: Int)
 
-    @Query("select * from AyaBookmark where bookmarkTypeId=:filterId")
-    fun getFilterBookmaks(filterId: Int): LiveData<List<AyaBookmark?>?>?
-
     @Query("UPDATE AyaBookmark SET bookmarkTypeId=:bookmarkTypeId WHERE bookmarkId=:bookmarkId")
     fun changeAyaBookmarkType(bookmarkId: Int, bookmarkTypeId: Int)
 
@@ -44,5 +41,5 @@ interface BookmarkDao {
     fun getBookmarkTypes(): Single<List<BookmarkType>>
 
     @Query("select * from BookmarkType")
-    fun getBookmarkTypesLiveData(): LiveData<List<BookmarkType?>?>?
+    suspend fun getAllBookmarkTypes(): List<BookmarkType>
 }

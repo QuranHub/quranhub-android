@@ -39,8 +39,7 @@ interface HizbQuarterDao {
             WHERE :ayaId BETWEEN h.aya_from AND h.aya_to ;
         """
     )
-    fun getHizbQuarterDataModelForAya(ayaId: Int): HizbQuarterDataModel?
-
+    suspend fun getHizbQuarterDataModelForAya(ayaId: Int): HizbQuarterDataModel?
     @Query(
         """
             SELECT s.id AS sura_number, a1.sura_aya AS aya_number, a1.pure_text AS aya_text

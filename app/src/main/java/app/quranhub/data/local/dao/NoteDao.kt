@@ -10,7 +10,7 @@ import io.reactivex.Single
 @Dao
 interface NoteDao {
     @Query("select * from note")
-    fun getAllNotes(): Single<List<Note>>
+    suspend fun getAllNotes(): List<Note>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertNote(note: Note)

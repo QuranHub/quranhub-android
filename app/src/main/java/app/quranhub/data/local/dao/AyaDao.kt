@@ -85,8 +85,8 @@ interface AyaDao {
         endHezbInterval: Int
     ): Single<List<SearchModel>>
 
-    @Query("select sura, sura_aya, pure_text,text, page from aya where id IN(:ayaIds)")
-    fun getNoteData(ayaIds: List<Int?>?): Single<List<MyNoteModel>>
+    @Query("select id, sura, sura_aya, pure_text,text, page from aya where id IN(:ayaIds)")
+    suspend fun getNoteData(ayaIds: List<Int>): List<MyNoteModel>
 
     @Query("select DISTINCT (page), sura from aya ")
     fun getSuraPage(): Single<List<PageSuras>>

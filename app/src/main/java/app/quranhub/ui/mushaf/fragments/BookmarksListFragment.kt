@@ -7,7 +7,10 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import app.quranhub.data.local.entity.BookmarkType
@@ -17,10 +20,10 @@ import app.quranhub.ui.mushaf.adapter.BookmarksAdapter.BookmarkActionListener
 import app.quranhub.ui.mushaf.dialogs.BookmarkEditDialog
 import app.quranhub.ui.mushaf.dialogs.BookmarkEditDialog.BookmarkFilterListener
 import app.quranhub.ui.mushaf.dialogs.BookmarkEditDialog.Companion.getInstance
-import app.quranhub.ui.mushaf.listener.BookmarksListListener
 import app.quranhub.ui.mushaf.listener.QuranNavigationCallbacks
 import app.quranhub.ui.mushaf.model.DisplayableBookmark
-import app.quranhub.ui.mushaf.viewmodel.BookmarksListViewModel
+import app.quranhub.ui.mushaf.viewmodel.BookmarksViewModel
+import kotlinx.coroutines.launch
 
 /**
  * A fragment representing a list of user saved bookmarked Quran ayas.
@@ -29,26 +32,23 @@ import app.quranhub.ui.mushaf.viewmodel.BookmarksListViewModel
  */
 class BookmarksListFragment : Fragment(), BookmarkActionListener, BookmarkFilterListener {
 
-    private var bookMarksViewModel: BookmarksListViewModel? = null
-    private var bookmarkFilterDialog: DialogFragment? = null
-    private var bookmarksListener: BookmarksListListener? = null
-    private var bookmarkTypes: List<BookmarkType?>? = null
+    private var bookMarksViewModel: BookmarksViewModel? = null
+    private var quranNavigationCallbacks: QuranNavigationCallbacks? = null
     private var editedBookmarkId = -1
     private var binding: FragmentBookmarksListBinding? = null
     private var adapter: BookmarksAdapter? = null
-    private var selectedFilterType = BookmarkEditDialog.ALL_BOOKMARK_FILTER
-    private var quranNavigationCallbacks: QuranNavigationCallbacks? = null
+    private var lastAppliedSearchQuery: String? = null
+    private var lastAppliedFilterType = -1
+    private var lastAppliedEditMode: Boolean? = null
+    private var lastRenderedBookmarks: List<DisplayableBookmark> = emptyList()
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
-        if (parentFragment is QuranNavigationCallbacks
-            && parentFragment is BookmarksListListener
-        ) {
+        if (parentFragment is QuranNavigationCallbacks) {
             quranNavigationCallbacks = parentFragment as QuranNavigationCallbacks?
-            bookmarksListener = parentFragment as BookmarksListListener?
         } else {
             error(
-                "${requireParentFragment().javaClass.simpleName} must implement QuranNavigationCallbacks & BookmarksListener interfaces."
+                "${requireParentFragment().javaClass.simpleName} must implement QuranNavigationCallbacks interface."
             )
         }
     }
@@ -59,7 +59,6 @@ class BookmarksListFragment : Fragment(), BookmarkActionListener, BookmarkFilter
     ): View {
         binding = FragmentBookmarksListBinding.inflate(inflater, container, false)
         setupBookmarksRecyclerView()
-        bookmarkFilterDialog = BookmarkEditDialog()
         return binding!!.root
     }
 
@@ -69,37 +68,52 @@ class BookmarksListFragment : Fragment(), BookmarkActionListener, BookmarkFilter
     }
 
     private fun bindViewModel() {
-        bookMarksViewModel = ViewModelProvider(this).get(
-            BookmarksListViewModel::class.java
-        )
-        bookMarksViewModel!!.getBookmarksTypes()
-        bookMarksViewModel!!.getBookmarks()
-            .observe(viewLifecycleOwner) { ayaBookmarks: List<DisplayableBookmark> ->
-                bookmarksListener!!.onEditabilityChange(ayaBookmarks.isNotEmpty())
-                bookMarksViewModel!!.bookmarksMapper(
-                    ayaBookmarks,
-                    object : BookmarksListViewModel.BookmarkMapperListener {
-                        override fun onDisplayableBookmarksReady(displayableBookmarks: List<DisplayableBookmark>?) {
-                            displayableBookmarks?.let {
-                                if (binding!!.loadingIndicator.visibility == View.VISIBLE) {
-                                    binding!!.loadingIndicator.visibility = View.GONE
-                                }
-                                adapter!!.setBookmarks(displayableBookmarks.toMutableList())
-                                if (displayableBookmarks.isNotEmpty()) {
-                                    binding!!.tvEmptyListMsg.visibility = View.GONE
-                                } else {
-                                    binding!!.tvEmptyListMsg.visibility = View.VISIBLE
-                                }
-                            }
-                        }
+        // Share the host screen's ViewModel (dialogs are UI shells over the same one)
+        bookMarksViewModel = ViewModelProvider(requireParentFragment())[
+            BookmarksViewModel::class.java
+        ]
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    bookMarksViewModel!!.uiState.collect { uiState ->
+                        binding!!.loadingIndicator.visibility =
+                            if (uiState.loading) View.VISIBLE else View.GONE
+                        val bookmarksChanged = uiState.bookmarks != lastRenderedBookmarks
+                        renderBookmarks(uiState.bookmarks)
+                        lastRenderedBookmarks = uiState.bookmarks
+                        applyListState(uiState.searchQuery, uiState.filterType, bookmarksChanged)
+                        applyEditMode(uiState.isEditMode)
+                        binding!!.tvEmptyListMsg.visibility =
+                            if (uiState.bookmarks.isEmpty()) View.VISIBLE else View.GONE
+                    }
+                }
+            }
+        }
+    }
 
-                    })
+    private fun renderBookmarks(displayableBookmarks: List<DisplayableBookmark>) {
+        adapter!!.setBookmarks(displayableBookmarks.toMutableList())
+    }
+
+    private fun applyListState(searchQuery: String, filterType: Int, listContentChanged: Boolean) {
+        if (listContentChanged || searchQuery != lastAppliedSearchQuery) {
+            lastAppliedSearchQuery = searchQuery
+            lastAppliedFilterType = filterType
+            adapter!!.filter.filter(searchQuery)
+            if (searchQuery.isEmpty() && filterType != BookmarkEditDialog.ALL_BOOKMARK_FILTER) {
+                adapter!!.filterBookmarks(filterType)
             }
-        bookMarksViewModel!!.getBookmarksTypes()
-            .observe(viewLifecycleOwner) { bookmarkTypes: List<BookmarkType?>? ->
-                binding!!.loadingIndicator.visibility = View.GONE
-                this.bookmarkTypes = bookmarkTypes
-            }
+        } else if (filterType != lastAppliedFilterType) {
+            lastAppliedFilterType = filterType
+            adapter!!.filterBookmarks(filterType)
+        }
+    }
+
+    private fun applyEditMode(isEditMode: Boolean) {
+        if (isEditMode != lastAppliedEditMode) {
+            lastAppliedEditMode = isEditMode
+            adapter!!.setEditable(isEditMode)
+        }
     }
 
     private fun setupBookmarksRecyclerView() {
@@ -128,28 +142,23 @@ class BookmarksListFragment : Fragment(), BookmarkActionListener, BookmarkFilter
 
     }
 
-    fun setEditBookmarks(isEditable: Boolean) {
-        adapter!!.setEditable(isEditable)
-    }
-
     fun showFilterDialog() {
-        if (bookmarkTypes != null) {
-            val dialog = getInstance(bookmarkTypes, selectedFilterType, false)
+        val bookmarkTypes: List<BookmarkType> = bookMarksViewModel!!.uiState.value.bookmarkTypes
+        if (bookmarkTypes.isNotEmpty()) {
+            val dialog = getInstance(
+                bookmarkTypes, bookMarksViewModel!!.uiState.value.filterType, false
+            )
             dialog.show(childFragmentManager, "BookmarkEditDialog")
         }
     }
 
-    fun searchBookmarks(text: String?) {
-        adapter!!.filter.filter(text)
-    }
-
     override fun deleteBookmark(displayableBookmark: DisplayableBookmark) {
         bookMarksViewModel!!.deleteBookmark(displayableBookmark.bookmarkId)
-        adapter!!.deleteBookmark(displayableBookmark.ayaId)
     }
 
     override fun updateBookmarkType(bookmarkId: Int) {
-        if (bookmarkTypes != null) {
+        val bookmarkTypes: List<BookmarkType> = bookMarksViewModel!!.uiState.value.bookmarkTypes
+        if (bookmarkTypes.isNotEmpty()) {
             editedBookmarkId = bookmarkId
             val dialog = getInstance(bookmarkTypes, bookmarkId, true)
             dialog.show(childFragmentManager, "BookmarkEditDialog")
@@ -158,11 +167,9 @@ class BookmarksListFragment : Fragment(), BookmarkActionListener, BookmarkFilter
 
     override fun onBookmarkFilter(bookmarkType: Int, colorIndex: Int) {
         if (editedBookmarkId == -1) {
-            selectedFilterType = bookmarkType
-            adapter!!.filterBookmarks(bookmarkType)
+            bookMarksViewModel!!.onFilterTypeSelected(bookmarkType)
         } else {
             bookMarksViewModel!!.changeBookmarkType(editedBookmarkId, bookmarkType)
-            adapter!!.editBookmark(editedBookmarkId, bookmarkType, colorIndex)
             editedBookmarkId = -1
         }
     }

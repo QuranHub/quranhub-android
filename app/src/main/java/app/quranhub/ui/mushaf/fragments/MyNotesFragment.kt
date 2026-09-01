@@ -4,14 +4,16 @@ import android.content.Context
 import android.content.pm.ActivityInfo
 import android.os.Bundle
 import android.text.Editable
-import android.text.TextUtils
 import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import app.quranhub.R
 import app.quranhub.data.local.entity.Note
@@ -29,19 +31,22 @@ import app.quranhub.ui.mushaf.viewmodel.NotesViewModel
 import app.quranhub.util.ScreenUtils
 import app.quranhub.util.ScreenUtils.dismissKeyboard
 import app.quranhub.util.ScreenUtils.getOrientationState
+import kotlinx.coroutines.launch
 
 class MyNotesFragment : Fragment(), NoteCallback, AddNoteListener, ItemSelectionListener<Int?> {
 
     private var binding: FragmentMyNotesBinding? = null
 
-    private var inputSearch: String? = ""
     private var navDrawerListener: ToolbarActionsListener? = null
     private var quranNavigationCallbacks: QuranNavigationCallbacks? = null
     private var adapter: NotesAdapter? = null
     private var viewModel: NotesViewModel? = null
-    private var selectedFilterNoteType = 0
     private var openDialog = false
     private var selectedAyaNote: DisplayedNote? = null
+    private var lastAppliedSearchQuery: String? = null
+    private var lastAppliedFilterType = -1
+    private var lastAppliedEditMode: Boolean? = null
+    private var lastRenderedNotes: List<DisplayedNote> = emptyList()
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -79,8 +84,6 @@ class MyNotesFragment : Fragment(), NoteCallback, AddNoteListener, ItemSelection
     }
 
     private fun getPrevState(savedInstanceState: Bundle) {
-        inputSearch = savedInstanceState.getString("input_search")
-        selectedFilterNoteType = savedInstanceState.getInt("filter_type")
         openDialog = savedInstanceState.getBoolean("open_dialog")
         if (openDialog) {
             openDialog = false
@@ -91,27 +94,78 @@ class MyNotesFragment : Fragment(), NoteCallback, AddNoteListener, ItemSelection
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putString("input_search", inputSearch)
-        outState.putInt("filter_type", selectedFilterNoteType)
         outState.putBoolean("open_dialog", openDialog)
         outState.putParcelable("selected_note", selectedAyaNote)
     }
 
     private fun bindViewModel() {
         viewModel = ViewModelProvider(this)[NotesViewModel::class.java]
-        viewModel!!.allNotes
-        viewModel!!.notes.observe(viewLifecycleOwner) { displayedNotes: List<DisplayedNote> ->
-            binding!!.progreesBar.visibility = View.GONE
-            if (displayedNotes.isNotEmpty()) {
-                adapter!!.setNoteList(displayedNotes.toMutableList())
-                if (inputSearch != null && !TextUtils.isEmpty(inputSearch!!.trim { it <= ' ' })) {
-                    adapter!!.filter(inputSearch!!)
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    viewModel!!.uiState.collect { uiState ->
+                        binding!!.progreesBar.visibility =
+                            if (uiState.loading) View.VISIBLE else View.GONE
+                        val notesChanged = uiState.notes != lastRenderedNotes
+                        renderNotes(uiState.notes)
+                        lastRenderedNotes = uiState.notes
+                        applyListState(uiState.searchQuery, uiState.filterType, notesChanged)
+                        applyEditMode(uiState.isEditMode)
+                        binding!!.noNotesTv.visibility =
+                            if (uiState.notes.isEmpty()) View.VISIBLE else View.GONE
+                    }
                 }
-                if (selectedFilterNoteType != 0) {
-                    adapter!!.setFilteredNotes(selectedFilterNoteType - 1)
+                launch {
+                    viewModel!!.notesEvents.collect { event ->
+                        when (event) {
+                            is NotesViewModel.NotesEvent.ShowError ->
+                                Toast.makeText(
+                                    activity, event.message, Toast.LENGTH_LONG
+                                ).show()
+                        }
+                    }
                 }
+            }
+        }
+    }
+
+    private fun renderNotes(displayedNotes: List<DisplayedNote>) {
+        adapter!!.setNoteList(displayedNotes.toMutableList())
+    }
+
+    private fun applyListState(searchQuery: String, filterType: Int, listContentChanged: Boolean) {
+        if (listContentChanged || searchQuery != lastAppliedSearchQuery) {
+            lastAppliedSearchQuery = searchQuery
+            lastAppliedFilterType = filterType
+            if (searchQuery.isNotEmpty()) {
+                adapter!!.filter(searchQuery)
+            } else if (filterType == 0) {
+                adapter!!.setAllNotes()
             } else {
-                binding!!.noNotesTv.visibility = View.VISIBLE
+                adapter!!.setFilteredNotes(filterType - 1)
+            }
+        } else if (filterType != lastAppliedFilterType) {
+            lastAppliedFilterType = filterType
+            if (filterType == 0) {
+                adapter!!.setAllNotes()
+            } else {
+                adapter!!.setFilteredNotes(filterType - 1)
+            }
+        }
+    }
+
+    private fun applyEditMode(isEditMode: Boolean) {
+        if (isEditMode != lastAppliedEditMode) {
+            lastAppliedEditMode = isEditMode
+            adapter!!.setEditable(isEditMode)
+            if (isEditMode) {
+                binding!!.ibFinishEdit.visibility = View.VISIBLE
+                binding!!.editBtn.visibility = View.GONE
+                binding!!.filterBtn.visibility = View.GONE
+            } else {
+                binding!!.ibFinishEdit.visibility = View.GONE
+                binding!!.editBtn.visibility = View.VISIBLE
+                binding!!.filterBtn.visibility = View.VISIBLE
             }
         }
     }
@@ -120,8 +174,7 @@ class MyNotesFragment : Fragment(), NoteCallback, AddNoteListener, ItemSelection
         binding!!.etSearch.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
-                adapter!!.filter(s.toString())
-                inputSearch = s.toString()
+                viewModel!!.onSearchQueryChanged(s.toString())
             }
 
             override fun afterTextChanged(s: Editable) {}
@@ -174,8 +227,7 @@ class MyNotesFragment : Fragment(), NoteCallback, AddNoteListener, ItemSelection
     override fun onAddNote(note: Note?, isEditable: Boolean) {
         requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         Toast.makeText(activity, getString(R.string.note_edited), Toast.LENGTH_LONG).show()
-        adapter!!.updateNoteType(note!!)
-        viewModel!!.updateNote(note)
+        viewModel!!.updateNote(note!!)
     }
 
     override fun onDismissDialog() {
@@ -183,32 +235,21 @@ class MyNotesFragment : Fragment(), NoteCallback, AddNoteListener, ItemSelection
     }
 
     private fun onNoteEdit() {
-        adapter!!.setEditable(true)
-        binding!!.ibFinishEdit.visibility = View.VISIBLE
-        binding!!.editBtn.visibility = View.GONE
-        binding!!.filterBtn.visibility = View.GONE
+        viewModel!!.onNoteEditClicked()
     }
 
     private fun onClickFilter() {
-        val filterDialog = NotesFilterDialog.getInstance(selectedFilterNoteType)
+        val filterDialog = NotesFilterDialog.getInstance(viewModel!!.uiState.value.filterType)
         filterDialog.show(childFragmentManager, "NotesFilterDialog")
     }
 
     private fun onFinishEdit() {
-        adapter!!.setEditable(false)
-        binding!!.ibFinishEdit.visibility = View.GONE
-        binding!!.editBtn.visibility = View.VISIBLE
-        binding!!.filterBtn.visibility = View.VISIBLE
+        viewModel!!.onFinishEditClicked()
     }
 
     override fun onSelectItem(noteFilterType: Int?) {
         noteFilterType?.let {
-            selectedFilterNoteType = it
-            if (it == 0) {
-                adapter!!.setAllNotes()
-            } else {
-                adapter!!.setFilteredNotes(selectedFilterNoteType - 1)
-            }
+            viewModel!!.onFilterTypeSelected(it)
         }
     }
 

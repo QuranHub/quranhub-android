@@ -32,7 +32,8 @@ class BookmarksAdapter(
 
     fun setBookmarks(bookmarks: MutableList<DisplayableBookmark>) {
         originalBookmarks = bookmarks
-        filter.filter(searchText)
+        filteredBookmarks = bookmarks
+        notifyDataSetChanged()
     }
 
     fun setEditable(isEditable: Boolean) {

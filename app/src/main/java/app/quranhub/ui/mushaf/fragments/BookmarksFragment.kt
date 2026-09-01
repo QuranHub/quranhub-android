@@ -10,25 +10,25 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import app.quranhub.R
 import app.quranhub.databinding.FragmentBookmarksBinding
 import app.quranhub.ui.common.interfaces.ToolbarActionsListener
-import app.quranhub.ui.mushaf.listener.BookmarksListListener
 import app.quranhub.ui.mushaf.listener.QuranNavigationCallbacks
-import app.quranhub.ui.mushaf.presenter.BookmarksPresenter
-import app.quranhub.ui.mushaf.presenter.BookmarksPresenterImp
-import app.quranhub.ui.mushaf.view.BookmarksView
+import app.quranhub.ui.mushaf.viewmodel.BookmarksViewModel
 import app.quranhub.util.ScreenUtils.dismissKeyboard
+import kotlinx.coroutines.launch
 
-class BookmarksFragment : Fragment(), BookmarksView, BookmarksListListener,
-    QuranNavigationCallbacks {
+class BookmarksFragment : Fragment(), QuranNavigationCallbacks {
 
     private var binding: FragmentBookmarksBinding? = null
 
-    private var presenter: BookmarksPresenter<BookmarksView>? = null
+    private var viewModel: BookmarksViewModel? = null
     private var navDrawerListener: ToolbarActionsListener? = null
     private var quranNavigationCallbacks: QuranNavigationCallbacks? = null
-    private var isListEditable = true
     private var bookmarksListFragment: BookmarksListFragment? = null
 
     override fun onAttach(context: Context) {
@@ -56,11 +56,11 @@ class BookmarksFragment : Fragment(), BookmarksView, BookmarksListListener,
 
         // Inflate the layout for this fragment
         binding = FragmentBookmarksBinding.inflate(inflater, container, false)
-        presenter = BookmarksPresenterImp()
+        viewModel = ViewModelProvider(this)[BookmarksViewModel::class.java]
         binding!!.etSearch.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
-                (presenter as BookmarksPresenterImp).searchList(s.toString())
+                viewModel!!.onSearchQueryChanged(s.toString())
             }
 
             override fun afterTextChanged(s: Editable) {}
@@ -74,21 +74,56 @@ class BookmarksFragment : Fragment(), BookmarksView, BookmarksListListener,
         val transaction = childFragmentManager.beginTransaction()
         transaction.replace(R.id.list_container, bookmarksListFragment!!)
         transaction.commit()
-        presenter!!.onAttach(this)
         attachListeners()
+        observeViewModel()
     }
 
-    override fun onDestroyView() {
-        super.onDestroyView()
-        presenter!!.onDetach()
-        binding = null
+    private fun observeViewModel() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    viewModel!!.uiState.collect { uiState ->
+                        if (uiState.isEditMode) {
+                            binding!!.editBtn.visibility = View.INVISIBLE
+                            binding!!.ibFinishEdit.visibility = View.VISIBLE
+                            binding!!.filterBtn.visibility = View.INVISIBLE
+                        } else {
+                            binding!!.editBtn.visibility = View.VISIBLE
+                            binding!!.ibFinishEdit.visibility = View.INVISIBLE
+                            binding!!.filterBtn.visibility = View.VISIBLE
+                        }
+                        if (uiState.isListEditable) {
+                            binding!!.editBtn.setImageResource(R.drawable.edit_gold_ic)
+                        } else {
+                            binding!!.editBtn.setColorFilter(
+                                ContextCompat.getColor(
+                                    requireContext(),
+                                    R.color.dark_grey
+                                )
+                            )
+                        }
+                    }
+                }
+                launch {
+                    viewModel!!.bookmarksEvents.collect { event ->
+                        when (event) {
+                            is BookmarksViewModel.BookmarksEvent.ListNotEditable ->
+                                showMessage(getString(R.string.msg_no_bookmarks))
+
+                            is BookmarksViewModel.BookmarksEvent.ShowError ->
+                                showMessage(event.message)
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private fun attachListeners() {
-        binding!!.hamburgerIv.setOnClickListener { v: View? -> onNavHamburgerClick() }
-        binding!!.editBtn.setOnClickListener { v: View? -> edit() }
-        binding!!.filterBtn.setOnClickListener { v: View? -> filter() }
-        binding!!.ibFinishEdit.setOnClickListener { v: View? -> finishEdit() }
+        binding!!.hamburgerIv.setOnClickListener { onNavHamburgerClick() }
+        binding!!.editBtn.setOnClickListener { edit() }
+        binding!!.filterBtn.setOnClickListener { filter() }
+        binding!!.ibFinishEdit.setOnClickListener { finishEdit() }
     }
 
     private fun onNavHamburgerClick() {
@@ -96,67 +131,19 @@ class BookmarksFragment : Fragment(), BookmarksView, BookmarksListListener,
     }
 
     private fun edit() {
-        if (isListEditable) {
-            presenter!!.enableEditList()
-        } else {
-            showMessage(getString(R.string.msg_no_bookmarks))
-        }
+        viewModel!!.onEditClicked()
     }
 
     private fun filter() {
-        presenter!!.filterList()
-    }
-
-    private fun finishEdit() {
-        presenter!!.finishEditList()
-    }
-
-    override fun showMessage(message: String) {
-        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-    }
-
-    override fun showLoading() { /* there's no need for this here */
-    }
-
-    override fun hideLoading() { /* there's no need for this here */
-    }
-
-    override fun enableEditList() {
-        binding!!.editBtn.visibility = View.INVISIBLE
-        binding!!.ibFinishEdit.visibility = View.VISIBLE
-        binding!!.filterBtn.visibility = View.INVISIBLE
-        bookmarksListFragment!!.setEditBookmarks(true)
-    }
-
-    override fun finishEditList() {
-        binding!!.editBtn.visibility = View.VISIBLE
-        binding!!.ibFinishEdit.visibility = View.INVISIBLE
-        binding!!.filterBtn.visibility = View.VISIBLE
-        bookmarksListFragment!!.setEditBookmarks(false)
-    }
-
-    override fun filterList() {
         bookmarksListFragment!!.showFilterDialog()
     }
 
-    override fun searchList(text: String) {
-        bookmarksListFragment!!.searchBookmarks(text)
+    private fun finishEdit() {
+        viewModel!!.onFinishEditClicked()
     }
 
-    override fun onEditabilityChange(isEditable: Boolean) {
-        isListEditable = isEditable
-
-        // disable/enable the edit image button
-        if (isEditable) {
-            binding!!.editBtn.setImageResource(R.drawable.edit_gold_ic)
-        } else {
-            binding!!.editBtn.setColorFilter(
-                ContextCompat.getColor(
-                    requireContext(),
-                    R.color.dark_grey
-                )
-            )
-        }
+    private fun showMessage(message: String) {
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
     }
 
     override fun gotoQuranPage(pageNumber: Int) {
@@ -166,6 +153,11 @@ class BookmarksFragment : Fragment(), BookmarksView, BookmarksListListener,
     override fun gotoQuranPageAya(pageNumber: Int, ayaId: Int, addToBackStack: Boolean) {
         dismissKeyboard(requireActivity(), binding!!.etSearch)
         quranNavigationCallbacks!!.gotoQuranPageAya(pageNumber, ayaId, false)
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        binding = null
     }
 
     companion object {

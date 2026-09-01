@@ -3,6 +3,7 @@ package app.quranhub.ui.mushaf.model
 import androidx.room.ColumnInfo
 
 class MyNoteModel {
+    var id = 0
     var sura = 0
     @ColumnInfo("sura_aya")
     var suraAya = 0
