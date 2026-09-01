@@ -544,7 +544,12 @@ class MushafFragment : Fragment(), MushafView, QuranFooterCallbacks, Translation
             binding.translationBottomSheet.prevIv.visibility = View.VISIBLE
         } else if (book == null) {
             // load translation book from TranslationDB if exist to get aya translation from it
-            presenter!!.getCurrentTafseerBook(currentTafseerId!!)
+            val tafseerId = currentTafseerId
+            if (tafseerId == null) {
+                onNoBooksExist()
+            } else {
+                presenter!!.getCurrentTafseerBook(tafseerId)
+            }
         } else {
             presenter!!.getAyaTafseer(selectedAya.id)
         }
