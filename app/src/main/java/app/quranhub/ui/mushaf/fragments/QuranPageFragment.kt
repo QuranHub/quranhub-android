@@ -15,11 +15,15 @@ import android.view.ViewTreeObserver.OnGlobalLayoutListener
 import android.widget.RelativeLayout
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import app.quranhub.R
 import app.quranhub.data.Constants
 import app.quranhub.data.local.entity.Aya
-import app.quranhub.data.local.entity.AyaBookmark
-import app.quranhub.data.local.entity.BookmarkType
 import app.quranhub.data.local.entity.Note
 import app.quranhub.data.local.prefs.AppPreferencesManager
 import app.quranhub.data.model.ReciterModel
@@ -29,15 +33,12 @@ import app.quranhub.ui.downloads_manager.dialogs.AudioDownloadAmountDialogFragme
 import app.quranhub.ui.downloads_manager.dialogs.QuranRecitersDialogFragment
 import app.quranhub.ui.downloads_manager.dialogs.QuranRecitersDialogFragment.ReciterSelectionListener
 import app.quranhub.ui.mushaf.dialogs.AddBookmarkDialog
-import app.quranhub.ui.mushaf.dialogs.AddBookmarkDialog.AddBookmarkListener
 import app.quranhub.ui.mushaf.dialogs.AddNoteDialog
 import app.quranhub.ui.mushaf.dialogs.AddNoteDialog.AddNoteListener
 import app.quranhub.ui.mushaf.dialogs.AyaActionsDialog
 import app.quranhub.ui.mushaf.dialogs.AyaActionsDialog.AyaPropertiesListener
-import app.quranhub.ui.mushaf.model.BookmarkModel
-import app.quranhub.ui.mushaf.presenter.QuranPagePresenter
-import app.quranhub.ui.mushaf.presenter.QuranPagePresenterImp
-import app.quranhub.ui.mushaf.view.QuranPageView
+import app.quranhub.ui.mushaf.flowholder.QuranPageClickHolder
+import app.quranhub.ui.mushaf.viewmodel.QuranPageViewModel
 import app.quranhub.util.FragmentUtils.isSafeFragment
 import app.quranhub.util.ImageUtil
 import app.quranhub.util.IntentUtils
@@ -48,13 +49,26 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import kotlin.math.abs
 
-class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, QuranPageView,
-    AddBookmarkListener, ReciterSelectionListener, AudioDownloadListener {
+class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener,
+    ReciterSelectionListener, AudioDownloadListener {
 
     private var _binding: FragmentQuranPageBinding? = null
     private val binding get() = _binding!!
+
+    private val viewModel: QuranPageViewModel by viewModels {
+        viewModelFactory {
+            initializer {
+                QuranPageViewModel(
+                    requireActivity().application, quranPageNum
+                )
+            }
+        }
+    }
 
     private var mushafFragment: MushafFragment? = null
 
@@ -103,8 +117,6 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
 
     private var ayaShadowsViews: MutableList<View>? = null
 
-    private var presenter: QuranPagePresenter<QuranPageView>? = null
-
     private var recitationId = 0
 
     private var margin = 0
@@ -113,15 +125,11 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
     private var start = 0.0
     private var end = 0.0
 
-    private var isAyaBookmark = false
-
     private var playFirstAyaAudio = false
 
     private var playMiddleAyaAudio = false
 
     var isAyaAudioDownloaded = false
-
-    private var selectedAyaNote: Note? = null
 
     private var isVisibleToUser = false
 
@@ -153,7 +161,8 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
         setZoomScale()
         setParentFragment()
         recitationId = AppPreferencesManager.getRecitationSetting(requireContext())
-        getCurrentPageAyas()
+        ayaShadowsViews = ArrayList()
+        observeViewModel()
 
         binding.containerSv.viewTreeObserver.addOnGlobalLayoutListener(object :
             OnGlobalLayoutListener {
@@ -186,6 +195,50 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
         binding.pageIv.setOnClickListener { onQuranPageClick() }
     }
 
+    private fun observeViewModel() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    viewModel.uiState.map { it.pageAyas }.distinctUntilChanged()
+                        .collect { ayas -> onGetPageAya(ayas) }
+                }
+                launch {
+                    viewModel.uiState.map { it.saving }.distinctUntilChanged()
+                        .collect { saving ->
+                            binding.progreesBar.visibility =
+                                if (saving) View.VISIBLE else View.GONE
+                        }
+                }
+                launch {
+                    viewModel.events.collect { event -> handleEvent(event) }
+                }
+            }
+        }
+    }
+
+    private fun handleEvent(event: QuranPageViewModel.QuranPageEvent) {
+        when (event) {
+            is QuranPageViewModel.QuranPageEvent.InitAyaLoaded -> {
+                drawInitAyaShadow(event.aya, event.previousAya)
+            }
+
+            is QuranPageViewModel.QuranPageEvent.ShowBookmarkTypePicker -> {
+                bookmarkDialog = AddBookmarkDialog()
+                bookmarkDialog!!.show(childFragmentManager, "AddBookmarkDialog")
+            }
+
+            is QuranPageViewModel.QuranPageEvent.BookmarkRemoved -> {
+                ayaActionsDialog?.dismiss()
+                Toast.makeText(activity, getString(R.string.bookmark_removed), Toast.LENGTH_SHORT)
+                    .show()
+            }
+
+            is QuranPageViewModel.QuranPageEvent.ShowMessage -> {
+                showMessage(event.message)
+            }
+        }
+    }
+
     private fun setZoomScale() {
         binding.quranPageContainer.scaleX = zoomScaleFactor
         binding.quranPageContainer.scaleY = zoomScaleFactor
@@ -197,8 +250,7 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
         }
     }
 
-    override fun drawInitAyaShadow(aya: Aya, previousAya: Aya?) {
-        isAyaBookmark = false
+    private fun drawInitAyaShadow(aya: Aya, previousAya: Aya?) {
         currentAya = aya
         this.previousAya = previousAya
         drawShadow()
@@ -216,8 +268,8 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
             bookmarkDialog =
                 childFragmentManager.findFragmentByTag("AddBookmarkDialog") as AddBookmarkDialog?
             if (currentAya != null) {
-                presenter!!.getAyaBookmarkType(currentAya!!.id)
-                presenter!!.checkAyaHasNote(currentAya!!.id)
+                viewModel.selectAya(currentAya!!)
+                viewModel.loadAyaState(currentAya!!.id)
                 val currentAyaY: Int = when (recitationId) {
                     Constants.Recitation.HAFS_ID -> currentAya!!.y
                     Constants.Recitation.WARSH_ID -> currentAya!!.yw
@@ -232,8 +284,7 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
             noteDialogOpen = savedInstanceState.getBoolean("open_dialog")
             if (noteDialogOpen) {
                 noteDialogOpen = false
-                selectedAyaNote = savedInstanceState.getParcelable("selected_note")
-                openAddNoteDialog()
+                openAddNoteDialog(savedInstanceState.getParcelable("selected_note"))
             }
         }
     }
@@ -242,7 +293,7 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
         super.onSaveInstanceState(outState)
         outState.putParcelable("current_aya", currentAya)
         outState.putParcelable("prev_aya", previousAya)
-        outState.putParcelable("selected_note", selectedAyaNote)
+        outState.putParcelable("selected_note", viewModel.uiState.value.selectedAyaNote)
         outState.putBoolean("open_dialog", noteDialogOpen)
         outState.putInt("CURRENT_AYA_INDEX", currentAyaIndex)
         outState.putInt("num_of_ayas", numOfAyaInPage)
@@ -279,13 +330,6 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
 
     private fun getScaledX(x: Int) = x * imageScaleFactor
 
-    private fun getCurrentPageAyas() {
-        ayaShadowsViews = ArrayList()
-        presenter = QuranPagePresenterImp(requireContext())
-        presenter!!.onAttach(this)
-        presenter!!.getPageAyas(quranPageNum)
-    }
-
     private fun initBookmarkDialog() {
         bookmarkDialog = AddBookmarkDialog()
     }
@@ -300,9 +344,7 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
         }
         binding.pageIv.setOnLongClickListener {
             if (!isPageShown) return@setOnLongClickListener false
-            isAyaBookmark = false
             isAyaAudioDownloaded = false
-            selectedAyaNote = null
             selectedAya
             if (currentAya != null) {
                 drawShadow()
@@ -328,8 +370,8 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
         ayaActionsArgs!!.putInt(AyaActionsDialog.ARG_Y_LOCATION, yLocation)
         ayaActionsDialog!!.arguments = ayaActionsArgs
         ayaActionsDialog!!.show(childFragmentManager, "AyaActionsDialog")
-        presenter!!.getAyaBookmarkType(currentAya!!.id)
-        presenter!!.checkAyaHasNote(currentAya!!.id)
+        viewModel.selectAya(currentAya!!)
+        viewModel.loadAyaState(currentAya!!.id)
     }
 
     private fun removePrevAyaShadows() {
@@ -436,7 +478,6 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
-        presenter!!.onDetach()
     }
 
     override fun onShareClick() {
@@ -447,28 +488,10 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
 
     override fun onFasilClick() {
         ayaActionsDialog!!.dismiss()
-        if (isAyaBookmark) {                // remove from bookmark
-            presenter!!.removeBookmark(currentAya!!.id)
+        if (viewModel.uiState.value.selectedAyaBookmarkType != null) {  // remove from bookmark
+            viewModel.removeBookmark()
         } else {                        // add to bookmark
-            presenter!!.getBookmarkTypes()
-        }
-    }
-
-    override fun onGetAyaBookmarkTypes(bookmarkTypes: List<BookmarkType>) {
-        bookmarkDialog = AddBookmarkDialog.getInstance(bookmarkTypes, true)
-        bookmarkDialog!!.show(childFragmentManager, "AddBookmarkDialog")
-    }
-
-    override fun addNormalBookmark(bookmarkType: Int) {
-        if (currentAya != null) {
-            presenter!!.insertAyaBookmark(AyaBookmark(currentAya!!.id, bookmarkType, currentAya!!))
-        }
-    }
-
-    override fun addCustomBookmark(type: BookmarkType?) {
-        val aya = currentAya
-        if (aya != null && type != null) {
-            presenter!!.insertCustomBookmark(aya, type)
+            viewModel.loadBookmarkTypes()
         }
     }
 
@@ -484,48 +507,29 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
     @SuppressLint("SourceLockedOrientationActivity")
     override fun onNoteClick() {
         if (ScreenUtils.getOrientationState(requireActivity()) == ScreenUtils.PORTRAIT_STATE) {
-            openAddNoteDialog()
+            openAddNoteDialog(viewModel.uiState.value.selectedAyaNote)
         } else {
             noteDialogOpen = true
         }
         requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
     }
 
-    private fun openAddNoteDialog() {
-        val dialog: AddNoteDialog = if (selectedAyaNote != null) {
-            AddNoteDialog.getInstance(selectedAyaNote!!)
+    private fun openAddNoteDialog(note: Note?) {
+        val dialog: AddNoteDialog = if (note != null) {
+            AddNoteDialog.getInstance(note)
         } else {
             AddNoteDialog.getInstance(currentAya!!.id)
         }
         dialog.show(childFragmentManager, "AddNoteDialog")
     }
 
-    override fun onGetPageAya(ayaList: List<Aya>) {
+    private fun onGetPageAya(ayaList: List<Aya>) {
         pageAyasList = mutableListOf()
         pageAyasList?.addAll(ayaList)
         numOfAyaInPage = pageAyasList?.size ?: 0
         if (playFirstAyaAudio) checkPlayFirstAyaAudio()
         else if (playMiddleAyaAudio) checkPlayMiddleAyaAudio()
         else if (drawShadowFromNotification) drawAyaNotificationShadow()
-    }
-
-    override fun onGetAyaBookmarkType(bookmarkModel: BookmarkModel) {
-        if (ayaActionsDialog != null) {
-            isAyaBookmark = true
-            ayaActionsDialog!!.setBookmarkTypeIcon(bookmarkModel)
-        }
-    }
-
-    override fun onSuccessRemoveBookmark() {
-        ayaActionsDialog!!.dismiss()
-        Toast.makeText(activity, getString(R.string.bookmark_removed), Toast.LENGTH_SHORT).show()
-    }
-
-    override fun onAyaHasNote(note: Note) {
-        if (ayaActionsDialog != null) {
-            selectedAyaNote = note
-            ayaActionsDialog!!.setAyaHasNote()
-        }
     }
 
     // draw shadow when user make prev or next action on aya
@@ -621,20 +625,12 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
         }
     }
 
-    override fun showMessage(message: String) {
+    private fun showMessage(message: String) {
         Toast.makeText(activity, message, Toast.LENGTH_SHORT).show()
     }
 
-    override fun showLoading() {
-        binding.progreesBar.visibility = View.VISIBLE
-    }
-
-    override fun hideLoading() {
-        binding.progreesBar.visibility = View.GONE
-    }
-
     private fun onQuranPageClick() {
-        presenter!!.handleQuranPageClick()
+        QuranPageClickHolder.onPageClicked()
     }
 
     val currentAyaId: Int
@@ -643,7 +639,7 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
     override fun onAddNote(note: Note?, isEditable: Boolean) {
         requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         if (note != null) {
-            presenter!!.addNote(note)
+            viewModel.saveNote(note)
         }
         if (isEditable) {
             Toast.makeText(activity, getString(R.string.note_edited), Toast.LENGTH_LONG).show()
@@ -691,7 +687,7 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener, Qu
                         // auto play aya audio if audio player is playing  after image is loaded
                         if (playFirstAyaAudio && isVisibleToUser) checkPlayFirstAyaAudio() else if (playMiddleAyaAudio && isVisibleToUser) checkPlayMiddleAyaAudio() else if (drawShadowFromNotification && isVisibleToUser) drawAyaNotificationShadow() else {
                             if (currentAya == null) {
-                                presenter!!.drawInitAyaShadow(quranPageNum, initSelectedAyaId)
+                                viewModel.loadInitAya(quranPageNum, initSelectedAyaId)
                             } else {
                                 // draw shadow if it is exist before orientation changed
                                 drawShadow()

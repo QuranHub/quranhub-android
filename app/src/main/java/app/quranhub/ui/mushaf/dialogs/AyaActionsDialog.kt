@@ -8,10 +8,18 @@ import android.view.Gravity
 import android.view.Window
 import android.view.WindowManager
 import androidx.fragment.app.DialogFragment
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import app.quranhub.R
 import app.quranhub.data.Constants
 import app.quranhub.databinding.DialogAyaPropertiesBinding
 import app.quranhub.ui.mushaf.model.BookmarkModel
+import app.quranhub.ui.mushaf.viewmodel.QuranPageViewModel
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 
 class AyaActionsDialog : DialogFragment() {
 
@@ -19,6 +27,11 @@ class AyaActionsDialog : DialogFragment() {
     private var dialog: Dialog? = null
     private var ayaPropertiesListener: AyaPropertiesListener? = null
     private var binding: DialogAyaPropertiesBinding? = null
+
+    // Shares the host page's ViewModel (UI shell over one ViewModel per feature)
+    private val viewModel: QuranPageViewModel by lazy {
+        ViewModelProvider(requireParentFragment())[QuranPageViewModel::class.java]
+    }
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -41,7 +54,26 @@ class AyaActionsDialog : DialogFragment() {
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         binding = DialogAyaPropertiesBinding.inflate(layoutInflater)
         initializeDialog()
+        observeAyaState()
         return dialog!!
+    }
+
+    // Bookmark type and note of the selected aya come from the shared page
+    // ViewModel state (formerly pushed by the host fragment's presenter)
+    private fun observeAyaState() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.uiState
+                    .map { it.selectedAyaBookmarkType to it.selectedAyaNote }
+                    .distinctUntilChanged()
+                    .collect { (bookmarkType, note) ->
+                        bookmarkType?.let { setBookmarkTypeIcon(it) }
+                        if (note != null) {
+                            setAyaHasNote()
+                        }
+                    }
+            }
+        }
     }
 
     fun initializeDialog() {

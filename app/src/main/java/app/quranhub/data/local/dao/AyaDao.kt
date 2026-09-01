@@ -27,7 +27,7 @@ interface AyaDao {
     fun findAyaById(ayaId: Int): Aya?
 
     @Query("SELECT * FROM Aya WHERE page=:pageNum")
-    fun getAllInPage(pageNum: Int): Single<List<Aya>>
+    suspend fun getAllInPage(pageNum: Int): List<Aya>
 
     @Query("SELECT * FROM Aya WHERE page=:page AND id=:ayaId LIMIT 1")
     fun getPageAya(page: Int, ayaId: Int): Aya?

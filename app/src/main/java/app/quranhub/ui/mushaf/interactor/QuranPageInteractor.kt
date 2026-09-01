@@ -7,24 +7,13 @@ import app.quranhub.data.local.entity.Note
 import app.quranhub.ui.mushaf.model.BookmarkModel
 
 interface QuranPageInteractor {
-    fun getPageAyaWithPrevious(pageNumber: Int, ayaId: Int)
-    fun getPageAyas(page: Int)
-    fun getBookmarkType(ayaId: Int)
-    fun insertAyaBookmark(ayaBookmark: AyaBookmark)
-    fun removeBookmark(ayaId: Int)
-    fun addNote(note: Note)
-    fun checkAyaNote(ayaId: Int)
-    fun getBookmarkTypes()
-    fun insertCustomBookmark(currentAya: Aya, type: BookmarkType)
-
-    interface ResultListener {
-        fun onGetAyaWithPrevious(aya: Aya?, previousAya: Aya?)
-        fun onGetPageAyas(ayaList: List<Aya>)
-        fun onGetBookmarkType(bookmarkType: BookmarkModel)
-        fun onSuccessRemoveBookmark()
-        fun showMessage(message: String)
-        fun onSuccessAddNote()
-        fun onGetAyaNote(note: Note)
-        fun onGetBookmarkTypes(bookmarkTypes: List<BookmarkType>)
-    }
+    suspend fun getPageAyaWithPrevious(pageNumber: Int, ayaId: Int): Pair<Aya?, Aya?>
+    suspend fun getPageAyas(page: Int): List<Aya>
+    suspend fun getBookmarkType(ayaId: Int): BookmarkModel?
+    suspend fun insertAyaBookmark(ayaBookmark: AyaBookmark)
+    suspend fun removeBookmark(ayaId: Int)
+    suspend fun addNote(note: Note)
+    suspend fun checkAyaNote(ayaId: Int): Note?
+    suspend fun getBookmarkTypes(): List<BookmarkType>
+    suspend fun insertCustomBookmark(currentAya: Aya, type: BookmarkType)
 }

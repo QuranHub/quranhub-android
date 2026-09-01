@@ -1,42 +1,35 @@
 package app.quranhub.ui.mushaf.dialogs
 
 import android.app.Dialog
-import android.content.Context
 import android.os.Bundle
-import android.os.Parcelable
 import android.util.Log
 import android.view.View
 import android.view.Window
 import android.widget.Toast
 import androidx.fragment.app.DialogFragment
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import app.quranhub.R
 import app.quranhub.data.local.entity.BookmarkType
 import app.quranhub.databinding.DialogAddBookmarkBinding
 import app.quranhub.ui.mushaf.adapter.BookmarkTypeAdapter
 import app.quranhub.ui.mushaf.listener.ItemSelectionListener
+import app.quranhub.ui.mushaf.viewmodel.QuranPageViewModel
 import app.quranhub.util.DialogUtils.wrapDialogHeight
 
 class AddBookmarkDialog : DialogFragment(), ItemSelectionListener<Int> {
 
     private var binding: DialogAddBookmarkBinding? = null
     private var dialog: Dialog? = null
-    private var listener: AddBookmarkListener? = null
     private var selectedType = 0
     private var bookmarkTypes: List<BookmarkType>? = null
     private var isAddCustom = false
     private var adapter: BookmarkTypeAdapter? = null
     private var colorIndex = 0
 
-    override fun onAttach(context: Context) {
-        super.onAttach(context)
-        listener = try {
-            parentFragment as AddBookmarkListener?
-        } catch (e: ClassCastException) {
-            throw ClassCastException(
-                "The parent fragment of BookmarkEditDialog (${requireParentFragment().javaClass.simpleName}) must implement the BookmarkFilterListener interface"
-            )
-        }
+    // Shares the host page's ViewModel (UI shell over one ViewModel per feature)
+    private val viewModel: QuranPageViewModel by lazy {
+        ViewModelProvider(requireParentFragment())[QuranPageViewModel::class.java]
     }
 
     override fun onResume() {
@@ -46,7 +39,7 @@ class AddBookmarkDialog : DialogFragment(), ItemSelectionListener<Int> {
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         binding = DialogAddBookmarkBinding.inflate(layoutInflater)
-        args
+        bookmarkTypes = viewModel.uiState.value.bookmarkTypes
         initializeDialog()
         observeOnSelectedColor()
         return dialog!!
@@ -65,18 +58,6 @@ class AddBookmarkDialog : DialogFragment(), ItemSelectionListener<Int> {
             Log.d("yy8", "observeOnSelectedColor: $color")
         }
     }
-
-    private val args: Unit
-        get() {
-            arguments?.let {
-                bookmarkTypes = it.getParcelableArrayList(BOOKMARK_TYPES_ARGS)
-                if (!it.getBoolean(IS_EDITABLE)) {
-                    binding!!.addCustomGroup.visibility = View.GONE
-                    binding!!.customBookmarkGroup.visibility = View.GONE
-                    binding!!.btnShow.text = getString(R.string.show)
-                }
-            }
-        }
 
     fun initializeDialog() {
         dialog = Dialog(requireActivity())
@@ -112,14 +93,13 @@ class AddBookmarkDialog : DialogFragment(), ItemSelectionListener<Int> {
                     Toast.LENGTH_LONG
                 ).show()
             } else {
-                val type = BookmarkType(
-                    bookmarkTypes!!.size + 1, binding!!.bookmarkTitleEt.text.toString(), colorIndex
+                viewModel.addCustomBookmark(
+                    binding!!.bookmarkTitleEt.text.toString(), colorIndex
                 )
-                listener!!.addCustomBookmark(type)
                 dismiss()
             }
         } else {
-            listener!!.addNormalBookmark(selectedType)
+            viewModel.insertAyaBookmark(selectedType)
             dismiss()
         }
     }
@@ -137,25 +117,5 @@ class AddBookmarkDialog : DialogFragment(), ItemSelectionListener<Int> {
     override fun onDestroyView() {
         super.onDestroyView()
         binding = null
-    }
-
-    interface AddBookmarkListener {
-        fun addNormalBookmark(bookmarkType: Int)
-        fun addCustomBookmark(type: BookmarkType?)
-    }
-
-    companion object {
-        private const val BOOKMARK_TYPES_ARGS = "BOOKMARK_TYPES_ARGS"
-
-        private const val IS_EDITABLE = "IS_EDITABLE"
-
-        fun getInstance(types: List<BookmarkType?>?, isEditable: Boolean): AddBookmarkDialog {
-            val bundle = Bundle()
-            bundle.putParcelableArrayList(BOOKMARK_TYPES_ARGS, types as ArrayList<out Parcelable?>?)
-            bundle.putBoolean(IS_EDITABLE, isEditable)
-            val dialog = AddBookmarkDialog()
-            dialog.arguments = bundle
-            return dialog
-        }
     }
 }

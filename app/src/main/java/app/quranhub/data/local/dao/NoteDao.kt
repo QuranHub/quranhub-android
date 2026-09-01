@@ -5,7 +5,6 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import app.quranhub.data.local.entity.Note
-import io.reactivex.Single
 
 @Dao
 interface NoteDao {
@@ -16,7 +15,7 @@ interface NoteDao {
     fun insertNote(note: Note)
 
     @Query("select * from note where ayaId=:ayaId")
-    fun getAyaNote(ayaId: Int): Single<Note>
+    suspend fun getAyaNote(ayaId: Int): Note?
 
     @Query("delete from note where ayaId=:ayaId")
     fun deleteNote(ayaId: Int)

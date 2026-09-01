@@ -17,6 +17,9 @@ import android.widget.SeekBar.OnSeekBarChangeListener
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.viewpager.widget.ViewPager
 import app.quranhub.R
 import app.quranhub.data.Constants
@@ -42,9 +45,9 @@ import app.quranhub.ui.mushaf.dialogs.AyaRecorderPlayerDialog.AyaRecorderPlayerL
 import app.quranhub.ui.mushaf.dialogs.AyaRepeatDialogFragment.AyaRepeatListener
 import app.quranhub.ui.mushaf.dialogs.AyaRepeatDialogFragment.Companion.getInstance
 import app.quranhub.ui.mushaf.dialogs.TranslationsDialogFragment.Companion.newInstance
-import app.quranhub.ui.mushaf.events.QuranPageClickEvent
 import app.quranhub.ui.mushaf.fragments.MushafBottomBarFragment.QuranFooterCallbacks
 import app.quranhub.ui.mushaf.fragments.TranslationsDataFragment.TranslationSelectionListener
+import app.quranhub.ui.mushaf.flowholder.QuranPageClickHolder
 import app.quranhub.ui.mushaf.model.QuranPageInfo
 import app.quranhub.ui.mushaf.model.RepeatModel
 import app.quranhub.ui.mushaf.model.SuraVersesNumber
@@ -65,6 +68,7 @@ import me.toptas.fancyshowcase.FocusShape
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
+import kotlinx.coroutines.launch
 import java.util.Locale
 
 class MushafFragment : Fragment(), MushafView, QuranFooterCallbacks, TranslationSelectionListener,
@@ -158,6 +162,17 @@ class MushafFragment : Fragment(), MushafView, QuranFooterCallbacks, Translation
             keepScreenOn(requireActivity(), true)
         }
         checkOrientationType()
+        observeQuranPageClicks()
+    }
+
+    // Toggle the mushaf chrome bars whenever the user taps a Quran page image
+    // (typed flow holder replacing the former QuranPageClickEvent)
+    private fun observeQuranPageClicks() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                QuranPageClickHolder.pageClicks.collect { toggleQuranBars() }
+            }
+        }
     }
 
     private fun observeOnBottomSheetChanged() {
@@ -495,11 +510,6 @@ class MushafFragment : Fragment(), MushafView, QuranFooterCallbacks, Translation
         } else {
             binding.barsGroup.visibility = View.VISIBLE
         }
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN_ORDERED)
-    fun onQuranPageClick(event: QuranPageClickEvent?) {
-        toggleQuranBars()
     }
 
     override fun openSearchFragment() {
