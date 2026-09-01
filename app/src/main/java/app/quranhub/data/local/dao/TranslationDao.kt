@@ -1,9 +1,9 @@
 package app.quranhub.data.local.dao
 
-import androidx.lifecycle.LiveData
 import androidx.room.Dao
 import androidx.room.Query
 import app.quranhub.data.local.entity.Translation
+import kotlinx.coroutines.flow.Flow
 import io.reactivex.Single
 
 @Dao
@@ -13,7 +13,7 @@ interface TranslationDao {
     fun getAll(): Single<List<Translation>>
 
     @Query("SELECT * FROM translation where `sura`=:suraNumber")
-    fun getAyasTafseer(suraNumber: Int): LiveData<List<Translation?>?>?
+    fun getAyasTafseer(suraNumber: Int): Flow<List<Translation>>
 
     @Query("SELECT text FROM translation WHERE `index`=:index")
     fun findByIndex(index: Int): Single<String>

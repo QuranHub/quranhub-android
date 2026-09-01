@@ -10,13 +10,14 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import app.quranhub.R
 import app.quranhub.data.Constants
-import app.quranhub.data.local.entity.Translation
 import app.quranhub.data.local.entity.TranslationBook
-import app.quranhub.data.local.prefs.AppPreferencesManager.getQuranTranslationBook
 import app.quranhub.data.local.prefs.AppPreferencesManager.getQuranTranslationLanguage
 import app.quranhub.data.local.prefs.AppPreferencesManager.persistQuranTranslationLanguage
 import app.quranhub.databinding.FragmentTafseerBinding
@@ -29,8 +30,8 @@ import app.quranhub.ui.mushaf.dialogs.OptionDialog.Companion.getInstance
 import app.quranhub.ui.mushaf.dialogs.TranslationsDialogFragment
 import app.quranhub.ui.mushaf.fragments.TranslationsDataFragment.TranslationSelectionListener
 import app.quranhub.ui.mushaf.model.TafseerModel
-import app.quranhub.ui.mushaf.model.TafseerModel.Companion.map
 import app.quranhub.ui.mushaf.viewmodel.TafseerViewModel
+import kotlinx.coroutines.launch
 
 class TafseerFragment : Fragment(), OptionDialog.ItemClickListener, TranslationSelectionListener,
     OptionsListDialogFragment.ItemSelectionListener {
@@ -46,9 +47,6 @@ class TafseerFragment : Fragment(), OptionDialog.ItemClickListener, TranslationS
     private var ayaNumber = 0
     private var adapter: TafseerAdapter? = null
     private var viewModel: TafseerViewModel? = null
-    private var currentTafseerId: String? = null
-    private var currentTafseerLang: String? = null
-    private var ayasTafseer: List<TafseerModel>? = null
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -105,62 +103,55 @@ class TafseerFragment : Fragment(), OptionDialog.ItemClickListener, TranslationS
 
     private fun bindViewModel() {
         viewModel = ViewModelProvider(this)[TafseerViewModel::class.java]
-        if (currentTafseerId != null || currentTafseerLang == "ar") {
-            tafseers
-        } else {
-            binding!!.progreesBar.visibility = View.GONE
-            binding!!.bookTv.text = getString(R.string.choose_book)
-            Toast.makeText(activity, getString(R.string.no_downloaded_books), Toast.LENGTH_LONG)
-                .show()
-        }
-        viewModel!!.tafseers.observe(viewLifecycleOwner) { tafseerModels: List<TafseerModel>? ->
-            binding!!.progreesBar.visibility = View.GONE
-            if (!tafseerModels.isNullOrEmpty()) {
-                adapter!!.setTafseerModelList(tafseerModels)
-                if (ayaNumber <= tafseerModels.size) {
-                    binding!!.tafseerRv.scrollToPosition(ayaNumber - 1)
-                } else {
-                    binding!!.tafseerRv.scrollToPosition(0)
+        viewModel!!.setSelectedBook(bookDbName, bookName)
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    viewModel!!.uiState.collect { uiState ->
+                        renderUiState(uiState)
+                    }
                 }
-                if (inputSearch != null && !TextUtils.isEmpty(inputSearch!!.trim { it <= ' ' })) {
-                    adapter!!.filter(inputSearch!!)
+                launch {
+                    viewModel!!.tafseerEvents.collect { event ->
+                        renderEvent(event)
+                    }
                 }
-            } else {
-                Toast.makeText(activity, getString(R.string.data_failed), Toast.LENGTH_LONG).show()
             }
         }
-        viewModel!!.ayahs.observe(viewLifecycleOwner) { tafseerModels: List<TafseerModel>? ->
-            ayasTafseer = tafseerModels
-            viewModel!!.getSuraTafseers(bookDbName, suraNumber)
+        viewModel!!.loadInitialTafseers(suraNumber)
+    }
+
+    private fun renderUiState(uiState: TafseerViewModel.TafseerUiState) {
+        binding!!.progreesBar.visibility = if (uiState.loading) View.VISIBLE else View.GONE
+        uiState.bookName?.let { bookName -> binding!!.bookTv.text = bookName }
+        if (uiState.loading) {
+            return
         }
-        viewModel!!.bookTafseers.observe(viewLifecycleOwner) { translations: List<Translation>? ->
-            binding!!.progreesBar.visibility = View.GONE
-            if (translations != null && ayasTafseer != null && translations.isNotEmpty()) {
-                val tafseerModels = map(translations, ayasTafseer!!)
-                adapter!!.setTafseerModelList(tafseerModels)
-                if (ayaNumber <= tafseerModels.size) {
-                    binding!!.tafseerRv.scrollToPosition(ayaNumber - 1)
-                } else {
-                    binding!!.tafseerRv.scrollToPosition(0)
-                }
-                if (inputSearch != null && !TextUtils.isEmpty(inputSearch!!.trim { it <= ' ' })) {
-                    adapter!!.filter(inputSearch!!)
-                }
-            } else {
+        val tafseerModels = uiState.tafseerItems
+        adapter!!.setTafseerModelList(tafseerModels)
+        if (ayaNumber <= tafseerModels.size) {
+            binding!!.tafseerRv.scrollToPosition(ayaNumber - 1)
+        } else {
+            binding!!.tafseerRv.scrollToPosition(0)
+        }
+        if (inputSearch != null && !TextUtils.isEmpty(inputSearch!!.trim { it <= ' ' })) {
+            adapter!!.filter(inputSearch!!)
+        }
+    }
+
+    private fun renderEvent(event: TafseerViewModel.TafseerEvent) {
+        when (event) {
+            is TafseerViewModel.TafseerEvent.NoDownloadedBooks -> {
+                binding!!.progreesBar.visibility = View.GONE
+                binding!!.bookTv.text = getString(R.string.choose_book)
+                Toast.makeText(activity, getString(R.string.no_downloaded_books), Toast.LENGTH_LONG)
+                    .show()
+            }
+            is TafseerViewModel.TafseerEvent.DataLoadFailed -> {
                 Toast.makeText(activity, getString(R.string.data_failed), Toast.LENGTH_LONG).show()
             }
         }
     }
-
-    // get aya tafseer from default book ("EL-Meyser")
-    private val tafseers: Unit
-        get() {
-            if (currentTafseerId == null && currentTafseerLang == "ar") {         // get aya tafseer from default book ("EL-Meyser")
-                viewModel!!.getSuraTafseers(suraNumber)
-            } else {
-                viewModel!!.getSuraAyahs(suraNumber)
-            }
-        }
 
     private fun observeOnInputSearch() {
         binding!!.etSearch.addTextChangedListener(object : TextWatcher {
@@ -175,15 +166,12 @@ class TafseerFragment : Fragment(), OptionDialog.ItemClickListener, TranslationS
     }
 
     private fun readArgumentsData() {
-        currentTafseerId = getQuranTranslationBook(requireActivity())
-        currentTafseerLang = getQuranTranslationLanguage(requireActivity())
         if (arguments != null) {
             suraName = requireArguments().getString(ARG_SURA_NAME)
             suraNumber = requireArguments().getInt(ARG_SURA_NUMBER)
             bookDbName = requireArguments().getString(ARG_BOOK_DB_NAME)
             bookName = requireArguments().getString(ARG_BOOK_NAME)
             ayaNumber = requireArguments().getInt("ARG_AYA_NUMBER")
-            binding!!.bookTv.text = bookName
             binding!!.suraTv.text = suraName
         }
         val currentTranslationLanguageIndex = Constants.Language.CODES.indexOf(
@@ -231,17 +219,15 @@ class TafseerFragment : Fragment(), OptionDialog.ItemClickListener, TranslationS
     }
 
     override fun onTranslationSelected(translationBook: TranslationBook) {
-        bookDbName = translationBook.databaseName
-        tafseers
-        //viewModel.getSuraTafseers(translationBook.getDatabaseName(), suraNumber);
-        currentTafseerId = translationBook.id
-        binding!!.bookTv.text = translationBook.name
+        viewModel!!.onBookSelected(
+            translationBook.databaseName, translationBook.id, translationBook.name
+        )
     }
 
     override fun onItemSelected(requestCode: Int, itemIndex: Int) {
         val langCode = Constants.Language.CODES[itemIndex]
         persistQuranTranslationLanguage(requireContext(), langCode)
-        currentTafseerLang = langCode
+        viewModel!!.onTranslationLanguageChanged(langCode)
         binding!!.langTv.text =
             getString(Constants.Language.NAMES_STR_IDS[itemIndex])
     }
@@ -251,7 +237,7 @@ class TafseerFragment : Fragment(), OptionDialog.ItemClickListener, TranslationS
         suraName = optionName
         suraNumber = optionIndex + 1
         ayaNumber = 1
-        tafseers
+        viewModel!!.onSuraSelected(suraNumber)
         binding!!.suraTv.text = suraName
     }
 

@@ -9,6 +9,7 @@ import app.quranhub.ui.mushaf.model.PageSuras
 import app.quranhub.ui.mushaf.model.SearchModel
 import app.quranhub.ui.mushaf.model.TafseerModel
 import io.reactivex.Single
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface AyaDao {
@@ -32,7 +33,7 @@ interface AyaDao {
     fun getPageAya(page: Int, ayaId: Int): Aya?
 
     @Query("select text, tafseer, pure_text from aya WHERE sura=:suraNumber")
-    fun getPageTafseers(suraNumber: Int): LiveData<List<TafseerModel?>?>?
+    fun getPageTafseers(suraNumber: Int): Flow<List<TafseerModel>>
 
     @Query("SELECT * FROM Aya WHERE page=:pageNum LIMIT 1")
     fun getFirstAyaInPage(pageNum: Int): Aya?

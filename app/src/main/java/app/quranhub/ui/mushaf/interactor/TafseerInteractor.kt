@@ -1,12 +1,11 @@
 package app.quranhub.ui.mushaf.interactor
 
-import androidx.lifecycle.LiveData
 import app.quranhub.data.local.entity.Translation
 import app.quranhub.ui.mushaf.model.TafseerModel
+import kotlinx.coroutines.flow.Flow
 
 interface TafseerInteractor {
-    fun getSuraTafseers(suraNumber: Int): LiveData<List<TafseerModel>>
-    fun initTranslationDB(dbName: String?)
-    fun getSuraBookTafseers(suraNumber: Int): LiveData<List<Translation>>
-    fun getSuraAyah(suraNumber: Int): LiveData<List<TafseerModel>>
+    suspend fun initTranslationDB(dbName: String?)
+    fun getSuraTafseers(suraNumber: Int): Flow<List<TafseerModel>>
+    fun getSuraBookTafseers(suraNumber: Int): Flow<List<Translation>>
 }

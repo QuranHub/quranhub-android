@@ -20,7 +20,8 @@ data class TafseerModel(
             ayasTafseer: List<TafseerModel>
         ): List<TafseerModel> {
             val tafseerModels: MutableList<TafseerModel> = ArrayList()
-            for (i in translations.indices) {
+            val mappedCount = minOf(translations.size, ayasTafseer.size)
+            for (i in 0 until mappedCount) {
                 tafseerModels.add(
                     TafseerModel(
                         ayasTafseer[i].text,
