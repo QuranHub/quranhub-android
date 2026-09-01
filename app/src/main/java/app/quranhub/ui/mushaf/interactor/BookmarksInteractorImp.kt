@@ -6,6 +6,8 @@ import app.quranhub.data.local.db.UserDatabase
 import app.quranhub.data.local.entity.AyaBookmark
 import app.quranhub.data.local.entity.BookmarkType
 import app.quranhub.ui.mushaf.model.HizbQuarterDataModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class BookmarksInteractorImp(context: Context) : BookmarksInteractor {
 
@@ -25,10 +27,14 @@ class BookmarksInteractorImp(context: Context) : BookmarksInteractor {
     }
 
     override suspend fun deleteBookmark(bookmarkId: Int) {
-        userDatabase.bookmarkDao.deleteAyaBookmark(bookmarkId)
+        withContext(Dispatchers.IO) {
+            userDatabase.bookmarkDao.deleteAyaBookmark(bookmarkId)
+        }
     }
 
     override suspend fun changeBookmarkType(bookmarkId: Int, bookmarkTypeId: Int) {
-        userDatabase.bookmarkDao.changeAyaBookmarkType(bookmarkId, bookmarkTypeId)
+        withContext(Dispatchers.IO) {
+            userDatabase.bookmarkDao.changeAyaBookmarkType(bookmarkId, bookmarkTypeId)
+        }
     }
 }

@@ -5,6 +5,8 @@ import app.quranhub.data.local.db.MushafDatabase
 import app.quranhub.data.local.db.UserDatabase
 import app.quranhub.data.local.entity.Note
 import app.quranhub.ui.mushaf.model.DisplayedNote
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class NotesInteractorImp(context: Context) : NotesInteractor {
 
@@ -29,10 +31,14 @@ class NotesInteractorImp(context: Context) : NotesInteractor {
     }
 
     override suspend fun editNote(note: Note) {
-        userDatabase.noteDao.insertNote(note)
+        withContext(Dispatchers.IO) {
+            userDatabase.noteDao.insertNote(note)
+        }
     }
 
     override suspend fun deleteNote(ayaId: Int) {
-        userDatabase.noteDao.deleteNote(ayaId)
+        withContext(Dispatchers.IO) {
+            userDatabase.noteDao.deleteNote(ayaId)
+        }
     }
 }
