@@ -2,22 +2,42 @@ package app.quranhub.ui.mushaf.viewmodel
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.MediatorLiveData
+import androidx.lifecycle.viewModelScope
 import app.quranhub.ui.mushaf.interactor.SubjectInteractor
-import app.quranhub.ui.mushaf.interactor.SubjectInteractor.SubjectListener
 import app.quranhub.ui.mushaf.interactor.SubjectInteractorImp
 import app.quranhub.ui.mushaf.model.TopicModel
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
-class SubjectsViewModel(application: Application) : AndroidViewModel(application), SubjectListener {
+class SubjectsViewModel(application: Application) : AndroidViewModel(application) {
 
-    val subjectsLiveData: MediatorLiveData<List<TopicModel>> = MediatorLiveData()
-    private val interactor: SubjectInteractor = SubjectInteractorImp(application, this)
+    data class SubjectsUiState(
+        val loading: Boolean = true,
+        val subjects: List<TopicModel>? = null
+    )
 
-    fun getSubjects(subjects: List<String?>?, subjectsCategory: List<String?>?) {
-        interactor.getSubjects(subjects, subjectsCategory)
-    }
+    private val interactor: SubjectInteractor = SubjectInteractorImp(application)
 
-    override fun onGetSubjects(topicModels: List<TopicModel>) {
-        subjectsLiveData.value = topicModels
+    private val _uiState = MutableStateFlow(SubjectsUiState())
+    val uiState: StateFlow<SubjectsUiState> = _uiState.asStateFlow()
+
+    fun getSubjects(subjects: List<String>, subjectsCategory: List<String>) {
+        if (_uiState.value.subjects != null) {
+            return
+        }
+        viewModelScope.launch {
+            _uiState.value = SubjectsUiState(loading = true)
+            try {
+                val topicModels = interactor.getSubjects(subjects, subjectsCategory)
+                _uiState.value = SubjectsUiState(loading = false, subjects = topicModels)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _uiState.value = SubjectsUiState(loading = false)
+            }
+        }
     }
 }

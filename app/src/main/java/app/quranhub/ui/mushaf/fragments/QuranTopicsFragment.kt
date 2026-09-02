@@ -8,7 +8,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import app.quranhub.R
 import app.quranhub.databinding.FragmentQuranTopicsBinding
@@ -20,6 +23,7 @@ import app.quranhub.ui.mushaf.model.TopicCategory
 import app.quranhub.ui.mushaf.model.TopicModel
 import app.quranhub.ui.mushaf.viewmodel.SubjectsViewModel
 import java.util.Locale
+import kotlinx.coroutines.launch
 
 class QuranTopicsFragment : Fragment(), ItemSelectionListener<TopicCategory> {
 
@@ -96,11 +100,18 @@ class QuranTopicsFragment : Fragment(), ItemSelectionListener<TopicCategory> {
             listOf(*requireActivity().resources.getStringArray(R.array.subject_category_name))
         viewModel = ViewModelProvider(this)[SubjectsViewModel::class.java]
         viewModel!!.getSubjects(subjects, subjectsCategory)
-        viewModel!!.subjectsLiveData.observe(viewLifecycleOwner) { topicModels: List<TopicModel?>? ->
-            binding!!.progreesBar.visibility = View.GONE
-            this.topicModels = topicModels
-            adapter = SubjectsAdapter(topicModels, this)
-            binding!!.topicsRv.adapter = adapter
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel!!.uiState.collect { state ->
+                    binding!!.progreesBar.visibility =
+                        if (state.loading) View.VISIBLE else View.GONE
+                    state.subjects?.let { topicModels ->
+                        this@QuranTopicsFragment.topicModels = topicModels
+                        adapter = SubjectsAdapter(topicModels, this@QuranTopicsFragment)
+                        binding!!.topicsRv.adapter = adapter
+                    }
+                }
+            }
         }
     }
 

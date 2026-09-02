@@ -1,6 +1,5 @@
 package app.quranhub.ui.mushaf.fragments
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Bundle
 import android.text.Editable
@@ -11,7 +10,10 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import app.quranhub.R
 import app.quranhub.databinding.FragmentSearchBinding
@@ -26,6 +28,7 @@ import app.quranhub.ui.mushaf.listener.QuranNavigationCallbacks
 import app.quranhub.ui.mushaf.model.SearchModel
 import app.quranhub.ui.mushaf.viewmodel.SearchViewModel
 import app.quranhub.util.ScreenUtils.dismissKeyboard
+import kotlinx.coroutines.launch
 
 class SearchFragment : Fragment(), ItemSelectionListener<SearchModel>,
     OptionDialog.ItemClickListener, OptionsListDialogFragment.ItemSelectionListener {
@@ -75,7 +78,7 @@ class SearchFragment : Fragment(), ItemSelectionListener<SearchModel>,
             getPrevState(savedInstanceState)
         }
         initRecycler()
-        bindViewModel()
+        initViewModel()
         setViewsFromBackStack()
         attachListeners()
     }
@@ -105,10 +108,12 @@ class SearchFragment : Fragment(), ItemSelectionListener<SearchModel>,
             )
         }
         if (selectedHezb != 0) {
-            binding!!.filterContainer.hezbTv.text = hezbOptions!![selectedHezb]
+            binding!!.filterContainer.hezbTv.text =
+                requireActivity().resources.getStringArray(R.array.hezb_name)[selectedHezb - 1]
         }
         if (selectedQuarter != 0) {
-            binding!!.filterContainer.rob3Tv.text = quarterOptions!![selectedQuarter]
+            binding!!.filterContainer.rob3Tv.text =
+                requireActivity().resources.getStringArray(R.array.quarter_name)[selectedQuarter - 1]
         }
     }
 
@@ -126,14 +131,12 @@ class SearchFragment : Fragment(), ItemSelectionListener<SearchModel>,
         outState.putInt("input_qurater", selectedQuarter)
     }
 
-    @SuppressLint("CheckResult")
     private fun observeOnInputSearch() {
         binding!!.etSearch.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
                 inputSearch = s.toString()
                 if (!isOriented) {
-                    binding!!.progreesBar.visibility = View.VISIBLE
                     searchAya()
                 } else {
                     isOriented = false
@@ -160,7 +163,7 @@ class SearchFragment : Fragment(), ItemSelectionListener<SearchModel>,
             clearResult()
         } else if (selectedJuz != 0 && selectedHezb != 0 && selectedQuarter != 0) {
             searchViewModel!!.searchWithSuraAndJuzAndHizbQuarter(
-                inputSearch,
+                inputSearch!!,
                 selectedSura,
                 selectedJuz,
                 selectedHezb,
@@ -168,19 +171,19 @@ class SearchFragment : Fragment(), ItemSelectionListener<SearchModel>,
             )
         } else if (selectedJuz != 0 && selectedHezb != 0) {
             searchViewModel!!.searchWithSuraAndJuzAndHizb(
-                inputSearch,
+                inputSearch!!,
                 selectedSura,
                 selectedJuz,
                 selectedHezb
             )
         } else if (selectedSura != 0 && selectedJuz != 0) {
-            searchViewModel!!.searchWithSuraAndJuz(inputSearch, selectedSura, selectedJuz)
+            searchViewModel!!.searchWithSuraAndJuz(inputSearch!!, selectedSura, selectedJuz)
         } else if (selectedSura != 0) {
-            searchViewModel!!.searchWithSura(inputSearch, selectedSura)
+            searchViewModel!!.searchWithSura(inputSearch!!, selectedSura)
         } else if (selectedJuz != 0) {
-            searchViewModel!!.searchWithJuz(inputSearch, selectedJuz)
+            searchViewModel!!.searchWithJuz(inputSearch!!, selectedJuz)
         } else {
-            searchViewModel!!.simpleSearch(inputSearch)
+            searchViewModel!!.simpleSearch(inputSearch!!)
         }
     }
 
@@ -190,37 +193,52 @@ class SearchFragment : Fragment(), ItemSelectionListener<SearchModel>,
         binding!!.progreesBar.visibility = View.GONE
     }
 
-    private fun bindViewModel() {
-        searchViewModel = ViewModelProvider(this).get(
-            SearchViewModel::class.java
-        )
-        searchViewModel!!.search.observe(viewLifecycleOwner) { searchModels: List<SearchModel>? ->
-            binding!!.progreesBar.visibility = View.GONE
-            if (searchModels == null) {
-                Toast.makeText(activity, getString(R.string.search_failed), Toast.LENGTH_LONG)
-                    .show()
-            } else if (searchModels.isEmpty()) {
-                clearResult()
-            } else if (inputSearch!!.trim().isNotEmpty()) {
-                binding!!.noresultTv.visibility = View.GONE
-                searchAdapter!!.setSearchModels(searchModels)
+    private fun initViewModel() {
+        searchViewModel = ViewModelProvider(this)[SearchViewModel::class.java]
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    searchViewModel!!.uiState.collect { state ->
+                        binding!!.progreesBar.visibility =
+                            if (state.loading) View.VISIBLE else View.GONE
+                        val results = state.results ?: return@collect
+                        if (results.isEmpty()) {
+                            clearResult()
+                        } else if (inputSearch!!.trim().isNotEmpty()) {
+                            binding!!.noresultTv.visibility = View.GONE
+                            searchAdapter!!.setSearchModels(results)
+                        }
+                    }
+                }
+                launch {
+                    searchViewModel!!.suras.collect { results ->
+                        if (results != null) {
+                            juzSuraNumbers = results
+                            buildJuzSuraOptions()
+                        }
+                    }
+                }
+                launch {
+                    searchViewModel!!.events.collect { event ->
+                        when (event) {
+                            is SearchViewModel.SearchEvent.ShowError -> {
+                                binding!!.progreesBar.visibility = View.GONE
+                                Toast.makeText(activity, event.message, Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    }
+                }
             }
-        }
-        searchViewModel!!.sura.observe(viewLifecycleOwner) { results: List<Int>? ->
-            suraOptions = ArrayList()
-            juzSuraNumbers = results
-            juzSuras
         }
     }
 
-    private val juzSuras: Unit
-        get() {
-            val surahs = listOf(*resources.getStringArray(R.array.sura_name))
-            suraOptions = mutableListOf()
-            for (index in juzSuraNumbers!!) {
-                suraOptions!!.add(surahs[index - 1])
-            }
+    private fun buildJuzSuraOptions() {
+        val surahs = listOf(*resources.getStringArray(R.array.sura_name))
+        suraOptions = mutableListOf()
+        for (index in juzSuraNumbers!!) {
+            suraOptions!!.add(surahs[index - 1])
         }
+    }
 
     private fun initRecycler() {
         searchAdapter = SearchAdapter(requireContext(), this)

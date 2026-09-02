@@ -4,13 +4,12 @@ import androidx.room.Dao
 import androidx.room.Query
 import app.quranhub.data.local.entity.HizbQuarter
 import app.quranhub.ui.mushaf.model.HizbQuarterDataModel
-import io.reactivex.Single
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface HizbQuarterDao {
     @Query("SELECT * FROM HizbQuarter")
-    fun getAll(): Single<List<HizbQuarter>>
+    suspend fun getAll(): List<HizbQuarter>
 
     @Query("SELECT * FROM HizbQuarter WHERE id=:id")
     fun getById(id: Int): HizbQuarter?

@@ -9,7 +9,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import app.quranhub.databinding.FragmentTopicAyasBinding
 import app.quranhub.ui.common.interfaces.ToolbarActionsListener
@@ -20,6 +23,7 @@ import app.quranhub.ui.mushaf.model.SearchModel
 import app.quranhub.ui.mushaf.model.TopicCategory
 import app.quranhub.ui.mushaf.viewmodel.TopicViewModel
 import app.quranhub.util.ScreenUtils.dismissKeyboard
+import kotlinx.coroutines.launch
 
 class TopicAyasFragment : Fragment(), ItemSelectionListener<SearchModel> {
 
@@ -95,15 +99,19 @@ class TopicAyasFragment : Fragment(), ItemSelectionListener<SearchModel> {
     private fun bindViewModel() {
         viewModel = ViewModelProvider(this)[TopicViewModel::class.java]
         viewModel!!.getAyas(category!!.categoryId)
-        viewModel!!.ayahs.observe(viewLifecycleOwner) { searchModels: List<SearchModel>? ->
-            binding!!.progreesBar.visibility = View.GONE
-            searchModels?.let {
-                adapter!!.setSearchModels(searchModels)
-                if (inputSearch != null && !TextUtils.isEmpty(inputSearch!!.trim { it <= ' ' })) {
-                    adapter!!.filter(inputSearch!!)
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel!!.uiState.collect { state ->
+                    binding!!.progreesBar.visibility =
+                        if (state.loading) View.VISIBLE else View.GONE
+                    state.ayahs?.let { ayahs ->
+                        adapter!!.setSearchModels(ayahs)
+                        if (inputSearch != null && !TextUtils.isEmpty(inputSearch!!.trim { it <= ' ' })) {
+                            adapter!!.filter(inputSearch!!)
+                        }
+                    }
                 }
             }
-
         }
     }
 
