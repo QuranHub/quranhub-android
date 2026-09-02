@@ -4,6 +4,30 @@ QuranHub Android app: a Quran reader (Hafs & Warsh mushaf, audio recitations, ta
 
 > **Note:** This file is symlinked to `CLAUDE.md` so that Claude Code picks it up. Whenever this file is edited, keep `CLAUDE.md` in sync — i.e. always symlink `CLAUDE.md` → `AGENTS.md` (see `.github` workflow for symlink enforcement or the commit hook). When renaming or moving, update the symlink: `ln -sf AGENTS.md CLAUDE.md`.
 
+## Intent Layer
+
+**Before modifying code in a subdirectory, read its AGENTS.md first** to understand local patterns and invariants.
+
+- **Mushaf UI**: `app/src/main/java/app/quranhub/ui/mushaf/AGENTS.md` — Quran page reader, navigation indexes, search, tafsir, bookmarks/notes, per-aya audio. Largest and most complex UI area (~99k tokens).
+
+### Measurements
+
+| Directory | Tokens | Needs node? |
+|-----------|--------|-------------|
+| `ui/` (total) | ~136k | covered by `ui/mushaf` child node |
+| `ui/mushaf` | ~99k | YES (child node above) |
+| `ui/downloads_manager` | ~17.6k | NO |
+| `data/` (local+remote+repository) | ~19k | NO — see Room gotchas below |
+| `ui/settings`, `ui/main`, `ui/first_wizard`, `ui/base`, `ui/common` | <6k each | NO |
+| `:prdownloader-service` | ~5.7k | NO |
+
+### Global Invariants
+
+- XML Views only (ViewBinding/DataBinding) — no Jetpack Compose; RxJava2 (not 3) + EventBus, no DI framework.
+- Asset-backed DBs (`MushafDatabase`, `TranslationDatabase`) keep `@Database(version) = 2`; migrate via the `RoomAsset.databaseBuilder` version argument only.
+- `UserDatabase` schema is exported to committed `app/schemas/` — bump version + export schema on any change.
+- App locale is applied in three places in `QuranhubApplication` — keep all three in sync.
+
 ## Toolchain & commands
 
 - JDK 21 (Temurin), Gradle 9.7.1 wrapper, AGP 9.3.2, Kotlin 2.4.10, KSP. compileSdk 37 / targetSdk 36 / minSdk 23.
