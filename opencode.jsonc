@@ -1,0 +1,16 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "code-review-graph": {
+      "type": "local",
+      "command": [
+        "/Users/abdallah.ali/Library/Application Support/pipx/venvs/code-review-graph/bin/python",
+        "-m",
+        "code_review_graph",
+        "serve",
+        "--repo",
+        "/Users/abdallah.ali/AndroidStudioProjects/quranhub-android"
+      ]
+    }
+  }
+}

@@ -11,3 +11,5 @@
 # direnv
 .envrc
 .envrc.local
+# Added by code-review-graph
+.code-review-graph/
