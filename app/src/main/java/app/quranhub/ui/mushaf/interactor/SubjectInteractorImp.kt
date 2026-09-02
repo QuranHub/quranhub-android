@@ -39,10 +39,13 @@ class SubjectInteractorImp(context: Context) : SubjectInteractor {
                 topicIndex++
                 topicCategories = mutableListOf()
             }
-            if (topicIndex <= subjects.size) {
-                val name = if (topicIndex - 1 in subjects.indices) subjects[topicIndex - 1] else null
-                topicCategories.add(TopicCategory(name, quranSubjects[i].ayaCount, quranSubjects[i].id))
-            }
+            topicCategories.add(
+                TopicCategory(
+                    subjects.getOrNull(i),
+                    quranSubjects[i].ayaCount,
+                    quranSubjects[i].id
+                )
+            )
         }
         if (topicIndex < subjectsCategory.size) {
             results.add(TopicModel(subjectsCategory[topicIndex], topicCategories))
