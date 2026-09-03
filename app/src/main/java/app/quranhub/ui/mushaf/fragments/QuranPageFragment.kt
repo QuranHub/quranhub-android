@@ -767,6 +767,16 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener,
     // draw shadow of current aya played in notification audio when launch app from notification
     private fun drawAyaNotificationShadow() {
         if (pageAyasList != null && drawShadowFromNotification && isPageShown) {
+            if (currentAya == null) {
+                // No notification aya to highlight
+                drawShadowFromNotification = false
+                return
+            }
+            if (pageAyasList!!.isEmpty()) {
+                // The page ayas are not loaded yet: keep the draw pending so
+                // it retries when they arrive (onGetPageAya / image-ready)
+                return
+            }
             drawShadowFromNotification = false
             if (currentAya!!.id != pageAyasList!![0].id) {
                 for (i in 1 until pageAyasList!!.size) {
