@@ -127,6 +127,7 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
         private set
     private var notificationCurrentAya: Aya? = null
     private var audioServiceIntent: Intent? = null
+    private var appliedNightMode = false
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
@@ -195,7 +196,14 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
                             suraVersesNumberArrayList = state.suraVersesNumbers
                             setAudioService()
                         }
-                        pagerAdapter?.setNightMode(state.nightMode)
+                        // Only notify the adapter when night mode actually changed:
+                        // setNightMode() triggers notifyDataSetChanged() which recreates
+                        // every page fragment (POSITION_NONE), making the page image
+                        // flash at its unscaled size when the fragments rebuild
+                        if (state.nightMode != appliedNightMode) {
+                            appliedNightMode = state.nightMode
+                            pagerAdapter?.setNightMode(state.nightMode)
+                        }
                         binding.barsGroup.visibility =
                             if (state.barsVisible) View.VISIBLE else View.GONE
                     }
@@ -515,6 +523,7 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
             initAyaId
         )
         binding.quranViewpager.adapter = pagerAdapter
+        appliedNightMode = viewModel.uiState.value.nightMode
         if (!isInstanceSaved) {
             binding.quranViewpager.currentItem = quranPageIndex
         }
