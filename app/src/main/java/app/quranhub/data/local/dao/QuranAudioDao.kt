@@ -58,7 +58,7 @@ interface QuranAudioDao {
                 "and ReciterRecitation.recitation_id=:recitation " +
                 "and ReciterRecitation.reciter_id=:sheikh"
     )
-    fun getAyaAudioPath(ayaId: Int, recitation: Int, sheikh: String?): Single<String>
+    suspend fun getAyaAudioPath(ayaId: Int, recitation: Int, sheikh: String?): String?
 
     @Query("select recorderPath from ayarecorder where ayaId=:ayaId and recitation=:recitation")
     suspend fun getAyaRecorderPath(ayaId: Int, recitation: Int): String?

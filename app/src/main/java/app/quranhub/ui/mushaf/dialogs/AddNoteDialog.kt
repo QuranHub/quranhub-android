@@ -22,11 +22,11 @@ import app.quranhub.R
 import app.quranhub.data.Constants
 import app.quranhub.data.local.entity.Note
 import app.quranhub.databinding.DialogAddNoteBinding
-import app.quranhub.util.AyaAudioHelper
 import app.quranhub.util.DialogUtils
 import app.quranhub.util.DialogUtils.adjustDialogSize
 import app.quranhub.util.RecorderMediaHelper
 import app.quranhub.util.RecorderMediaHelper.MediaPlayerCallback
+import app.quranhub.util.RecorderMediaHelper.PlaybackState
 import java.io.File
 import java.io.IOException
 
@@ -335,8 +335,8 @@ class AddNoteDialog : DialogFragment(), MediaPlayerCallback {
         }
     }
 
-    override fun onStateChanged(state: Int) {
-        if (state == AyaAudioHelper.AudioStateCallback.State.COMPLETED) {
+    override fun onStateChanged(state: PlaybackState) {
+        if (state == PlaybackState.COMPLETED) {
             binding!!.recorderProgress.progress = 0
             isPlaying = false
             firstPlay = true

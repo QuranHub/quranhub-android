@@ -36,7 +36,6 @@ import app.quranhub.ui.downloads_manager.dialogs.QuranRecitersDialogFragment
 import app.quranhub.ui.downloads_manager.dialogs.QuranRecitersDialogFragment.ReciterSelectionListener
 import app.quranhub.ui.main.MainActivity
 import app.quranhub.ui.mushaf.adapter.QuranViewPagerAdapter
-import app.quranhub.ui.mushaf.audio_manager.AudioStateEvent
 import app.quranhub.ui.mushaf.audio_manager.AyaAudioService
 import app.quranhub.ui.mushaf.audio_manager.SharedRepeatModel
 import app.quranhub.ui.mushaf.dialogs.AyaAudioPopup
@@ -50,6 +49,8 @@ import app.quranhub.ui.mushaf.dialogs.AyaRepeatDialogFragment.Companion.getInsta
 import app.quranhub.ui.mushaf.dialogs.TranslationsDialogFragment.Companion.newInstance
 import app.quranhub.ui.mushaf.fragments.MushafBottomBarFragment.QuranFooterCallbacks
 import app.quranhub.ui.mushaf.fragments.TranslationsDataFragment.TranslationSelectionListener
+import app.quranhub.ui.mushaf.flowholder.AudioPlaybackState
+import app.quranhub.ui.mushaf.flowholder.AudioPlaybackStateHolder
 import app.quranhub.ui.mushaf.flowholder.QuranPageClickHolder
 import app.quranhub.ui.mushaf.model.QuranPageInfo
 import app.quranhub.ui.mushaf.model.RepeatModel
@@ -172,6 +173,7 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
         }
         checkOrientationType()
         observeQuranPageClicks()
+        observeAudioPlaybackState()
     }
 
     // Toggle the mushaf chrome bars whenever the user taps a Quran page image
@@ -180,6 +182,27 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 QuranPageClickHolder.pageClicks.collect { viewModel.toggleBars() }
+            }
+        }
+    }
+
+    // Reflect the audio service's playback state (typed flow holder replacing
+    // the former greenrobot AudioStateEvent) in the player popup and page UI
+    private fun observeAudioPlaybackState() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                var firstEmission = true
+                AudioPlaybackStateHolder.state.collect { update ->
+                    if (firstEmission) {
+                        // The holder replays its latest state on every
+                        // (re)subscription; act only on transitions arriving
+                        // while started, like the fire-and-forget EventBus
+                        // contract this replaces.
+                        firstEmission = false
+                    } else {
+                        onAudioStateChanged(update.state)
+                    }
+                }
             }
         }
     }
@@ -285,11 +308,19 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
 
     private fun checkAudioDialogState() {
         if (isAudioDialogOpen) {
-            binding.quranViewpager.post { ayaAudioPopup!!.showPopup(binding.quranViewpager) }
+            showAudioPopupOnNextLayout()
             if (isAudioPlay) {
                 ayaAudioPopup!!.setPlayState()
             }
             ayaAudioPopup!!.setRecordState(ayaHasRecorder)
+        }
+    }
+
+    // Show the audio popup on the next layout pass; skip when the fragment
+    // view is already torn down (a posted runnable can outlive onDestroyView)
+    private fun showAudioPopupOnNextLayout() {
+        binding.quranViewpager.post {
+            _binding?.let { ayaAudioPopup?.showPopup(it.quranViewpager) }
         }
     }
 
@@ -689,7 +720,7 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
         onCloseTranslationDiaog()
         binding.barsGroup.visibility = View.GONE
         if (!isAudioDialogOpen) {
-            binding.quranViewpager.post { ayaAudioPopup!!.showPopup(binding.quranViewpager) }
+            showAudioPopupOnNextLayout()
             isAudioDialogOpen = true
         }
     }
@@ -1013,43 +1044,44 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
         if (EventBus.getDefault().isRegistered(this)) EventBus.getDefault().unregister(this)
     }
 
-    // Eventbus subscriber to recieve audio states from audio foreground service
-    @Subscribe(threadMode = ThreadMode.MAIN_ORDERED)
-    fun onAudioStateChanged(audioStateEvent: AudioStateEvent) {
+    // Playback-state subscriber: reflect audio states from the foreground
+    // service (delivered via AudioPlaybackStateHolder) in the page UI
+    private fun onAudioStateChanged(audioState: AudioPlaybackState) {
         setCurrentQuranPageFragment()
-        if (audioStateEvent.audioState == AudioStateEvent.State.PAUSED) {
-            togglePauseState(false)
-        } else if (audioStateEvent.audioState == AudioStateEvent.State.RESUME || audioStateEvent.audioState == AudioStateEvent.State.PLAYING) {
-            quranPageFragment!!.isAyaAudioDownloaded = true
-            togglePlayState(false)
-        } else if (audioStateEvent.audioState == AudioStateEvent.State.PLAY_NEXT) {
-            if (quranPageFragment!!.currentAyaIndex != quranPageFragment!!.numOfAyaInPage - 1) {
-                quranPageFragment!!.drawActionShadow(false)
-                checkAyaRecorderState(quranPageFragment!!.currentAyaId)
-            } else {
-                swipToNextQuranPage()
+        when (audioState) {
+            AudioPlaybackState.PAUSED -> togglePauseState(false)
+            AudioPlaybackState.RESUMED, AudioPlaybackState.PLAYING -> {
+                quranPageFragment!!.isAyaAudioDownloaded = true
+                togglePlayState(false)
             }
-        } else if (audioStateEvent.audioState == AudioStateEvent.State.PLAY_PREV) {
-            if (quranPageFragment!!.currentAyaIndex != 0) {
-                quranPageFragment!!.drawActionShadow(true)
-                checkAyaRecorderState(quranPageFragment!!.currentAyaId)
-            } else {
-                swipToPrevQuranPage()
+            AudioPlaybackState.PLAY_NEXT -> {
+                if (quranPageFragment!!.currentAyaIndex != quranPageFragment!!.numOfAyaInPage - 1) {
+                    quranPageFragment!!.drawActionShadow(false)
+                    checkAyaRecorderState(quranPageFragment!!.currentAyaId)
+                } else {
+                    swipToNextQuranPage()
+                }
             }
-        } else if (audioStateEvent.audioState == AudioStateEvent.State.STOP) {
-            onClickStop()
-        } else if (audioStateEvent.audioState == AudioStateEvent.State.COMPLETED) {
-            if (quranPageFragment!!.currentAyaIndex == quranPageFragment!!.numOfAyaInPage - 1) {
-                swipToNextQuranPage()
-            } // play audio of next aya after current aya audio was finished
-            else {
-                quranPageFragment!!.drawActionShadow(false)
-                checkAyaRecorderState(quranPageFragment!!.currentAyaId)
+            AudioPlaybackState.PLAY_PREV -> {
+                if (quranPageFragment!!.currentAyaIndex != 0) {
+                    quranPageFragment!!.drawActionShadow(true)
+                    checkAyaRecorderState(quranPageFragment!!.currentAyaId)
+                } else {
+                    swipToPrevQuranPage()
+                }
             }
-        } else if (audioStateEvent.audioState == AudioStateEvent.State.NOT_DOWNLOADED) {
-            quranPageFragment!!.onAyaAudioNotFound()
-        } else if (audioStateEvent.audioState == AudioStateEvent.State.GROUP_REPEAT_COMPLETED) {
-            swipToFirstAyaInRepeatGroup()
+            AudioPlaybackState.STOPPED -> onClickStop()
+            AudioPlaybackState.COMPLETED -> {
+                if (quranPageFragment!!.currentAyaIndex == quranPageFragment!!.numOfAyaInPage - 1) {
+                    swipToNextQuranPage()
+                } // play audio of next aya after current aya audio was finished
+                else {
+                    quranPageFragment!!.drawActionShadow(false)
+                    checkAyaRecorderState(quranPageFragment!!.currentAyaId)
+                }
+            }
+            AudioPlaybackState.NOT_DOWNLOADED -> quranPageFragment!!.onAyaAudioNotFound()
+            AudioPlaybackState.GROUP_REPEAT_COMPLETED -> swipToFirstAyaInRepeatGroup()
         }
     }
 

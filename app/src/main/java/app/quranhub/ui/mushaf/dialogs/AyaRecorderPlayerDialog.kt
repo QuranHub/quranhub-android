@@ -16,9 +16,9 @@ import app.quranhub.R
 import app.quranhub.data.Constants
 import app.quranhub.data.local.prefs.AppPreferencesManager
 import app.quranhub.databinding.DialogPlayAyaRecorderBinding
-import app.quranhub.util.AyaAudioHelper
 import app.quranhub.util.RecorderMediaHelper
 import app.quranhub.util.RecorderMediaHelper.MediaPlayerCallback
+import app.quranhub.util.RecorderMediaHelper.PlaybackState
 import java.io.File
 
 class AyaRecorderPlayerDialog : DialogFragment(), MediaPlayerCallback {
@@ -172,8 +172,8 @@ class AyaRecorderPlayerDialog : DialogFragment(), MediaPlayerCallback {
         binding!!.recorderTimeTv.text = time
     }
 
-    override fun onStateChanged(state: Int) {
-        if (state == AyaAudioHelper.AudioStateCallback.State.COMPLETED) {
+    override fun onStateChanged(state: PlaybackState) {
+        if (state == PlaybackState.COMPLETED) {
             binding!!.recorderProgress.progress = 0
             isPlaying = false
             firstPlay = true

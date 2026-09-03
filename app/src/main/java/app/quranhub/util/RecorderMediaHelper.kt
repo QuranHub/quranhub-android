@@ -2,13 +2,19 @@ package app.quranhub.util
 
 import android.media.MediaPlayer
 import android.os.Handler
-import app.quranhub.util.AyaAudioHelper.AudioStateCallback
 import java.io.IOException
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 
 class RecorderMediaHelper {
+
+    /** States of the recorded-ayah playback handled by this helper. */
+    enum class PlaybackState {
+        PLAYING,
+        PAUSED,
+        COMPLETED
+    }
 
     private var mediaPlayer: MediaPlayer?
     private var mediaPlayerCallback: MediaPlayerCallback? = null
@@ -22,7 +28,7 @@ class RecorderMediaHelper {
         mediaPlayer!!.setOnCompletionListener { mp: MediaPlayer? ->
             stopUpdatingCallbackWithPosition()
             if (mediaPlayerCallback != null) {
-                mediaPlayerCallback!!.onStateChanged(AudioStateCallback.State.COMPLETED)
+                mediaPlayerCallback!!.onStateChanged(PlaybackState.COMPLETED)
             }
         }
     }
@@ -79,7 +85,7 @@ class RecorderMediaHelper {
         if (mediaPlayer != null && !mediaPlayer!!.isPlaying) {
             mediaPlayer!!.start()
             if (mediaPlayerCallback != null) {
-                mediaPlayerCallback!!.onStateChanged(AudioStateCallback.State.PLAYING)
+                mediaPlayerCallback!!.onStateChanged(PlaybackState.PLAYING)
             }
             startUpdatingCallbackWithPosition()
         }
@@ -89,7 +95,7 @@ class RecorderMediaHelper {
         if (mediaPlayer != null && mediaPlayer!!.isPlaying) {
             mediaPlayer!!.pause()
             if (mediaPlayerCallback != null) {
-                mediaPlayerCallback!!.onStateChanged(AudioStateCallback.State.PAUSED)
+                mediaPlayerCallback!!.onStateChanged(PlaybackState.PAUSED)
             }
         }
     }
@@ -153,7 +159,8 @@ class RecorderMediaHelper {
     val currentPosition: Int
         get() = mediaPlayer!!.currentPosition
 
-    interface MediaPlayerCallback : AudioStateCallback {
+    interface MediaPlayerCallback {
+        fun onStateChanged(state: PlaybackState)
         fun onGetMaxDuration(duration: Int)
         fun onPositionChanged(position: Int)
         fun onUpdatedTime(time: String?)

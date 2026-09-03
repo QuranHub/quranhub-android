@@ -1,6 +1,5 @@
 package app.quranhub.ui.mushaf.audio_manager
 
-import android.annotation.SuppressLint
 import android.app.ForegroundServiceStartNotAllowedException
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -32,13 +31,19 @@ import app.quranhub.ui.mushaf.model.SuraVersesNumber
 import app.quranhub.util.LocaleUtils.isRTL
 import app.quranhub.util.SharedPrefsUtils.saveBoolean
 import app.quranhub.util.SharedPrefsUtils.saveInteger
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.schedulers.Schedulers
-import org.greenrobot.eventbus.EventBus
+import app.quranhub.ui.mushaf.flowholder.AudioPlaybackState
+import app.quranhub.ui.mushaf.flowholder.AudioPlaybackStateHolder
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import java.io.File
 
 class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener {
 
+    private val serviceJob = SupervisorJob()
+    private val serviceScope = CoroutineScope(serviceJob + Dispatchers.Main.immediate)
     private var playAudioDelayRunnable: Runnable? = null
     private var playAudioHandler: Handler? = null
     private var currentAyaRepeatNumber = 1
@@ -243,6 +248,7 @@ class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener 
 
     override fun onDestroy() {
         super.onDestroy()
+        serviceJob.cancel()
         releaseAudio()
         stopAyaAudioDelay()
         saveBoolean(this, SERVICE_RUNNING, false)
@@ -322,28 +328,28 @@ class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener 
                 updateNotificationContent(true, it)
             }
             updateNotificationState(true)
-            EventBus.getDefault().post(AudioStateEvent(AudioStateEvent.State.PAUSED))
+            AudioPlaybackStateHolder.update(AudioPlaybackState.PAUSED)
             pauseAudio()
         } else if (action == ACTION_RESUME) {
             Log.d(TAG, "resume: $currentAyaId")
             updateNotificationState(false)
-            EventBus.getDefault().post(AudioStateEvent(AudioStateEvent.State.RESUME))
+            AudioPlaybackStateHolder.update(AudioPlaybackState.RESUMED)
             playAudio()
         } else if (action == ACTION_NEXT && currentAyaId != Constants.Quran.NUM_OF_VERSES + 1) {
-            EventBus.getDefault().post(AudioStateEvent(AudioStateEvent.State.PLAY_NEXT))
+            AudioPlaybackStateHolder.update(AudioPlaybackState.PLAY_NEXT)
             Log.d(TAG, "next: $currentAyaId")
             if (fromNotification) ++currentAyaId
             checkSelectedAyaInRepeat()
             checkAyaAudioDownloaded(currentAyaId)
         } else if (action == ACTION_PREVIOUS && currentAyaId != 0) {
-            EventBus.getDefault().post(AudioStateEvent(AudioStateEvent.State.PLAY_PREV))
+            AudioPlaybackStateHolder.update(AudioPlaybackState.PLAY_PREV)
             if (fromNotification) --currentAyaId
             Log.d(TAG, "prev: $currentAyaId")
             checkSelectedAyaInRepeat()
             checkAyaAudioDownloaded(currentAyaId)
         } else if (action == ACTION_STOP) {
             Log.d(TAG, "stop $currentAyaId")
-            EventBus.getDefault().post(AudioStateEvent(AudioStateEvent.State.STOP))
+            AudioPlaybackStateHolder.update(AudioPlaybackState.STOPPED)
             releaseAudio()
             stopSelf()
         }
@@ -383,7 +389,7 @@ class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener 
     }
 
     override fun onPrepared(mp: MediaPlayer) {
-        EventBus.getDefault().post(AudioStateEvent(AudioStateEvent.State.PLAYING))
+        AudioPlaybackStateHolder.update(AudioPlaybackState.PLAYING)
         mp.start()
     }
 
@@ -425,8 +431,7 @@ class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener 
                 if (repeatModel.delayTime > 0) {
                     setAudioDelay(GROUP_REPEAT_CASE, repeatModel.delayTime)
                 } else {
-                    EventBus.getDefault()
-                        .post(AudioStateEvent(AudioStateEvent.State.GROUP_REPEAT_COMPLETED))
+                    AudioPlaybackStateHolder.update(AudioPlaybackState.GROUP_REPEAT_COMPLETED)
                 }
             } else {
                 if (repeatModel != null && repeatModel.delayTime > 0) setAudioDelay(
@@ -438,7 +443,7 @@ class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener 
     }
 
     private fun playNextAya() {
-        EventBus.getDefault().post(AudioStateEvent(AudioStateEvent.State.COMPLETED))
+        AudioPlaybackStateHolder.update(AudioPlaybackState.COMPLETED)
         ++currentAyaId
         checkAyaAudioDownloaded(currentAyaId)
     }
@@ -452,8 +457,7 @@ class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener 
                 Runnable { checkFileAudioExist(currentAudioPath) }
 
             GROUP_REPEAT_CASE -> playAudioDelayRunnable = Runnable {
-                EventBus.getDefault()
-                    .post(AudioStateEvent(AudioStateEvent.State.GROUP_REPEAT_COMPLETED))
+                AudioPlaybackStateHolder.update(AudioPlaybackState.GROUP_REPEAT_COMPLETED)
             }
 
             NEXT_AYA_CASE -> playAudioDelayRunnable = Runnable { playNextAya() }
@@ -469,25 +473,28 @@ class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener 
         }
     }
 
-    @SuppressLint("CheckResult")
-    fun checkAyaAudioDownloaded(ayaId: Int) {
+    private fun checkAyaAudioDownloaded(ayaId: Int) {
         saveInteger(this, AYA_ID_KEY, ayaId)
         currentAyaRepeatNumber = 1
         stopAudio()
         stopAyaAudioDelay()
         val sheikhId = AppPreferencesManager.getReciterSheikhSetting(this)
         val recitationId = AppPreferencesManager.getRecitationSetting(this)
-        userDatabase!!.quranAudioDao
-            .getAyaAudioPath(ayaId, recitationId, sheikhId)
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe({ result: String ->
-                checkFileAudioExist(
-                    applicationContext.getExternalFilesDir(null).toString() + result
-                )
-            }) {
-                EventBus.getDefault().post(AudioStateEvent(AudioStateEvent.State.NOT_DOWNLOADED))
+        serviceScope.launch {
+            try {
+                val result = userDatabase!!.quranAudioDao
+                    .getAyaAudioPath(ayaId, recitationId, sheikhId)
+                if (result != null) {
+                    checkFileAudioExist(
+                        applicationContext.getExternalFilesDir(null).toString() + result
+                    )
+                } else {
+                    AudioPlaybackStateHolder.update(AudioPlaybackState.NOT_DOWNLOADED)
+                }
+            } catch (e: Exception) {
+                AudioPlaybackStateHolder.update(AudioPlaybackState.NOT_DOWNLOADED)
             }
+        }
     }
 
     private fun checkFileAudioExist(audioPath: String?) {
@@ -504,7 +511,7 @@ class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener 
                     Log.d(TAG, "checkFileAudioExist: Exception")
                 }
             } else {
-                EventBus.getDefault().post(AudioStateEvent(AudioStateEvent.State.NOT_DOWNLOADED))
+                AudioPlaybackStateHolder.update(AudioPlaybackState.NOT_DOWNLOADED)
             }
         }
     }

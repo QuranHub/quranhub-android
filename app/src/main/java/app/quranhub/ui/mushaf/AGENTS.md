@@ -6,7 +6,7 @@ Quran page reader — the app's core feature. Owned by this area: page rendering
 
 - `fragments/MushafFragment.kt` — hosts the `QuranViewPagerAdapter` of `QuranPageFragment`s; implements `MushafView` (MVP) and wires top/bottom bar fragments. Start here when tracing anything.
 - `fragments/QuranPageFragment.kt` — one mushaf page.
-- `audio_manager/AyaAudioService.kt` — per-aya audio playback service; publishes `AudioStateEvent` on EventBus.
+- `audio_manager/AyaAudioService.kt` — per-aya audio playback service; publishes playback state through `flowholder/AudioPlaybackStateHolder`.
 
 ## Architecture: MVP and MVVM coexist (migration in progress)
 
@@ -27,13 +27,13 @@ This area is mid-migration from MVP to MVVM (see repo `.scratch/mvvm-migration/`
 | `presenter/` + `interactor/` | Legacy MVP presenters + shared data-access interactors |
 | `model/` | UI models (mappers from Room entities live near their consumer) |
 | `dialogs/` | Aya actions/bookmark/note/recorder/tafsir dialogs |
-| `audio_manager/` | `AyaAudioService`, `AudioStateEvent`, repeat config |
-| `listener/`, `view/`, `flowholder/` | Callback interfaces, custom views, click holder |
+| `audio_manager/` | `AyaAudioService`, repeat config |
+| `listener/`, `view/`, `flowholder/` | Callback interfaces, custom views, flow holders (page clicks, audio playback state) |
 
 ## Contracts & Invariants
 
 - Data access always goes through `interactor/*` interfaces; never import `data.local.db` DAOs into fragments/adapters.
-- Cross-fragment/service communication uses greenrobot EventBus (e.g. audio state) — register/unregister pairs must match lifecycle (`onStart`/`onStop`).
+- Cross-fragment/service communication: audio playback state flows through the typed `flowholder/AudioPlaybackStateHolder` StateFlow (never via EventBus); the remaining greenrobot EventBus stream (download-finished) still requires matching `onStart`/`onStop` register/unregister pairs.
 - Async: legacy MVP code uses RxJava2; new MVVM code uses coroutines + Flow. Do not mix RxJava into new code.
 - Search/navigation depends on mushaf topology constants in `data/Constants` (aya counts, page mapping) — don't duplicate these.
 - Views are XML + ViewBinding only.
