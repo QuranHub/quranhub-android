@@ -109,9 +109,11 @@ class FirstTimeWizardViewModel(application: Application) : AndroidViewModel(appl
 
     fun onAppLanguageSelected(itemIndex: Int) {
         val selectedLangCode = Constants.Language.CODES[itemIndex]
+        // always mirror the UI selection, even when the language didn't change,
+        // so the selection survives configuration changes
+        _uiState.update { it.copy(appLangIndex = itemIndex) }
         if (selectedLangCode != AppPreferencesManager.getAppLangSetting(context)) {
             AppPreferencesManager.persistAppLangSetting(context, selectedLangCode)
-            _uiState.update { it.copy(appLangIndex = itemIndex) }
             viewModelScope.launch {
                 _events.send(WizardEvent.AppLanguageChanged(selectedLangCode))
             }

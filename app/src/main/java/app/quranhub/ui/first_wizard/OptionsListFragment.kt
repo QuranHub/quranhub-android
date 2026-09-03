@@ -7,12 +7,16 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import app.quranhub.databinding.FragmentOptionsListBinding
 import app.quranhub.ui.common.interfaces.Searchable
 import app.quranhub.ui.first_wizard.OptionsListFragment.OnOptionClickListener
+import kotlinx.coroutines.launch
 
 /**
  * Activities that contain this fragment must implement the
@@ -51,6 +55,27 @@ class OptionsListFragment : Fragment(), OptionsListAdapter.ItemClickListener, Se
         binding = FragmentOptionsListBinding.inflate(inflater, container, false)
         initOptionsRecyclerView()
         return binding!!.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        observeSelectedOption()
+    }
+
+    private fun observeSelectedOption() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.uiState.collect { state ->
+                    // Converge the checkmark to the shared wizard state; this also
+                    // restores the selection after a configuration change.
+                    val index = selectedIndexFrom(state)
+                    val adapter = optionsListAdapter
+                    if (adapter != null && index != adapter.getSelectedOptionIndex()) {
+                        adapter.setSelectedOptionIndex(index)
+                    }
+                }
+            }
+        }
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
@@ -92,18 +117,18 @@ class OptionsListFragment : Fragment(), OptionsListAdapter.ItemClickListener, Se
      * wizard ViewModel so a restored fragment (whose arguments are frozen at
      * creation time) still reflects selections made before a configuration change.
      */
-    private fun currentSelectedOptionIndex(): Int = when (requestCode) {
-        FirstTimeWizardActivity.RC_APP_LANGUAGES_STEP ->
-            viewModel.uiState.value.appLangIndex
+    private fun currentSelectedOptionIndex(): Int = selectedIndexFrom(viewModel.uiState.value)
 
-        FirstTimeWizardActivity.RC_TRANSLATION_LANGUAGES_STEP ->
-            viewModel.uiState.value.translationLangIndex
+    private fun selectedIndexFrom(state: FirstTimeWizardViewModel.WizardUiState): Int =
+        when (requestCode) {
+            FirstTimeWizardActivity.RC_APP_LANGUAGES_STEP -> state.appLangIndex
 
-        FirstTimeWizardActivity.RC_RECITATIONS_STEP ->
-            viewModel.uiState.value.recitationIndex
+            FirstTimeWizardActivity.RC_TRANSLATION_LANGUAGES_STEP -> state.translationLangIndex
 
-        else -> selectedOptionPosition
-    }
+            FirstTimeWizardActivity.RC_RECITATIONS_STEP -> state.recitationIndex
+
+            else -> selectedOptionPosition
+        }
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
