@@ -101,7 +101,7 @@ dependencies {
     implementation(libs.retrofit.adapter.rxjava2)
     implementation(libs.glide)
     ksp(libs.glide.ksp)
-    implementation(project(":prdownloader-service"))
+    implementation(project(":lib:prdownloader-service"))
 
     // Room
     implementation(libs.room.runtime)

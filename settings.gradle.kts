@@ -22,4 +22,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "QuranHub"
 include(":app")
-include(":prdownloader-service")
+include(":lib:prdownloader-service")
