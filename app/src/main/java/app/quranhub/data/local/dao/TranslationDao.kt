@@ -16,7 +16,7 @@ interface TranslationDao {
     fun getAyasTafseer(suraNumber: Int): Flow<List<Translation>>
 
     @Query("SELECT text FROM translation WHERE `index`=:index")
-    fun findByIndex(index: Int): Single<String>
+    suspend fun findByIndex(index: Int): String?
 
     @Query("SELECT * FROM translation WHERE sura=:sura AND aya=:aya LIMIT 1")
     fun findForAya(sura: Int, aya: Int): Translation?

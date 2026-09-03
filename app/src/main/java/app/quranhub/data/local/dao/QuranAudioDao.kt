@@ -61,7 +61,7 @@ interface QuranAudioDao {
     fun getAyaAudioPath(ayaId: Int, recitation: Int, sheikh: String?): Single<String>
 
     @Query("select recorderPath from ayarecorder where ayaId=:ayaId and recitation=:recitation")
-    fun getAyaRecorderPath(ayaId: Int, recitation: Int): Single<String>
+    suspend fun getAyaRecorderPath(ayaId: Int, recitation: Int): String?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertAyaRecorder(recorder: AyaRecorder)

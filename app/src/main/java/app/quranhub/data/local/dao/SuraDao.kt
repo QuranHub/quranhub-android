@@ -17,11 +17,11 @@ interface SuraDao {
     fun findById(suraId: Int): Sura?
 
     @Query("SELECT juz, sura from aya where page=:currentPage LIMIT 1")
-    fun getQuranPageInfo(currentPage: Int): Single<QuranPageInfo>
+    suspend fun getQuranPageInfo(currentPage: Int): QuranPageInfo?
 
     @Query("select sura.id, sura.ayas, sura.type, aya.juz, aya.page, aya.sura from sura join aya on aya.sura=sura.id and aya.sura_aya=1")
     suspend fun getSuraIndexInfo(): List<SuraIndexModel>
 
     @Query("select id, ayas from sura")
-    fun getSuraVersesNumber(): Single<List<SuraVersesNumber>>
+    suspend fun getSuraVersesNumber(): List<SuraVersesNumber>
 }

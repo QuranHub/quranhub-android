@@ -7,7 +7,6 @@ import app.quranhub.ui.mushaf.model.MyNoteModel
 import app.quranhub.ui.mushaf.model.PageSuras
 import app.quranhub.ui.mushaf.model.SearchModel
 import app.quranhub.ui.mushaf.model.TafseerModel
-import io.reactivex.Single
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -18,9 +17,6 @@ interface AyaDao {
 
     @Query("SELECT * FROM Aya WHERE id IN (:ayaIds)")
     fun getAllByIds(vararg ayaIds: Int): List<Aya?>?
-
-    @Query("SELECT * FROM Aya WHERE id=:ayaId")
-    fun findById(ayaId: Int): Single<Aya>
 
     @Query("SELECT * FROM Aya WHERE id=:ayaId")
     fun findAyaById(ayaId: Int): Aya?
@@ -88,10 +84,10 @@ interface AyaDao {
     suspend fun getNoteData(ayaIds: List<Int>): List<MyNoteModel>
 
     @Query("select DISTINCT (page), sura from aya ")
-    fun getSuraPage(): Single<List<PageSuras>>
+    suspend fun getSuraPage(): List<PageSuras>
 
     @Query("select page from aya where id=:ayaId")
-    fun getAyaPage(ayaId: Int): Single<Int>
+    suspend fun getAyaPage(ayaId: Int): Int?
 
     @Query("SELECT * FROM Aya where id=(SELECT MIN(id) FROM Aya WHERE sura=:sura)")
     fun getFirstAyaInSura(sura: Int): Aya?

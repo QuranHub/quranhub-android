@@ -7,7 +7,6 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import app.quranhub.data.local.entity.TranslationBook
-import io.reactivex.Single
 
 @Dao
 interface TranslationBookDao {
@@ -21,7 +20,7 @@ interface TranslationBookDao {
     fun getByLanguage(langCode: String?): LiveData<List<TranslationBook?>?>?
 
     @Query("SELECT * FROM TranslationBook WHERE id=:id")
-    fun findById(id: String?): Single<TranslationBook>
+    suspend fun findById(id: String?): TranslationBook?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(translationBook: TranslationBook)

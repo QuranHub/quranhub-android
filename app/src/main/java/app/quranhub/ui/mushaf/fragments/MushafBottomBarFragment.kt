@@ -7,26 +7,27 @@ import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.appcompat.widget.TooltipCompat
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.MutableLiveData
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import app.quranhub.R
-import app.quranhub.data.local.prefs.AppPreferencesManager
 import app.quranhub.databinding.FragmentMushafBottomBarBinding
-import app.quranhub.ui.mushaf.presenter.QuranFooterPresenter
-import app.quranhub.ui.mushaf.presenter.QuranFooterPresenterImp
-import app.quranhub.ui.mushaf.view.QuranFooterView
+import app.quranhub.ui.mushaf.viewmodel.MushafViewModel
+import kotlinx.coroutines.launch
 
-class MushafBottomBarFragment : Fragment(), QuranFooterView {
+class MushafBottomBarFragment : Fragment() {
 
     private var binding: FragmentMushafBottomBarBinding? = null
 
-    private var presenter: QuranFooterPresenter? = null
-    private var nightMode = false
+    // Shared host ViewModel: the footer wires directly to the mushaf ViewModel
+    private val viewModel: MushafViewModel by viewModels({ requireParentFragment() })
+
     private var quranPageZoomScaleFactor = 1f
     private var footerCallbacks: QuranFooterCallbacks? = null
-    private var pageNumTextLiveData: MutableLiveData<String>? = null
+    private var pageNumText: String? = null
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -37,11 +38,6 @@ class MushafBottomBarFragment : Fragment(), QuranFooterView {
                 "Cannot cast the parent fragment to QuranFooterCallbacks instance."
             )
         }
-    }
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        pageNumTextLiveData = MutableLiveData()
     }
 
     override fun onCreateView(
@@ -55,20 +51,25 @@ class MushafBottomBarFragment : Fragment(), QuranFooterView {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         initViews()
-        presenter!!.onAttach(this)
-        pageNumTextLiveData!!.observe(viewLifecycleOwner) { pageNumText: String? ->
-            binding!!.quranPageTv.text = pageNumText
+        observeViewModel()
+        binding!!.quranPageTv.text = pageNumText
+    }
+
+    private fun observeViewModel() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.uiState.collect { state ->
+                    setupNightModeButton(state.nightMode)
+                }
+            }
         }
     }
 
     private fun initViews() {
         setupButtonsTooltips()
-        presenter = QuranFooterPresenterImp()
-        nightMode = AppPreferencesManager.getNightModeSetting(requireActivity())
-        setupNightModeButton()
-        quranPageZoomScaleFactor =
-            AppPreferencesManager.getQuranPageZoomScaleSetting(requireActivity())
+        quranPageZoomScaleFactor = viewModel.quranPageZoomScaleFactor
         setupZoomButtons()
+        setupNightModeButton(viewModel.uiState.value.nightMode)
         attachListeners()
     }
 
@@ -122,46 +123,29 @@ class MushafBottomBarFragment : Fragment(), QuranFooterView {
     override fun onDestroyView() {
         super.onDestroyView()
         binding = null
-        presenter!!.onDetach()
     }
 
     private fun onQuranSearchClick() {
-        presenter!!.displaySearchDialog()
+        footerCallbacks!!.openSearchFragment()
     }
 
     private fun onQuranNightModeClick() {
-        presenter!!.toggleNightMode()
+        viewModel.toggleNightMode()
     }
 
-    private fun setupNightModeButton() {
+    private fun setupNightModeButton(nightMode: Boolean) {
         binding!!.quranNightModeIb.setImageResource(
             if (nightMode) R.drawable.ic_nightmode_on else R.drawable.ic_nightmode_off
         )
     }
 
     fun setCurrentPage(pageNumText: String) {
-        pageNumTextLiveData!!.value = pageNumText
+        this.pageNumText = pageNumText
+        binding?.quranPageTv?.text = pageNumText
     }
-
-    override fun displaySearchDialog() {
-        footerCallbacks!!.openSearchFragment()
-    }
-
-    override fun toggleNightMode() {
-        nightMode = footerCallbacks!!.toggleNightMode()
-        setupNightModeButton()
-    }
-
-    override fun showMessage(message: String) {
-        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-    }
-
-    override fun showLoading() {}
-    override fun hideLoading() {}
 
     interface QuranFooterCallbacks {
         fun openSearchFragment()
-        fun toggleNightMode(): Boolean
         fun updateQuranPageZoomScale(zoomScaleFactor: Float)
     }
 

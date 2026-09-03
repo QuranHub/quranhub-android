@@ -6,28 +6,15 @@ import app.quranhub.ui.mushaf.model.QuranPageInfo
 import app.quranhub.ui.mushaf.model.SuraVersesNumber
 
 interface Mus7fInteractor {
-    fun getPageInfo(curentPage: Int)
-    fun getAyaTafseer(ayaId: Int)
-    fun getTafseerBook(currentTafsserId: String)
+    suspend fun getPageInfo(currentPage: Int): QuranPageInfo?
+    suspend fun getAyaTafseer(ayaId: Int): String?
+    suspend fun getTafseerBook(currentTafsserId: String): TranslationBook?
     fun initTranslationDB(dbName: String)
-    fun getPageSuras()
-    fun checkAyaHasRecorder(id: Int)
-    fun saveRecorderPath(ayaId: Int, recorderPath: String)
-    fun deleteAyaVoiceRecorder(ayaId: Int)
-    fun getSuraNumofVerses()
-    fun getFromAyaPage(fromAya: Int)
-    fun getAya(currentAyaId: Int)
-
-    interface ResultListener {
-        fun onGetPageInfo(pageInfo: QuranPageInfo)
-        fun onGetAyaTafseer(tafseer: String)
-        fun onGetTafsserBook(book: TranslationBook)
-        fun onGetSuraPage(suras: ArrayList<ArrayList<Int>>)
-        fun onErrorOccurred()
-        fun onNoBooks()
-        fun onAyaHasRecorder(recorderPath: String)
-        fun onGetSuraVersesNumber(suraVersesNumbers: ArrayList<SuraVersesNumber>)
-        fun onGetAyaPage(page: Int)
-        fun onGetAya(aya: Aya)
-    }
+    suspend fun getPageSuras(): ArrayList<ArrayList<Int>>
+    suspend fun checkAyaHasRecorder(id: Int): String?
+    suspend fun saveRecorderPath(ayaId: Int, recorderPath: String)
+    suspend fun deleteAyaVoiceRecorder(ayaId: Int)
+    suspend fun getSuraNumofVerses(): ArrayList<SuraVersesNumber>
+    suspend fun getFromAyaPage(fromAya: Int): Int?
+    suspend fun getAya(currentAyaId: Int): Aya?
 }
