@@ -11,5 +11,7 @@
 # direnv
 .envrc
 .envrc.local
+# Machine-specific agent config
+/opencode.jsonc
 # Added by code-review-graph
 .code-review-graph/

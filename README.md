@@ -55,5 +55,8 @@ We follow the code style guidelines outlined in [Ribot's Project & Code Guidelin
 #### Versioning
 We use  [SemVer](http://semver.org/)  for versioning.
 
+#### License
+This project is licensed under the [GNU General Public License v3.0 (GPL-3.0)](https://www.gnu.org/licenses/gpl-3.0.en.html). See the [LICENSE](LICENSE) file for the full license text.
+
 #### Documentation & Wiki
 Info and documentation are available in this repository's [GitHub Wiki](https://github.com/QuranHub/quranhub-android/wiki). If you have any questions feel free to open a new issue on this repository.
