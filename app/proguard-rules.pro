@@ -5,21 +5,28 @@
 # For more details, see
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Keep line numbers & file names so Crashlytics can symbolicate stack traces
+# (mapping.txt is uploaded automatically by the Firebase Crashlytics Gradle plugin).
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# Needed for reflection over generics (Gson TypeToken, Retrofit call adapters,
+# FastAdapter/MaterialDrawer TypeUtils).
+-keepattributes Signature,InnerClasses,EnclosingMethod
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# Gson deserializes these by reflection. Fields without @SerializedName must
+# keep their names, and Firestore's toObjects() resolves Kotlin data-class
+# getters/setters reflectively - so keep members of all POJOs.
+-keep class app.quranhub.data.model.** { *; }
+-keep class app.quranhub.data.remote.model.** { *; }
 
+# MaterialDrawer v6.1.3 does not ship consumer ProGuard rules.
+# (EventBus, Retrofit, Gson, RxJava2, Room, Glide and Firebase all bundle
+# their own consumer rules - no manual rules required for those.)
+-keep class com.mikepenz.materialdrawer.** { *; }
+-keep class com.mikepenz.fastadapter.** { *; }
+
+# circular-progress-button: field accessed reflectively by the library
 -keepclassmembers class com.dd.StrokeGradientDrawable {
     public void setStrokeColor(int);
 }
