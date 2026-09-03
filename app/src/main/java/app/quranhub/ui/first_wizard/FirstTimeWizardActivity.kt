@@ -21,7 +21,6 @@ import app.quranhub.R
 import app.quranhub.data.Constants
 import app.quranhub.databinding.ActivityFirstTimeWizardBinding
 import app.quranhub.ui.base.BaseActivity
-import app.quranhub.ui.common.interfaces.Searchable
 import app.quranhub.ui.first_wizard.OptionsListFragment.OnOptionClickListener
 import app.quranhub.ui.main.MainActivity
 import app.quranhub.util.LocaleUtils.setAppLanguage
@@ -70,6 +69,8 @@ class FirstTimeWizardActivity : BaseActivity(), OnOptionClickListener {
                 }
                 launch {
                     viewModel.searchQuery.collect { query ->
+                        // keep the search box in sync; each fragment applies the
+                        // query to its own options list
                         if (query != appliedSearchQuery) {
                             appliedSearchQuery = query
                             if (binding!!.etSearch.text.toString() != query) {
@@ -80,7 +81,6 @@ class FirstTimeWizardActivity : BaseActivity(), OnOptionClickListener {
                                     binding!!.etSearch.setText(query)
                                 }
                             }
-                            searchOptions(query)
                         }
                     }
                 }
@@ -149,15 +149,6 @@ class FirstTimeWizardActivity : BaseActivity(), OnOptionClickListener {
      */
     private fun stepOfPagerIndex(pagerIndex: Int): Int =
         if (layoutDir == View.LAYOUT_DIRECTION_RTL) NUM_PAGES - 1 - pagerIndex else pagerIndex
-
-    private fun searchOptions(str: String) {
-        val searchableFragment = wizardStepPagerAdapter?.currentFragment as? Searchable?
-        searchableFragment?.search(str)
-            ?: Log.e(
-                TAG,
-                "Couldn't search the options list as the current view pager fragment is null"
-            )
-    }
 
     override fun onBackPressed() {
         if (viewModel.currentStep.value == FirstTimeWizardViewModel.FIRST_STEP) {

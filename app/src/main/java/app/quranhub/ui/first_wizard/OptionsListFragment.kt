@@ -60,6 +60,7 @@ class OptionsListFragment : Fragment(), OptionsListAdapter.ItemClickListener, Se
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         observeSelectedOption()
+        observeSearchQuery()
     }
 
     private fun observeSelectedOption() {
@@ -73,6 +74,18 @@ class OptionsListFragment : Fragment(), OptionsListAdapter.ItemClickListener, Se
                     if (adapter != null && index != adapter.getSelectedOptionIndex()) {
                         adapter.setSelectedOptionIndex(index)
                     }
+                }
+            }
+        }
+    }
+
+    private fun observeSearchQuery() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.searchQuery.collect { query ->
+                    // Mirror the shared search query so a revisited step never
+                    // keeps a stale filter from an earlier visit.
+                    optionsListAdapter?.filter?.filter(query)
                 }
             }
         }
