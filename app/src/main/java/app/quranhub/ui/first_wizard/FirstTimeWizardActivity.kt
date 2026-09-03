@@ -328,9 +328,9 @@ class FirstTimeWizardActivity : BaseActivity(), OnOptionClickListener {
     companion object {
         private val TAG = FirstTimeWizardActivity::class.java.simpleName
 
-        private const val RC_APP_LANGUAGES_STEP = 0
-        private const val RC_TRANSLATION_LANGUAGES_STEP = 1
-        private const val RC_RECITATIONS_STEP = 2
+        const val RC_APP_LANGUAGES_STEP = 0
+        const val RC_TRANSLATION_LANGUAGES_STEP = 1
+        const val RC_RECITATIONS_STEP = 2
 
         private const val NUM_PAGES = 3
     }

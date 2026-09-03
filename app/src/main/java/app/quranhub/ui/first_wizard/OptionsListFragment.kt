@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -26,6 +27,7 @@ class OptionsListFragment : Fragment(), OptionsListAdapter.ItemClickListener, Se
     private lateinit var options: List<String>
     private var optionsThumbnailsDrawableIds: IntArray? = null
     private var selectedOptionPosition = 0
+    private val viewModel: FirstTimeWizardViewModel by activityViewModels()
     private var listener: OnOptionClickListener? = null
     private var optionsListAdapter: OptionsListAdapter? = null
     private var searchText: String? = ""
@@ -80,9 +82,27 @@ class OptionsListFragment : Fragment(), OptionsListAdapter.ItemClickListener, Se
         )
         binding!!.rvOptions.addItemDecoration(dividerItemDecoration)
         optionsListAdapter = OptionsListAdapter(
-            options, optionsThumbnailsDrawableIds, selectedOptionPosition, this
+            options, optionsThumbnailsDrawableIds, currentSelectedOptionIndex(), this
         )
         binding!!.rvOptions.adapter = optionsListAdapter
+    }
+
+    /**
+     * The currently selected option index for this step. Read from the shared
+     * wizard ViewModel so a restored fragment (whose arguments are frozen at
+     * creation time) still reflects selections made before a configuration change.
+     */
+    private fun currentSelectedOptionIndex(): Int = when (requestCode) {
+        FirstTimeWizardActivity.RC_APP_LANGUAGES_STEP ->
+            viewModel.uiState.value.appLangIndex
+
+        FirstTimeWizardActivity.RC_TRANSLATION_LANGUAGES_STEP ->
+            viewModel.uiState.value.translationLangIndex
+
+        FirstTimeWizardActivity.RC_RECITATIONS_STEP ->
+            viewModel.uiState.value.recitationIndex
+
+        else -> selectedOptionPosition
     }
 
     override fun onAttach(context: Context) {
