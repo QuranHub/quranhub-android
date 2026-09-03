@@ -25,7 +25,7 @@ QuranHub Android app: a Quran reader (Hafs & Warsh mushaf, audio recitations, ta
 | `ui/downloads_manager` | ~17.6k | NO |
 | `data/` (local+remote+repository) | ~19k | NO — see Room gotchas below |
 | `ui/settings`, `ui/main`, `ui/first_wizard`, `ui/base`, `ui/common` | <6k each | NO |
-| `:prdownloader-service` | ~5.7k | NO |
+| `:lib:prdownloader-service` | ~5.7k | NO |
 
 ### Global Invariants
 
@@ -43,7 +43,7 @@ QuranHub Android app: a Quran reader (Hafs & Warsh mushaf, audio recitations, ta
 ## Modules
 
 - `:app` — the entire application (single source tree under `app/src/main/java/app/quranhub/`).
-- `:prdownloader-service` — local Android library wrapping `com.github.amitshekhariitbhu:PRDownloader` (served via jitpack, declared in `settings.gradle.kts`). Used by download services.
+- `:lib:prdownloader-service` — local Android library wrapping `com.github.amitshekhariitbhu:PRDownloader` (served via jitpack, declared in `settings.gradle.kts`). Used by download services.
 
 ## Architecture notes (not obvious from filenames)
 
