@@ -110,53 +110,32 @@ class OptionsListAdapter : RecyclerView.Adapter<OptionsListAdapter.ViewHolder>, 
     }
 
     override fun getFilter(): Filter {
-        // TODO refactor & enhance Filter
         return object : Filter() {
             override fun performFiltering(constraint: CharSequence): FilterResults {
-                var filterOptionsResult: MutableList<String> = ArrayList()
-                var filterThumbnailsResult: MutableList<Int?>? = null
-                if (constraint.length == 0) {
-                    filterOptionsResult = optionsList
-                    if (optionsThumbnailsDrawableIds != null) {
-                        filterThumbnailsResult = ArrayList()
-                        for (d in optionsThumbnailsDrawableIds!!) {
-                            filterThumbnailsResult.add(d)
-                        }
-                    }
+                val query = constraint.toString().lowercase(Locale.getDefault())
+                val filteredOptions: List<String>
+                val filteredThumbnails: List<Int>?
+                if (query.isEmpty()) {
+                    filteredOptions = optionsList
+                    filteredThumbnails = optionsThumbnailsDrawableIds?.toList()
                 } else {
-                    if (optionsThumbnailsDrawableIds != null) {
-                        filterThumbnailsResult = ArrayList()
+                    val matches = optionsList.withIndex().filter { (_, option) ->
+                        option.lowercase(Locale.getDefault()).contains(query)
                     }
-                    for (i in optionsList.indices) {
-                        val opt = optionsList[i]
-                        if (opt.lowercase(Locale.getDefault()).contains(
-                                constraint.toString().lowercase(
-                                    Locale.getDefault()
-                                )
-                            )
-                        ) {
-                            filterOptionsResult.add(opt)
-                            filterThumbnailsResult?.add(optionsThumbnailsDrawableIds!![i])
-                        }
+                    filteredOptions = matches.map { it.value }
+                    filteredThumbnails = optionsThumbnailsDrawableIds?.let { thumbnails ->
+                        matches.map { thumbnails[it.index] }
                     }
                 }
                 val results = FilterResults()
-                results.values =
-                    Pair<List<String>, List<Int?>?>(filterOptionsResult, filterThumbnailsResult)
+                results.values = Pair(filteredOptions, filteredThumbnails)
                 return results
             }
 
             override fun publishResults(constraint: CharSequence, results: FilterResults) {
                 val filterResult = results.values as Pair<List<String>, List<Int>?>
                 filteredOptionsList = filterResult.first
-                if (filterResult.second != null) {
-                    filteredOptionsThumbnailsDrawableIds = IntArray(filterResult.second!!.size)
-                    for (i in filterResult.second!!.indices) {
-                        filteredOptionsThumbnailsDrawableIds!![i] = filterResult.second!![i]
-                    }
-                } else {
-                    filteredOptionsThumbnailsDrawableIds = null
-                }
+                filteredOptionsThumbnailsDrawableIds = filterResult.second?.toIntArray()
                 notifyDataSetChanged()
             }
         }
