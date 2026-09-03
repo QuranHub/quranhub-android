@@ -6,6 +6,10 @@ QuranHub Android app: a Quran reader (Hafs & Warsh mushaf, audio recitations, ta
 >
 > **Any `AGENTS.md` in this repo must also have a `CLAUDE.md` symlink alongside it** (e.g. `app/src/main/java/app/quranhub/ui/mushaf/AGENTS.md` → `CLAUDE.md`) so Claude Code picks up nested intent-layer docs too.
 
+## Git workflow
+
+**Never commit directly to `master`.** `master` is branch-protected. Always create a new branch off `master` (e.g. `<area>/<short-description>`), commit changes there, push it, and open a PR targeting `master` (PRs must pass the required `build` status check before merge).
+
 ## Intent Layer
 
 **Before modifying code in a subdirectory, read its AGENTS.md first** to understand local patterns and invariants.
