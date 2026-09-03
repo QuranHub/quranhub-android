@@ -5,12 +5,23 @@ import android.content.res.Configuration
 import androidx.multidex.MultiDexApplication
 import app.quranhub.util.LocaleUtils
 import com.downloader.PRDownloader
+import com.google.firebase.Firebase
+import com.google.firebase.appcheck.appCheck
+import com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderFactory
+import com.google.firebase.initialize
 
 class QuranhubApplication : MultiDexApplication() {
 
     override fun onCreate() {
         super.onCreate()
         LocaleUtils.initAppLanguage(this)
+
+        // Initialize App Check with the Play Integrity provider.
+        // Must run before any other Firebase SDK is used.
+        Firebase.initialize(context = this)
+        Firebase.appCheck.installAppCheckProviderFactory(
+            PlayIntegrityAppCheckProviderFactory.getInstance()
+        )
 
         // initialize PRDownloader library (for downloading files)
         PRDownloader.initialize(applicationContext)
