@@ -14,6 +14,7 @@ import app.quranhub.ui.common.dialogs.OptionsListDialogFragment
 import app.quranhub.ui.common.dialogs.OptionsListDialogFragment.Companion.getInstance
 import app.quranhub.ui.common.interfaces.ToolbarActionsListener
 import app.quranhub.ui.mushaf.adapter.Guz2IndexAdapter
+import app.quranhub.util.InsetsUtils
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayout.OnTabSelectedListener
 import java.util.Arrays
@@ -59,6 +60,7 @@ class SuraGuz2IndexFragment : Fragment(),
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        InsetsUtils.padTopForStatusBar(binding!!.toolbarLayout)
         restoreSavedInstanceState(savedInstanceState)
         addIndexFragment(selectedTab)
         attachListeners()

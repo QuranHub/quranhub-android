@@ -16,6 +16,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import app.quranhub.R
 import app.quranhub.databinding.FragmentMushafBottomBarBinding
 import app.quranhub.ui.mushaf.viewmodel.MushafViewModel
+import app.quranhub.util.InsetsUtils
 import kotlinx.coroutines.launch
 
 class MushafBottomBarFragment : Fragment() {
@@ -50,6 +51,7 @@ class MushafBottomBarFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        InsetsUtils.padBottomForNavigationBar(binding!!.llRoot)
         initViews()
         observeViewModel()
         binding!!.quranPageTv.text = pageNumText

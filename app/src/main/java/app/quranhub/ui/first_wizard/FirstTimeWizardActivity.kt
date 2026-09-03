@@ -23,6 +23,7 @@ import app.quranhub.databinding.ActivityFirstTimeWizardBinding
 import app.quranhub.ui.base.BaseActivity
 import app.quranhub.ui.first_wizard.OptionsListFragment.OnOptionClickListener
 import app.quranhub.ui.main.MainActivity
+import app.quranhub.util.InsetsUtils
 import app.quranhub.util.LocaleUtils.setAppLanguage
 import kotlinx.coroutines.launch
 
@@ -46,6 +47,8 @@ class FirstTimeWizardActivity : BaseActivity(), OnOptionClickListener {
         binding = ActivityFirstTimeWizardBinding.inflate(layoutInflater)
         setContentView(binding!!.root)
         setSupportActionBar(binding!!.toolbar)
+        InsetsUtils.padTopForStatusBar(binding!!.appBar)
+        InsetsUtils.padBottomForNavigationBar(binding!!.clBottomBar)
         layoutDir = resources.configuration.layoutDirection
         wizardStepPagerAdapter = WizardStepPagerAdapter(supportFragmentManager)
         binding!!.pagerSteps.adapter = wizardStepPagerAdapter

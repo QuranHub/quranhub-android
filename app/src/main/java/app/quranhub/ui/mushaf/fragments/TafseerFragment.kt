@@ -31,6 +31,7 @@ import app.quranhub.ui.mushaf.dialogs.TranslationsDialogFragment
 import app.quranhub.ui.mushaf.fragments.TranslationsDataFragment.TranslationSelectionListener
 import app.quranhub.ui.mushaf.model.TafseerModel
 import app.quranhub.ui.mushaf.viewmodel.TafseerViewModel
+import app.quranhub.util.InsetsUtils
 import kotlinx.coroutines.launch
 
 class TafseerFragment : Fragment(), OptionDialog.ItemClickListener, TranslationSelectionListener,
@@ -65,6 +66,7 @@ class TafseerFragment : Fragment(), OptionDialog.ItemClickListener, TranslationS
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        InsetsUtils.padTopForStatusBar(binding!!.toolbarLayout)
         readArgumentsData()
         savedInstanceState?.let { getPrevState(it) }
         initRecycler()
