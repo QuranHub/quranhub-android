@@ -85,7 +85,7 @@ class FirstTimeWizardViewModel(application: Application) : AndroidViewModel(appl
 
     fun onNextClicked() {
         if (_currentStep.value < LAST_STEP) {
-            _currentStep.value++
+            onStepSelected(_currentStep.value + 1)
         } else {
             finishWizard()
         }
@@ -93,7 +93,7 @@ class FirstTimeWizardViewModel(application: Application) : AndroidViewModel(appl
 
     fun onBackClicked() {
         if (_currentStep.value > FIRST_STEP) {
-            _currentStep.value--
+            onStepSelected(_currentStep.value - 1)
         }
     }
 
