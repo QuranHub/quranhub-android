@@ -15,6 +15,7 @@ import app.quranhub.ui.downloads_manager.dialogs.AudioDownloadAmountDialogFragme
 import app.quranhub.ui.downloads_manager.dialogs.AudioDownloadAmountDialogFragment.AudioDownloadListener
 import app.quranhub.ui.downloads_manager.dialogs.QuranRecitersDialogFragment
 import app.quranhub.ui.downloads_manager.dialogs.QuranRecitersDialogFragment.ReciterSelectionListener
+import app.quranhub.util.InsetsUtils
 import com.google.android.material.tabs.TabLayout
 
 class DownloadsManagerActivity : BaseActivity(), DownloadsManagerNavigationCallbacks,
@@ -33,6 +34,8 @@ class DownloadsManagerActivity : BaseActivity(), DownloadsManagerNavigationCallb
         setContentView(binding.root)
         setSupportActionBar(binding.toolbar)
         supportActionBar!!.setDisplayHomeAsUpEnabled(true)
+        InsetsUtils.padTopForStatusBar(binding.appBar)
+        InsetsUtils.padBottomForNavigationBar(binding.fragmentContainer)
 
         binding.tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
 

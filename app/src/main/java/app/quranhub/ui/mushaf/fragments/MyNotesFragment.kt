@@ -28,6 +28,7 @@ import app.quranhub.ui.mushaf.listener.ItemSelectionListener
 import app.quranhub.ui.mushaf.listener.QuranNavigationCallbacks
 import app.quranhub.ui.mushaf.model.DisplayedNote
 import app.quranhub.ui.mushaf.viewmodel.NotesViewModel
+import app.quranhub.util.InsetsUtils
 import app.quranhub.util.ScreenUtils
 import app.quranhub.util.ScreenUtils.dismissKeyboard
 import app.quranhub.util.ScreenUtils.getOrientationState
@@ -69,6 +70,7 @@ class MyNotesFragment : Fragment(), NoteCallback, AddNoteListener, ItemSelection
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        InsetsUtils.padTopForStatusBar(binding!!.toolbarLayout)
         savedInstanceState?.let { getPrevState(it) }
         initViews()
         bindViewModel()

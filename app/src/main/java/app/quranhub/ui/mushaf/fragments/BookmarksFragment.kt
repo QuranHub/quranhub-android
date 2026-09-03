@@ -19,6 +19,7 @@ import app.quranhub.databinding.FragmentBookmarksBinding
 import app.quranhub.ui.common.interfaces.ToolbarActionsListener
 import app.quranhub.ui.mushaf.listener.QuranNavigationCallbacks
 import app.quranhub.ui.mushaf.viewmodel.BookmarksViewModel
+import app.quranhub.util.InsetsUtils
 import app.quranhub.util.ScreenUtils.dismissKeyboard
 import kotlinx.coroutines.launch
 
@@ -70,6 +71,7 @@ class BookmarksFragment : Fragment(), QuranNavigationCallbacks {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        InsetsUtils.padTopForStatusBar(binding!!.toolbarLayout)
         bookmarksListFragment = BookmarksListFragment.newInstance()
         val transaction = childFragmentManager.beginTransaction()
         transaction.replace(R.id.list_container, bookmarksListFragment!!)

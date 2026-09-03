@@ -83,7 +83,8 @@
         <activity
             android:name=".ui.first_wizard.FirstTimeWizardActivity"
             android:label="@string/title_activity_first_time_wizard"
-            android:theme="@style/AppTheme.NoActionBar" />
+            android:theme="@style/AppTheme.NoActionBar"
+            android:windowSoftInputMode="adjustResize" />
 
         <activity
             android:name=".ui.settings.SettingsActivity"

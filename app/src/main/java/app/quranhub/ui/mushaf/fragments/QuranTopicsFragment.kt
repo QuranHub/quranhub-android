@@ -22,6 +22,7 @@ import app.quranhub.ui.mushaf.listener.ItemSelectionListener
 import app.quranhub.ui.mushaf.model.TopicCategory
 import app.quranhub.ui.mushaf.model.TopicModel
 import app.quranhub.ui.mushaf.viewmodel.SubjectsViewModel
+import app.quranhub.util.InsetsUtils
 import java.util.Locale
 import kotlinx.coroutines.launch
 
@@ -51,6 +52,7 @@ class QuranTopicsFragment : Fragment(), ItemSelectionListener<TopicCategory> {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        InsetsUtils.padTopForStatusBar(binding!!.toolbarLayout)
         intiRecycler()
         bindViewModel()
         attachListeners()

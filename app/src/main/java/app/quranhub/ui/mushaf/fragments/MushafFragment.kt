@@ -56,6 +56,7 @@ import app.quranhub.ui.mushaf.model.QuranPageInfo
 import app.quranhub.ui.mushaf.model.RepeatModel
 import app.quranhub.ui.mushaf.model.SuraVersesNumber
 import app.quranhub.ui.mushaf.viewmodel.MushafViewModel
+import app.quranhub.util.InsetsUtils
 import app.quranhub.util.LocaleUtils.formatNumber
 import app.quranhub.util.ScreenUtils.isLandscape
 import app.quranhub.util.ScreenUtils.isPortrait
@@ -155,6 +156,7 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        InsetsUtils.padBottomMarginForNavigationBar(binding.quranSeekbar)
         attachListeners()
         observeViewModel()
 

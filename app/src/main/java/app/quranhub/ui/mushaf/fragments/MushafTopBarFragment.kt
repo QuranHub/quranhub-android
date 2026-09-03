@@ -13,6 +13,7 @@ import androidx.lifecycle.MutableLiveData
 import app.quranhub.R
 import app.quranhub.databinding.FragmentMushafTopBarBinding
 import app.quranhub.ui.common.interfaces.ToolbarActionsListener
+import app.quranhub.util.InsetsUtils
 
 class MushafTopBarFragment : Fragment() {
 
@@ -43,6 +44,7 @@ class MushafTopBarFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        InsetsUtils.padTopForStatusBar(binding!!.llRoot)
         initViews()
         pageDirLiveData!!.observe(viewLifecycleOwner) { pageDir: Int? ->
             when (pageDir) {

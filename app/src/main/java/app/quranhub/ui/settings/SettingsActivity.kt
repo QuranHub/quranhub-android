@@ -7,6 +7,7 @@ import androidx.appcompat.widget.Toolbar
 import app.quranhub.R
 import app.quranhub.ui.base.BaseActivity
 import app.quranhub.ui.main.MainActivity
+import app.quranhub.util.InsetsUtils
 
 class SettingsActivity : BaseActivity() {
 
@@ -17,6 +18,8 @@ class SettingsActivity : BaseActivity() {
         setSupportActionBar(toolbar)
         supportActionBar!!.setDisplayHomeAsUpEnabled(true)
         setTitle(R.string.title_activity_settings)
+        InsetsUtils.padTopForStatusBar(findViewById(R.id.app_bar))
+        InsetsUtils.padBottomForNavigationBar(findViewById(R.id.fragment))
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {

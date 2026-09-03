@@ -27,6 +27,7 @@ import app.quranhub.ui.mushaf.listener.ItemSelectionListener
 import app.quranhub.ui.mushaf.listener.QuranNavigationCallbacks
 import app.quranhub.ui.mushaf.model.SearchModel
 import app.quranhub.ui.mushaf.viewmodel.SearchViewModel
+import app.quranhub.util.InsetsUtils
 import app.quranhub.util.ScreenUtils.dismissKeyboard
 import kotlinx.coroutines.launch
 
@@ -73,6 +74,7 @@ class SearchFragment : Fragment(), ItemSelectionListener<SearchModel>,
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        InsetsUtils.padTopForStatusBar(binding!!.toolbarLayout)
         if (savedInstanceState != null) {
             isOriented = true
             getPrevState(savedInstanceState)

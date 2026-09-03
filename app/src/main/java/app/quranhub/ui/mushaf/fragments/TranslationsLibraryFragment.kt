@@ -15,6 +15,7 @@ import app.quranhub.databinding.FragmentTranslationsLibraryBinding
 import app.quranhub.ui.common.interfaces.ToolbarActionsListener
 import app.quranhub.ui.main.MainActivity
 import app.quranhub.ui.mushaf.fragments.TranslationsDataFragment.TranslationSelectionListener
+import app.quranhub.util.InsetsUtils
 
 class TranslationsLibraryFragment : Fragment(), TranslationSelectionListener {
 
@@ -41,6 +42,7 @@ class TranslationsLibraryFragment : Fragment(), TranslationSelectionListener {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        InsetsUtils.padTopForStatusBar(binding!!.toolbarLayout)
         restoreSavedInstanceState(savedInstanceState)
         addFragment()
         attachListeners()

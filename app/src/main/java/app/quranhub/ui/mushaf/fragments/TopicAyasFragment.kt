@@ -22,6 +22,7 @@ import app.quranhub.ui.mushaf.listener.QuranNavigationCallbacks
 import app.quranhub.ui.mushaf.model.SearchModel
 import app.quranhub.ui.mushaf.model.TopicCategory
 import app.quranhub.ui.mushaf.viewmodel.TopicViewModel
+import app.quranhub.util.InsetsUtils
 import app.quranhub.util.ScreenUtils.dismissKeyboard
 import kotlinx.coroutines.launch
 
@@ -56,6 +57,7 @@ class TopicAyasFragment : Fragment(), ItemSelectionListener<SearchModel> {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        InsetsUtils.padTopForStatusBar(binding!!.toolbarLayout)
         setViews()
         getPrevState(savedInstanceState)
         intiRecycler()
