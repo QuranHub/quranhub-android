@@ -54,11 +54,14 @@ jobs:
           sed -i -E "s/versionName = \"${{ steps.version.outputs.current }}\"/versionName = \"$next\"/" app/build.gradle.kts
           grep -E 'version(Code|Name)' app/build.gradle.kts
 
+      - name: Set up git identity
+        run: |
+          git config user.name "Abdallah-Abdelazim"
+          git config user.email "14303058+Abdallah-Abdelazim@users.noreply.github.com"
+
       - name: Commit and push
         run: |
           next="${{ steps.version.outputs.next }}"
-          git config user.name "Abdallah-Abdelazim"
-          git config user.email "14303058+Abdallah-Abdelazim@users.noreply.github.com"
           git add app/build.gradle.kts
           git commit -m "chore(release): $next"
           git push origin master
