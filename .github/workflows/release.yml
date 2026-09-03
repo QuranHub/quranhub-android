@@ -1,0 +1,87 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      part:
+        description: 'Semver part to bump'
+        type: choice
+        required: true
+        default: patch
+        options:
+          - major
+          - minor
+          - patch
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout master
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: master
+          token: ${{ secrets.RELEASE_TOKEN }}
+
+      - name: Compute next version
+        id: version
+        run: |
+          current=$(grep -E 'versionName = "' app/build.gradle.kts | sed -E 's/.*"([^"]+)".*/\1/')
+          IFS='.' read -r major minor patch <<< "$current"
+          case "${{ inputs.part }}" in
+            major) major=$((major + 1)); minor=0; patch=0;;
+            minor) minor=$((minor + 1)); patch=0;;
+            patch) patch=$((patch + 1));;
+          esac
+          next="$major.$minor.$patch"
+          echo "current=$current" >> "$GITHUB_OUTPUT"
+          echo "next=$next" >> "$GITHUB_OUTPUT"
+
+      - name: Bump versionCode and versionName
+        run: |
+          current_code=$(grep -E 'versionCode = [0-9]+' app/build.gradle.kts | grep -oE '[0-9]+')
+          next_code=$((current_code + 1))
+          next="${{ steps.version.outputs.next }}"
+          sed -i -E "s/versionCode = [0-9]+/versionCode = $next_code/" app/build.gradle.kts
+          sed -i -E "s/versionName = \"${{ steps.version.outputs.current }}\"/versionName = \"$next\"/" app/build.gradle.kts
+          grep -E 'version(Code|Name)' app/build.gradle.kts
+
+      - name: Set up git identity
+        run: |
+          git config user.name "Abdallah-Abdelazim"
+          git config user.email "abdallah.abdelazim@hotmail.com"
+
+      - name: Commit and push
+        run: |
+          next="${{ steps.version.outputs.next }}"
+          git add app/build.gradle.kts
+          git commit -m "chore(release): $next"
+          git push origin master
+
+      - name: Tag and push
+        run: |
+          next="${{ steps.version.outputs.next }}"
+          git tag "$next"
+          git push origin "$next"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          NEXT: ${{ steps.version.outputs.next }}
+        run: |
+          prev=$(git describe --abbrev=0 --match '[0-9]*.[0-9]*.[0-9]*' 'HEAD~1')
+          {
+            git log "$prev".."${{ github.sha }}" --pretty=format:'- %s (%h)'
+            echo
+            echo
+            echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/$prev...$NEXT"
+          } > notes.md
+          gh release create "$NEXT" --title "$NEXT" --notes-file notes.md --target master
