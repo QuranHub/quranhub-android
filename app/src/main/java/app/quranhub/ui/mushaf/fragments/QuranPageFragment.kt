@@ -205,8 +205,14 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener,
                 launch {
                     viewModel.uiState.map { it.saving }.distinctUntilChanged()
                         .collect { saving ->
-                            binding.progreesBar.visibility =
-                                if (saving) View.VISIBLE else View.GONE
+                            // The same bar doubles as the page-image loading indicator
+                            // (Glide hides it on load), so only override it for save
+                            // operations once the page is actually shown
+                            if (saving) {
+                                binding.progreesBar.visibility = View.VISIBLE
+                            } else if (isPageShown) {
+                                binding.progreesBar.visibility = View.GONE
+                            }
                         }
                 }
                 launch {
