@@ -3,6 +3,8 @@
 QuranHub Android app: a Quran reader (Hafs & Warsh mushaf, audio recitations, tafsir/translation downloads). Package `app.quranhub`.
 
 > **Note:** This file is symlinked to `CLAUDE.md` so that Claude Code picks it up. Whenever this file is edited, keep `CLAUDE.md` in sync — i.e. always symlink `CLAUDE.md` → `AGENTS.md` (see `.github` workflow for symlink enforcement or the commit hook). When renaming or moving, update the symlink: `ln -sf AGENTS.md CLAUDE.md`.
+>
+> **Any `AGENTS.md` in this repo must also have a `CLAUDE.md` symlink alongside it** (e.g. `app/src/main/java/app/quranhub/ui/mushaf/AGENTS.md` → `CLAUDE.md`) so Claude Code picks up nested intent-layer docs too.
 
 ## Intent Layer
 
