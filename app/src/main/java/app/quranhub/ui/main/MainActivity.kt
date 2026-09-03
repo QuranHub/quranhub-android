@@ -4,7 +4,13 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import androidx.activity.viewModels
 import androidx.fragment.app.FragmentManager
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import app.quranhub.R
 import app.quranhub.data.Constants
 import app.quranhub.data.local.prefs.AppPreferencesManager
@@ -33,9 +39,20 @@ import app.quranhub.util.SharedPrefsUtils.getInteger
 import app.quranhub.util.addCrashlyticsCustomKeys
 import com.mikepenz.materialdrawer.Drawer
 import com.mikepenz.materialdrawer.Drawer.OnDrawerListener
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 class MainActivity : BaseActivity(), ToolbarActionsListener, Mus7afDrawerItemClickListener,
     QuranNavigationCallbacks {
+
+    private val viewModel: MainViewModel by viewModels {
+        viewModelFactory {
+            initializer {
+                MainViewModel(application)
+            }
+        }
+    }
 
     private var drawer: Drawer? = null
     private var currentFragment: String? = null
@@ -62,10 +79,39 @@ class MainActivity : BaseActivity(), ToolbarActionsListener, Mus7afDrawerItemCli
         observeOnDrawerOpen()
         drawer = initDrawer(this, savedInstanceState, onDrawerListener!!)
         if (savedInstanceState == null) {
-            launchMushafFragment()
+            viewModel.computeLaunchDestination(
+                intent.extras?.getBoolean(AyaAudioService.FROM_NOTIFICATION) == true
+            )
+            observeLaunchDestination()
         } else {
             setCurrentFragmentData(savedInstanceState.getString("fragment"))
         }
+    }
+
+    private fun observeLaunchDestination() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.launchDestination.filterNotNull().first().let { destination ->
+                    when (destination) {
+                        is MainViewModel.LaunchDestination.Notification ->
+                            showMushafFragment(MushafFragment.newNotificationInstance(destination.ayaId))
+
+                        is MainViewModel.LaunchDestination.LastReadPage ->
+                            showMushafFragment(MushafFragment.newInstance(destination.pageNumber))
+
+                        MainViewModel.LaunchDestination.Mushaf ->
+                            showMushafFragment(MushafFragment())
+                    }
+                }
+            }
+        }
+    }
+
+    private fun showMushafFragment(fragment: MushafFragment) {
+        currentFragment = "mushaf"
+        val transaction = supportFragmentManager.beginTransaction()
+        transaction.replace(R.id.container, fragment, "Mushaf")
+        transaction.commit()
     }
 
     private fun observeOnDrawerOpen() {
@@ -114,33 +160,6 @@ class MainActivity : BaseActivity(), ToolbarActionsListener, Mus7afDrawerItemCli
 
     private fun setCurrentFragmentData(fragmentName: String?) {
         currentFragment = fragmentName
-    }
-
-    private fun launchMushafFragment() {
-        currentFragment = "mushaf"
-
-        // get current aya id if Main activity is launched from audio notification OR launch app with audio notification app
-        val mushafFragment: MushafFragment =
-            if (intent.extras != null && intent.extras!!.getBoolean(AyaAudioService.FROM_NOTIFICATION) || getBoolean(
-                    this,
-                    AyaAudioService.SERVICE_RUNNING,
-                    false
-                )
-            ) {
-                val ayaId = getInteger(this, AyaAudioService.AYA_ID_KEY, 1)
-                MushafFragment.newNotificationInstance(ayaId)
-            } else if (AppPreferencesManager.getLastReadPageSetting(this)) {
-                val pageNumber =
-                    Constants.Quran.NUM_OF_PAGES - getInteger(
-                        this, "last_open_page", Constants.Quran.NUM_OF_PAGES - 1
-                    )
-                MushafFragment.newInstance(pageNumber)
-            } else {
-                MushafFragment()
-            }
-        val transaction = supportFragmentManager.beginTransaction()
-        transaction.replace(R.id.container, mushafFragment, "Mushaf")
-        transaction.commit()
     }
 
     // handle new intent get in stack single-top when click on audio notification
