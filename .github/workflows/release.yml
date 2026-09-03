@@ -57,7 +57,7 @@ jobs:
       - name: Set up git identity
         run: |
           git config user.name "Abdallah-Abdelazim"
-          git config user.email "14303058+Abdallah-Abdelazim@users.noreply.github.com"
+          git config user.email "abdallah.abdelazim@hotmail.com"
 
       - name: Commit and push
         run: |
