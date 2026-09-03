@@ -1,6 +1,5 @@
 package app.quranhub.ui.first_wizard
 
-import android.util.Pair
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,15 +13,19 @@ import java.util.Locale
 class OptionsListAdapter : RecyclerView.Adapter<OptionsListAdapter.ViewHolder>, Filterable {
 
     private var optionsList: MutableList<String>
-    private var filteredOptionsList: List<String>
     private var optionsThumbnailsDrawableIds: IntArray? = null
-    private var filteredOptionsThumbnailsDrawableIds: IntArray? = null
+
+    /**
+     * The indices (into [optionsList]) of the options shown after filtering,
+     * so a filtered view position can always be mapped back to its original option.
+     */
+    private var filteredOriginalIndices: List<Int>
     private var selectedOptionIndex: Int
     private var itemClickListener: ItemClickListener
 
     constructor(optionsList: MutableList<String>, listener: ItemClickListener) {
         this.optionsList = optionsList
-        filteredOptionsList = optionsList
+        filteredOriginalIndices = optionsList.indices.toList()
         itemClickListener = listener
         selectedOptionIndex = -1
     }
@@ -31,7 +34,7 @@ class OptionsListAdapter : RecyclerView.Adapter<OptionsListAdapter.ViewHolder>, 
         optionsList: MutableList<String>, selectedOptionIndex: Int, listener: ItemClickListener
     ) {
         this.optionsList = optionsList
-        filteredOptionsList = optionsList
+        filteredOriginalIndices = optionsList.indices.toList()
         this.selectedOptionIndex = selectedOptionIndex
         itemClickListener = listener
     }
@@ -43,9 +46,8 @@ class OptionsListAdapter : RecyclerView.Adapter<OptionsListAdapter.ViewHolder>, 
         listener: ItemClickListener
     ) {
         this.optionsList = optionsList.toMutableList()
-        filteredOptionsList = optionsList
+        filteredOriginalIndices = optionsList.indices.toList()
         this.optionsThumbnailsDrawableIds = optionsThumbnailsDrawableIds
-        filteredOptionsThumbnailsDrawableIds = optionsThumbnailsDrawableIds
         this.selectedOptionIndex = selectedOptionIndex
         itemClickListener = listener
     }
@@ -56,7 +58,7 @@ class OptionsListAdapter : RecyclerView.Adapter<OptionsListAdapter.ViewHolder>, 
 
     fun setOptionsList(optionsList: MutableList<String>) {
         this.optionsList = optionsList
-        filteredOptionsList = optionsList
+        filteredOriginalIndices = optionsList.indices.toList()
         notifyDataSetChanged()
     }
 
@@ -64,9 +66,8 @@ class OptionsListAdapter : RecyclerView.Adapter<OptionsListAdapter.ViewHolder>, 
         optionsList: MutableList<String>, optionsThumbnailsDrawableIds: IntArray?
     ) {
         this.optionsList = optionsList
-        filteredOptionsList = optionsList
+        filteredOriginalIndices = optionsList.indices.toList()
         this.optionsThumbnailsDrawableIds = optionsThumbnailsDrawableIds
-        filteredOptionsThumbnailsDrawableIds = optionsThumbnailsDrawableIds
         notifyDataSetChanged()
     }
 
@@ -89,16 +90,17 @@ class OptionsListAdapter : RecyclerView.Adapter<OptionsListAdapter.ViewHolder>, 
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        if (filteredOptionsThumbnailsDrawableIds != null) {
-            val drawableResId = filteredOptionsThumbnailsDrawableIds!![position]
+        val originalIndex = filteredOriginalIndices[position]
+        if (optionsThumbnailsDrawableIds != null) {
             holder.binding.ivOptionThumbnail.visibility = View.VISIBLE
-            holder.binding.ivOptionThumbnail.setImageResource(drawableResId)
+            holder.binding.ivOptionThumbnail.setImageResource(
+                optionsThumbnailsDrawableIds!![originalIndex]
+            )
         } else {
             holder.binding.ivOptionThumbnail.visibility = View.GONE
         }
-        val option = filteredOptionsList[position]
-        holder.binding.tvOptionName.text = option
-        if (position == selectedOptionIndex) {
+        holder.binding.tvOptionName.text = optionsList[originalIndex]
+        if (originalIndex == selectedOptionIndex) {
             holder.binding.ivCheckBox.visibility = View.VISIBLE
         } else {
             holder.binding.ivCheckBox.visibility = View.INVISIBLE
@@ -106,57 +108,29 @@ class OptionsListAdapter : RecyclerView.Adapter<OptionsListAdapter.ViewHolder>, 
     }
 
     override fun getItemCount(): Int {
-        return filteredOptionsList.size
+        return filteredOriginalIndices.size
     }
 
     override fun getFilter(): Filter {
-        // TODO refactor & enhance Filter
         return object : Filter() {
             override fun performFiltering(constraint: CharSequence): FilterResults {
-                var filterOptionsResult: MutableList<String> = ArrayList()
-                var filterThumbnailsResult: MutableList<Int?>? = null
-                if (constraint.length == 0) {
-                    filterOptionsResult = optionsList
-                    if (optionsThumbnailsDrawableIds != null) {
-                        filterThumbnailsResult = ArrayList()
-                        for (d in optionsThumbnailsDrawableIds!!) {
-                            filterThumbnailsResult.add(d)
-                        }
-                    }
+                val query = constraint.toString().lowercase(Locale.getDefault())
+                val matchedIndices = if (query.isEmpty()) {
+                    optionsList.indices.toList()
                 } else {
-                    if (optionsThumbnailsDrawableIds != null) {
-                        filterThumbnailsResult = ArrayList()
-                    }
-                    for (i in optionsList.indices) {
-                        val opt = optionsList[i]
-                        if (opt.lowercase(Locale.getDefault()).contains(
-                                constraint.toString().lowercase(
-                                    Locale.getDefault()
-                                )
-                            )
-                        ) {
-                            filterOptionsResult.add(opt)
-                            filterThumbnailsResult?.add(optionsThumbnailsDrawableIds!![i])
+                    optionsList.withIndex()
+                        .filter { (_, option) ->
+                            option.lowercase(Locale.getDefault()).contains(query)
                         }
-                    }
+                        .map { it.index }
                 }
                 val results = FilterResults()
-                results.values =
-                    Pair<List<String>, List<Int?>?>(filterOptionsResult, filterThumbnailsResult)
+                results.values = matchedIndices
                 return results
             }
 
             override fun publishResults(constraint: CharSequence, results: FilterResults) {
-                val filterResult = results.values as Pair<List<String>, List<Int>?>
-                filteredOptionsList = filterResult.first
-                if (filterResult.second != null) {
-                    filteredOptionsThumbnailsDrawableIds = IntArray(filterResult.second!!.size)
-                    for (i in filterResult.second!!.indices) {
-                        filteredOptionsThumbnailsDrawableIds!![i] = filterResult.second!![i]
-                    }
-                } else {
-                    filteredOptionsThumbnailsDrawableIds = null
-                }
+                filteredOriginalIndices = results.values as List<Int>
                 notifyDataSetChanged()
             }
         }
@@ -172,8 +146,9 @@ class OptionsListAdapter : RecyclerView.Adapter<OptionsListAdapter.ViewHolder>, 
         }
 
         override fun onClick(v: View) {
-            setSelectedOptionIndex(adapterPosition)
-            itemClickListener.onItemClick(selectedOptionIndex)
+            val originalIndex = filteredOriginalIndices[adapterPosition]
+            setSelectedOptionIndex(originalIndex)
+            itemClickListener.onItemClick(originalIndex)
         }
     }
 

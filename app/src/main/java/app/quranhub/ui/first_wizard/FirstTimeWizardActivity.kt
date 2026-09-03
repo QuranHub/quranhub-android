@@ -10,29 +10,36 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentStatePagerAdapter
+import androidx.activity.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.viewpager.widget.ViewPager
 import app.quranhub.R
 import app.quranhub.data.Constants
-import app.quranhub.data.local.db.MushafDatabase
-import app.quranhub.data.local.db.RoomAsset
-import app.quranhub.data.local.prefs.AppPreferencesManager
 import app.quranhub.databinding.ActivityFirstTimeWizardBinding
 import app.quranhub.ui.base.BaseActivity
-import app.quranhub.ui.common.interfaces.Searchable
 import app.quranhub.ui.first_wizard.OptionsListFragment.OnOptionClickListener
 import app.quranhub.ui.main.MainActivity
 import app.quranhub.util.LocaleUtils.setAppLanguage
+import kotlinx.coroutines.launch
 
 class FirstTimeWizardActivity : BaseActivity(), OnOptionClickListener {
 
-    private var appLanguagesStepPosition = 0 // first step
-    private var translationLanguagesStepPosition = 1 // second step
-    private var recitationsStepPosition = 2 // third & last step
-    private var currentStepPosition = appLanguagesStepPosition
     private var binding: ActivityFirstTimeWizardBinding? = null
     private var wizardStepPagerAdapter: WizardStepPagerAdapter? = null
-    private val searchString = ""
-    var layoutDir = View.LAYOUT_DIRECTION_LTR
+    private var layoutDir = View.LAYOUT_DIRECTION_LTR
+    private var appliedSearchQuery: String? = null
+
+    private val viewModel: FirstTimeWizardViewModel by viewModels {
+        viewModelFactory {
+            initializer {
+                FirstTimeWizardViewModel(application)
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,22 +47,66 @@ class FirstTimeWizardActivity : BaseActivity(), OnOptionClickListener {
         setContentView(binding!!.root)
         setSupportActionBar(binding!!.toolbar)
         layoutDir = resources.configuration.layoutDirection
-        if (layoutDir == View.LAYOUT_DIRECTION_RTL) {
-            initPagesPositionsForRtl()
-        }
-        if (savedInstanceState != null) {
-            currentStepPosition = savedInstanceState.getInt(STATE_CURRENT_STEP_POSITION)
-        }
         wizardStepPagerAdapter = WizardStepPagerAdapter(supportFragmentManager)
         binding!!.pagerSteps.adapter = wizardStepPagerAdapter
-        binding!!.pagerSteps.currentItem = appLanguagesStepPosition
-        updateViews(appLanguagesStepPosition)
-
-        // Initialize Mus'haf metadata DB
-        RoomAsset.initializeDatabase(
-            this, MushafDatabase.DATABASE_NAME, MushafDatabase.ASSET_DB_VERSION
-        )
+        binding!!.pagerSteps.currentItem = pagerIndexOfStep(viewModel.currentStep.value)
+        updateViews(viewModel.currentStep.value)
         attachListeners()
+        observeViewModel()
+    }
+
+    private fun observeViewModel() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    viewModel.currentStep.collect { step ->
+                        val pagerIndex = pagerIndexOfStep(step)
+                        if (binding!!.pagerSteps.currentItem != pagerIndex) {
+                            binding!!.pagerSteps.currentItem = pagerIndex
+                        }
+                        updateViews(step)
+                    }
+                }
+                launch {
+                    viewModel.searchQuery.collect { query ->
+                        // keep the search box in sync; each fragment applies the
+                        // query to its own options list
+                        if (query != appliedSearchQuery) {
+                            appliedSearchQuery = query
+                            if (binding!!.etSearch.text.toString() != query) {
+                                if (query.isEmpty()) {
+                                    binding!!.etSearch.text.clear()
+                                    binding!!.etSearch.clearFocus()
+                                } else {
+                                    binding!!.etSearch.setText(query)
+                                }
+                            }
+                        }
+                    }
+                }
+                launch {
+                    viewModel.events.collect { event ->
+                        when (event) {
+                            is FirstTimeWizardViewModel.WizardEvent.AppLanguageChanged -> {
+                                // change app language & restart to apply it
+                                setAppLanguage(this@FirstTimeWizardActivity, event.langCode)
+                                restart()
+                            }
+
+                            is FirstTimeWizardViewModel.WizardEvent.WizardFinished -> {
+                                startActivity(
+                                    Intent(
+                                        this@FirstTimeWizardActivity,
+                                        MainActivity::class.java
+                                    )
+                                )
+                                finish()
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private fun attachListeners() {
@@ -68,14 +119,8 @@ class FirstTimeWizardActivity : BaseActivity(), OnOptionClickListener {
             }
 
             override fun onPageSelected(position: Int) {
-                // TODO apply MVP or MVVM
                 Log.d(TAG, "onPageSelected() callback called")
-                updateViews(position)
-                if (position != currentStepPosition) {
-                    // This is not a configuration change; you don't want to reset the search on config changes.
-                    resetSearch()
-                    currentStepPosition = position
-                }
+                viewModel.onStepSelected(stepOfPagerIndex(position))
             }
 
             override fun onPageScrollStateChanged(state: Int) {}
@@ -83,118 +128,80 @@ class FirstTimeWizardActivity : BaseActivity(), OnOptionClickListener {
         binding!!.etSearch.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
-                // TODO apply MVP or MVVM
-                searchOptions(s.toString())
+                viewModel.onSearchQueryChanged(s.toString())
             }
 
             override fun afterTextChanged(s: Editable) {}
         })
-        binding!!.btnBack.setOnClickListener { v: View? -> backButtonClicked() }
-        binding!!.btnNext.setOnClickListener { v: View? -> nextButtonClicked() }
-    }
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        outState.putInt(STATE_CURRENT_STEP_POSITION, currentStepPosition)
+        binding!!.btnBack.setOnClickListener { backButtonClicked() }
+        binding!!.btnNext.setOnClickListener { nextButtonClicked() }
     }
 
     /**
-     * Modify pages position to allow correct RTL swiping.
+     * Maps a logical wizard step (0: first, 2: last) to its index in the view pager,
+     * which is reversed in RTL to allow correct swiping.
      */
-    private fun initPagesPositionsForRtl() {
-        appLanguagesStepPosition = 2 // first page for us, last page for the viewpager
-        translationLanguagesStepPosition = 1 // second page for us & the viewpager
-        recitationsStepPosition = 0 // third & last page for us, first page for the viewpager
-        currentStepPosition = appLanguagesStepPosition
-    }
+    private fun pagerIndexOfStep(step: Int): Int =
+        if (layoutDir == View.LAYOUT_DIRECTION_RTL) NUM_PAGES - 1 - step else step
 
-    private fun searchOptions(str: String) {
-        val searchableFragment = wizardStepPagerAdapter?.currentFragment as? Searchable?
-        searchableFragment?.search(str)
-            ?: Log.e(
-                TAG,
-                "Couldn't search the options list as the current view pager fragment is null"
-            )
-    }
+    /**
+     * Inverse of [pagerIndexOfStep].
+     */
+    private fun stepOfPagerIndex(pagerIndex: Int): Int =
+        if (layoutDir == View.LAYOUT_DIRECTION_RTL) NUM_PAGES - 1 - pagerIndex else pagerIndex
 
     override fun onBackPressed() {
-        if (binding!!.pagerSteps.currentItem == appLanguagesStepPosition) {
+        if (viewModel.currentStep.value == FirstTimeWizardViewModel.FIRST_STEP) {
             // If the user is currently looking at the first step, allow the system to handle the
             // Back button. This calls finish() on this activity and pops the back stack.
             super.onBackPressed()
         } else {
             // Otherwise, select the previous step.
-            openPreviousStepPage()
+            viewModel.onBackClicked()
         }
     }
 
     private fun backButtonClicked() {
-        // TODO apply MVP or MVVM
-        openPreviousStepPage()
+        viewModel.onBackClicked()
     }
 
     private fun nextButtonClicked() {
-        // TODO ally MVP or MVVM
-        openNextStepPage()
-    }
-
-    private fun openNextStepPage() {
-        var currentPageIndex = binding!!.pagerSteps.currentItem
-        if (layoutDir == View.LAYOUT_DIRECTION_LTR && currentPageIndex < NUM_PAGES - 1) {
-            // navigate to the next page
-            binding!!.pagerSteps.currentItem = ++currentPageIndex
-        } else if (layoutDir == View.LAYOUT_DIRECTION_RTL && currentPageIndex > 0) {
-            // navigate to the next page
-            binding!!.pagerSteps.currentItem = --currentPageIndex
-        } else {
-            finishWizard()
+        if (viewModel.currentStep.value == FirstTimeWizardViewModel.LAST_STEP) {
+            // disable the button while finishing to avoid duplicate clicks
+            binding!!.btnNext.isEnabled = false
         }
+        viewModel.onNextClicked()
     }
 
-    private fun openPreviousStepPage() {
-        var currentPageIndex = binding!!.pagerSteps.currentItem
-        if (layoutDir == View.LAYOUT_DIRECTION_LTR && currentPageIndex > 0) {
-            // navigate to the previous page
-            binding!!.pagerSteps.currentItem = --currentPageIndex
-        } else if (layoutDir == View.LAYOUT_DIRECTION_RTL && currentPageIndex < NUM_PAGES - 1) {
-            // navigate to the previous page
-            binding!!.pagerSteps.currentItem = ++currentPageIndex
-        }
-    }
-
-    /**
-     * Navigate to main activity and mark wizard as done
-     */
-    private fun finishWizard() {
-        binding!!.btnNext.isEnabled = false
-        AppPreferencesManager.markFirstTimeWizardDone(this)
-        startActivity(Intent(this, MainActivity::class.java))
-        finish()
-    }
-
-    private fun updateViews(currentStepPageIndex: Int) {
+    private fun updateViews(currentStep: Int) {
 
         // update the step hint
-        if (currentStepPageIndex == appLanguagesStepPosition) {
-            title = getString(R.string.first_wizard_title_app_language_step)
-            binding!!.tvStepHint.setText(R.string.first_wizard_hint_app_langauge)
-        } else if (currentStepPageIndex == translationLanguagesStepPosition) {
-            title = getString(R.string.first_wizard_title_translation_languages_step)
-            binding!!.tvStepHint.text = getString(R.string.first_wizard_hint_translation_languages)
-        } else if (currentStepPageIndex == recitationsStepPosition) {
-            title = getString(R.string.first_wizard_title_recitations_step)
-            binding!!.tvStepHint.text = getString(R.string.first_wizard_hint_recitations)
+        when (currentStep) {
+            FirstTimeWizardViewModel.FIRST_STEP -> {
+                title = getString(R.string.first_wizard_title_app_language_step)
+                binding!!.tvStepHint.setText(R.string.first_wizard_hint_app_langauge)
+            }
+
+            FirstTimeWizardViewModel.TRANSLATIONS_STEP -> {
+                title = getString(R.string.first_wizard_title_translation_languages_step)
+                binding!!.tvStepHint.text = getString(R.string.first_wizard_hint_translation_languages)
+            }
+
+            FirstTimeWizardViewModel.LAST_STEP -> {
+                title = getString(R.string.first_wizard_title_recitations_step)
+                binding!!.tvStepHint.text = getString(R.string.first_wizard_hint_recitations)
+            }
         }
 
         // update progress
-        showStepProgress(currentStepPageIndex)
+        showStepProgress(currentStep)
 
         // update buttons
-        if (currentStepPageIndex == recitationsStepPosition) {
+        if (currentStep == FirstTimeWizardViewModel.LAST_STEP) {
             // on last page
             binding!!.btnNext.setText(R.string.finish)
             binding!!.btnBack.isEnabled = true
-        } else if (currentStepPageIndex == appLanguagesStepPosition) {
+        } else if (currentStep == FirstTimeWizardViewModel.FIRST_STEP) {
             // on first page
             binding!!.btnNext.setText(R.string.next)
             binding!!.btnBack.isEnabled = false
@@ -205,15 +212,9 @@ class FirstTimeWizardActivity : BaseActivity(), OnOptionClickListener {
         }
     }
 
-    private fun resetSearch() {
-        binding!!.etSearch.text.clear()
-        binding!!.etSearch.clearFocus()
-        searchOptions("")
-    }
-
-    private fun showStepProgress(currentStepPageIndex: Int) {
-        when (currentStepPageIndex) {
-            appLanguagesStepPosition -> {
+    private fun showStepProgress(currentStep: Int) {
+        when (currentStep) {
+            FirstTimeWizardViewModel.FIRST_STEP -> {
                 // first step
                 binding!!.ivProgressPage1.setImageResource(R.drawable.check_gold_ic)
                 binding!!.ivProgressPage1.setBackgroundResource(R.drawable.progress_circle_checked)
@@ -225,7 +226,7 @@ class FirstTimeWizardActivity : BaseActivity(), OnOptionClickListener {
                 binding!!.ivProgressPage3.setBackgroundResource(R.drawable.progress_circle_unchecked)
             }
 
-            translationLanguagesStepPosition -> {
+            FirstTimeWizardViewModel.TRANSLATIONS_STEP -> {
                 // second step
                 binding!!.ivProgressPage1.setImageResource(R.drawable.check_gold_ic)
                 binding!!.ivProgressPage1.setBackgroundResource(R.drawable.progress_circle_checked)
@@ -237,7 +238,7 @@ class FirstTimeWizardActivity : BaseActivity(), OnOptionClickListener {
                 binding!!.ivProgressPage3.setBackgroundResource(R.drawable.progress_circle_unchecked)
             }
 
-            recitationsStepPosition -> {
+            FirstTimeWizardViewModel.LAST_STEP -> {
                 // last (third) step
                 binding!!.ivProgressPage1.setImageResource(R.drawable.check_gold_ic)
                 binding!!.ivProgressPage1.setBackgroundResource(R.drawable.progress_circle_checked)
@@ -252,25 +253,12 @@ class FirstTimeWizardActivity : BaseActivity(), OnOptionClickListener {
     }
 
     override fun onOptionClicked(requestCode: Int, option: String, position: Int) {
-        // TODO apply MVP or MVVM
         when (requestCode) {
-            RC_APP_LANGUAGES_STEP -> {
-                val selectedLangCode = Constants.Language.CODES[position]
-                if (selectedLangCode != AppPreferencesManager.getAppLangSetting(this)) {
-                    AppPreferencesManager.persistAppLangSetting(this, selectedLangCode)
-                    setAppLanguage(this, selectedLangCode)
-                    restart()
-                }
-            }
+            RC_APP_LANGUAGES_STEP -> viewModel.onAppLanguageSelected(position)
 
-            RC_TRANSLATION_LANGUAGES_STEP -> {
-                val selectedTransLangCode = Constants.Language.CODES[position]
-                AppPreferencesManager.persistQuranTranslationLanguage(this, selectedTransLangCode)
-            }
+            RC_TRANSLATION_LANGUAGES_STEP -> viewModel.onTranslationLanguageSelected(position)
 
-            RC_RECITATIONS_STEP -> {
-                AppPreferencesManager.persistRecitationSetting(this, position)
-            }
+            RC_RECITATIONS_STEP -> viewModel.onRecitationSelected(position)
         }
     }
 
@@ -282,40 +270,32 @@ class FirstTimeWizardActivity : BaseActivity(), OnOptionClickListener {
             private set
 
         override fun getItem(position: Int): Fragment {
-            return when (position) {
-                appLanguagesStepPosition -> {
-                    val selectedAppLanguageIndex = Constants.Language.CODES.indexOf(
-                        AppPreferencesManager.getAppLangSetting(this@FirstTimeWizardActivity)
-                    )
+            return when (stepOfPagerIndex(position)) {
+                FirstTimeWizardViewModel.FIRST_STEP -> {
                     OptionsListFragment.newInstance(
                         this@FirstTimeWizardActivity,
                         Constants.Language.NAMES_STR_IDS,
                         Constants.Language.FLAGS_DRAWABLE_IDS,
-                        selectedAppLanguageIndex,
+                        viewModel.uiState.value.appLangIndex,
                         RC_APP_LANGUAGES_STEP
                     )
                 }
 
-                translationLanguagesStepPosition -> {
-                    val selectedTranslationLanguageIndex = Constants.Language.CODES.indexOf(
-                        AppPreferencesManager.getQuranTranslationLanguage(this@FirstTimeWizardActivity)
-                    )
+                FirstTimeWizardViewModel.TRANSLATIONS_STEP -> {
                     OptionsListFragment.newInstance(
                         this@FirstTimeWizardActivity,
                         Constants.Language.NAMES_STR_IDS,
                         Constants.Language.FLAGS_DRAWABLE_IDS,
-                        selectedTranslationLanguageIndex,
+                        viewModel.uiState.value.translationLangIndex,
                         RC_TRANSLATION_LANGUAGES_STEP
                     )
                 }
 
-                recitationsStepPosition -> {
-                    val selectedRecitationIndex =
-                        AppPreferencesManager.getRecitationSetting(this@FirstTimeWizardActivity)
+                FirstTimeWizardViewModel.LAST_STEP -> {
                     OptionsListFragment.newInstance(
                         this@FirstTimeWizardActivity,
                         Constants.Recitation.NAMES_STR_IDS,
-                        selectedRecitationIndex,
+                        viewModel.uiState.value.recitationIndex,
                         RC_RECITATIONS_STEP
                     )
                 }
@@ -339,11 +319,9 @@ class FirstTimeWizardActivity : BaseActivity(), OnOptionClickListener {
     companion object {
         private val TAG = FirstTimeWizardActivity::class.java.simpleName
 
-        private const val STATE_CURRENT_STEP_POSITION = "STATE_CURRENT_STEP_POSITION"
-
-        private const val RC_APP_LANGUAGES_STEP = 0
-        private const val RC_TRANSLATION_LANGUAGES_STEP = 1
-        private const val RC_RECITATIONS_STEP = 2
+        const val RC_APP_LANGUAGES_STEP = 0
+        const val RC_TRANSLATION_LANGUAGES_STEP = 1
+        const val RC_RECITATIONS_STEP = 2
 
         private const val NUM_PAGES = 3
     }

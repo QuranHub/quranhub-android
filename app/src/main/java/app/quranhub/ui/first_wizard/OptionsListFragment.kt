@@ -6,12 +6,17 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import app.quranhub.databinding.FragmentOptionsListBinding
 import app.quranhub.ui.common.interfaces.Searchable
 import app.quranhub.ui.first_wizard.OptionsListFragment.OnOptionClickListener
+import kotlinx.coroutines.launch
 
 /**
  * Activities that contain this fragment must implement the
@@ -26,6 +31,7 @@ class OptionsListFragment : Fragment(), OptionsListAdapter.ItemClickListener, Se
     private lateinit var options: List<String>
     private var optionsThumbnailsDrawableIds: IntArray? = null
     private var selectedOptionPosition = 0
+    private val viewModel: FirstTimeWizardViewModel by activityViewModels()
     private var listener: OnOptionClickListener? = null
     private var optionsListAdapter: OptionsListAdapter? = null
     private var searchText: String? = ""
@@ -49,6 +55,40 @@ class OptionsListFragment : Fragment(), OptionsListAdapter.ItemClickListener, Se
         binding = FragmentOptionsListBinding.inflate(inflater, container, false)
         initOptionsRecyclerView()
         return binding!!.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        observeSelectedOption()
+        observeSearchQuery()
+    }
+
+    private fun observeSelectedOption() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.uiState.collect { state ->
+                    // Converge the checkmark to the shared wizard state; this also
+                    // restores the selection after a configuration change.
+                    val index = selectedIndexFrom(state)
+                    val adapter = optionsListAdapter
+                    if (adapter != null && index != adapter.getSelectedOptionIndex()) {
+                        adapter.setSelectedOptionIndex(index)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun observeSearchQuery() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.searchQuery.collect { query ->
+                    // Mirror the shared search query so a revisited step never
+                    // keeps a stale filter from an earlier visit.
+                    optionsListAdapter?.filter?.filter(query)
+                }
+            }
+        }
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
@@ -80,10 +120,28 @@ class OptionsListFragment : Fragment(), OptionsListAdapter.ItemClickListener, Se
         )
         binding!!.rvOptions.addItemDecoration(dividerItemDecoration)
         optionsListAdapter = OptionsListAdapter(
-            options, optionsThumbnailsDrawableIds, selectedOptionPosition, this
+            options, optionsThumbnailsDrawableIds, currentSelectedOptionIndex(), this
         )
         binding!!.rvOptions.adapter = optionsListAdapter
     }
+
+    /**
+     * The currently selected option index for this step. Read from the shared
+     * wizard ViewModel so a restored fragment (whose arguments are frozen at
+     * creation time) still reflects selections made before a configuration change.
+     */
+    private fun currentSelectedOptionIndex(): Int = selectedIndexFrom(viewModel.uiState.value)
+
+    private fun selectedIndexFrom(state: FirstTimeWizardViewModel.WizardUiState): Int =
+        when (requestCode) {
+            FirstTimeWizardActivity.RC_APP_LANGUAGES_STEP -> state.appLangIndex
+
+            FirstTimeWizardActivity.RC_TRANSLATION_LANGUAGES_STEP -> state.translationLangIndex
+
+            FirstTimeWizardActivity.RC_RECITATIONS_STEP -> state.recitationIndex
+
+            else -> selectedOptionPosition
+        }
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
