@@ -53,7 +53,7 @@ class TranslationsViewModel(
         override fun onDownloadFinished() {}
         override fun onDownloadCancelled() {}
         override fun onDownloadFailed() {
-            onDownloadFailed()
+            notifyDownloadFailed()
         }
     }
 
@@ -131,14 +131,14 @@ class TranslationsViewModel(
     }
 
     override fun onCleared() {
-        // cancel the downloader network requests; the downstream DB writes
-        // (deleting the cancelled download rows) are fast and complete on IO
+        // cancel the downloader network requests and their scopes; the
+        // cleanup DB deletes still run via NonCancellable
         downloaders.values.forEach { it.cancel() }
         downloaders.clear()
         super.onCleared()
     }
 
-    private fun onDownloadFailed() {
+    private fun notifyDownloadFailed() {
         viewModelScope.launch {
             _events.send(TranslationsEvent.DownloadFailed)
         }

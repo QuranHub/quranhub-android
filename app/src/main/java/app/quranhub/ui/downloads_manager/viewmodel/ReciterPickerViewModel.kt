@@ -73,11 +73,7 @@ class ReciterPickerViewModel(
                 )
             }
 
-            val recitationKey: String = when (recitationId) {
-                Constants.Recitation.HAFS_ID -> Constants.Recitation.HAFS_KEY
-                Constants.Recitation.WARSH_ID -> Constants.Recitation.WARSH_KEY
-                else -> error("Invalid recitation id: $recitationId")
-            }
+            val recitationKey = Constants.Recitation.keyForRecitation(recitationId)
 
             try {
                 val reciters =

@@ -1,8 +1,31 @@
 package app.quranhub.util
 
+import android.content.Context
 import app.quranhub.data.Constants
+import app.quranhub.data.local.db.UserDatabase
+import app.quranhub.data.local.entity.ReciterRecitation
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 object QuranAudioDownloadUtils {
+
+    /**
+     * Registers the [ReciterRecitation] row for the given recitation & reciter
+     * in the local database, if it does not exist yet.
+     */
+    suspend fun registerReciterRecitation(context: Context, recitationId: Int, reciterId: String) {
+        withContext(Dispatchers.IO) {
+            val userDatabase = UserDatabase.getInstance(context)
+            if (userDatabase.reciterRecitationDao[recitationId, reciterId] == null) {
+                userDatabase.reciterRecitationDao.insert(
+                    ReciterRecitation(
+                        recitationId = recitationId,
+                        reciterId = reciterId
+                    )
+                )
+            }
+        }
+    }
 
     /**
      * Generates & returns the Quran audio file download URL relative path for the given args.

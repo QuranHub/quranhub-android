@@ -11,8 +11,11 @@ import com.downloader.PRDownloader
 import com.downloader.Progress
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class TranslationDownloader(
     val translationBook: TranslationBook,
@@ -51,10 +54,14 @@ class TranslationDownloader(
             }
             .setOnCancelListener {
                 Log.d(TAG, "onCancel: downloadId = $downloadId")
+                // NonCancellable: the cleanup delete must run even when this
+                // downloader's scope is cancelled with it
                 scope.launch {
-                    UserDatabase.getInstance(appContext).translationBookDao.delete(
-                        translationBook
-                    )
+                    withContext(NonCancellable) {
+                        UserDatabase.getInstance(appContext).translationBookDao.delete(
+                            translationBook
+                        )
+                    }
                 }
                 callback?.onDownloadCancelled()
             }
@@ -95,17 +102,24 @@ class TranslationDownloader(
                 override fun onError(error: Error) {
                     Log.e(TAG, "PRDownloader: downloadId = $downloadId ->  error")
                     scope.launch {
-                        UserDatabase.getInstance(appContext).translationBookDao.delete(
-                            translationBook
-                        )
+                        withContext(NonCancellable) {
+                            UserDatabase.getInstance(appContext).translationBookDao.delete(
+                                translationBook
+                            )
+                        }
                     }
                     callback?.onDownloadFailed()
                 }
             })
     }
 
+    /**
+     * Cancels the PRDownloader request and this downloader's coroutine scope.
+     * The cleanup DB deletes (cancel/error) still run via [NonCancellable].
+     */
     fun cancel() {
         PRDownloader.cancel(downloadId)
+        scope.cancel()
     }
 
     private fun updateProgressPercentage(downloadLevelPercentage: Int) {

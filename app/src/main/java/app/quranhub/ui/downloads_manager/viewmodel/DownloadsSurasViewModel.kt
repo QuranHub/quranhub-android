@@ -4,11 +4,11 @@ import android.app.Application
 import android.util.Log
 import app.quranhub.R
 import app.quranhub.data.local.db.UserDatabase
-import app.quranhub.data.local.entity.ReciterRecitation
 import app.quranhub.data.local.prefs.AppPreferencesManager
 import app.quranhub.data.service.QuranAudioDownloaderService
 import app.quranhub.ui.downloads_manager.model.DisplayableDownload
 import app.quranhub.util.QuranAudioDeleteUtils.deleteSuraAudio
+import app.quranhub.util.QuranAudioDownloadUtils.registerReciterRecitation
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 
@@ -52,15 +52,7 @@ class DownloadsSurasViewModel(
         viewModelScope.launch {
             try {
                 val suraId = position + 1
-                val userDatabase = UserDatabase.getInstance(appContext)
-                if (userDatabase.reciterRecitationDao[recitationId, reciterId] == null) {
-                    userDatabase.reciterRecitationDao.insert(
-                        ReciterRecitation(
-                            recitationId = recitationId,
-                            reciterId = reciterId
-                        )
-                    )
-                }
+                registerReciterRecitation(appContext, recitationId, reciterId)
                 val recitationIdPreference =
                     AppPreferencesManager.getRecitationSetting(appContext)
                 if (recitationIdPreference == recitationId) {

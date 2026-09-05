@@ -21,6 +21,7 @@ import com.downloader.Progress
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -154,8 +155,13 @@ class QuranAudioDownloaderService : PRDownloaderService() {
 //        Toast.makeText(this, R.string.toast_download_quran_audio_finished, Toast.LENGTH_SHORT).show();
         DownloadFinishedHolder.notifyFinished()
     }
-
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    override fun onDestroy() {
+        serviceScope.cancel()
+        super.onDestroy()
+    }
+
     companion object {
         private val TAG = QuranAudioDownloaderService::class.java.simpleName
         private const val EXTRA_START_AYA_ID = "EXTRA_START_AYA_ID"
@@ -166,12 +172,15 @@ class QuranAudioDownloaderService : PRDownloaderService() {
         private const val DRI_EXTRA_INFO_RECITATION_ID = "DRI_EXTRA_INFO_RECITATION_ID"
         private const val DRI_EXTRA_INFO_RECITER_ID = "DRI_EXTRA_INFO_RECITER_ID"
 
+        // IO scope for resolving the aya range before the service starts
+        private val helperScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
         @JvmStatic
         fun downloadSura(
             context: Context, recitationId: Int, reciterId: String?,
             suraId: Int
         ) {
-            CoroutineScope(Dispatchers.IO).launch {
+            helperScope.launch {
                 val ayaDao = MushafDatabase.getInstance(context).ayaDao
                 val startAyaId = ayaDao.getFirstAyaInSura(suraId)?.id
                 val endAyaId = ayaDao.getLastAyaInSura(suraId)?.id

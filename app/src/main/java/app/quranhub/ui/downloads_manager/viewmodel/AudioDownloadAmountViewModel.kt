@@ -4,10 +4,8 @@ import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import app.quranhub.data.local.db.UserDatabase
-import app.quranhub.data.local.entity.ReciterRecitation
 import app.quranhub.data.service.QuranAudioDownloaderService
-import kotlinx.coroutines.Dispatchers
+import app.quranhub.util.QuranAudioDownloadUtils.registerReciterRecitation
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,7 +14,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 /**
  * ViewModel for the Quran audio download-amount dialog: tracks the chosen
@@ -62,19 +59,8 @@ class AudioDownloadAmountViewModel(
     fun startDownload() {
         viewModelScope.launch {
             try {
-                withContext(Dispatchers.IO) {
-                    // Store SheikhRecitation for the downloaded recitation & reciter in DB
-                    val userDatabase = UserDatabase.getInstance(appContext)
-                    if (userDatabase.reciterRecitationDao[recitationId, reciterId] == null) {
-                        userDatabase.reciterRecitationDao
-                            .insert(
-                                ReciterRecitation(
-                                    recitationId = recitationId,
-                                    reciterId = reciterId
-                                )
-                            )
-                    }
-                }
+                // Store SheikhRecitation for the downloaded recitation & reciter in DB
+                registerReciterRecitation(appContext, recitationId, reciterId)
 
                 if (_uiState.value.selectedOption == OPTION_DOWNLOAD_SURA) {
                     QuranAudioDownloaderService.downloadSura(

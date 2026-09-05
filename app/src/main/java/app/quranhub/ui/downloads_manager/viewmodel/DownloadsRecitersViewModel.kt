@@ -10,6 +10,7 @@ import app.quranhub.data.local.entity.ReciterRecitation
 import app.quranhub.data.repository.RecitationsRepository
 import app.quranhub.ui.downloads_manager.model.DisplayableDownload
 import app.quranhub.util.QuranAudioDeleteUtils.deleteReciterAudio
+import app.quranhub.util.QuranAudioDownloadUtils.registerReciterRecitation
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 
@@ -25,11 +26,7 @@ class DownloadsRecitersViewModel(application: Application, private val recitatio
     override suspend fun loadDownloads(): List<DisplayableDownload> {
         val context = appContext
 
-        val recitationKey: String = when (recitationId) {
-            Constants.Recitation.HAFS_ID -> Constants.Recitation.HAFS_KEY
-            Constants.Recitation.WARSH_ID -> Constants.Recitation.WARSH_KEY
-            else -> error("Invalid recitation id: $recitationId")
-        }
+        val recitationKey = Constants.Recitation.keyForRecitation(recitationId)
 
         reciters = try {
             val reciterModels =
@@ -93,11 +90,7 @@ class DownloadsRecitersViewModel(application: Application, private val recitatio
                 if (userDatabase.reciterDao.getById(reciter.id) == null) {
                     userDatabase.reciterDao.insert(reciter)
                 }
-                if (userDatabase.reciterRecitationDao[recitationId, reciter.id] == null) {
-                    userDatabase.reciterRecitationDao.insert(
-                        ReciterRecitation(recitationId = recitationId, reciterId = reciter.id)
-                    )
-                }
+                registerReciterRecitation(appContext, recitationId, reciter.id)
                 emitEvent(
                     DownloadsEvent.OpenAudioDownloadAmountDialog(recitationId, reciter.id)
                 )
