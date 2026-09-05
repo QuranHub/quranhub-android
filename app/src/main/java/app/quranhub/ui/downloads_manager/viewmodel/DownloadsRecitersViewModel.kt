@@ -33,19 +33,14 @@ class DownloadsRecitersViewModel(application: Application, private val recitatio
 
         reciters = try {
             val reciterModels =
-                recitationsRepository.getRecitersForRecitation(recitationKey).blockingGet()
-            if (reciterModels != null) {
-                reciterModels.map {
-                    Reciter(
-                        it.id,
-                        it.getLocalizedName(context),
-                        it.getLocalizedNationality(context),
-                        it.audioBaseUrl
-                    )
-                }
-            } else {
-                Log.e(TAG, "reciterModels is null!")
-                retrieveLocalReciters()
+                recitationsRepository.getRecitersForRecitation(recitationKey)
+            reciterModels.map {
+                Reciter(
+                    it.id,
+                    it.getLocalizedName(context),
+                    it.getLocalizedNationality(context),
+                    it.audioBaseUrl
+                )
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to retrieve reciters from RecitationsRepository.")

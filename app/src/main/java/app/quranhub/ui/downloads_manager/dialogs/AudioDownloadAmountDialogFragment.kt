@@ -1,11 +1,9 @@
 package app.quranhub.ui.downloads_manager.dialogs
 
-import android.annotation.SuppressLint
 import android.app.Dialog
 import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
-import android.os.AsyncTask
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -16,16 +14,20 @@ import android.widget.ArrayAdapter
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.DialogFragment
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import app.quranhub.R
-import app.quranhub.data.local.db.UserDatabase
-import app.quranhub.data.local.entity.ReciterRecitation
-import app.quranhub.data.service.QuranAudioDownloaderService.Companion.downloadQuran
-import app.quranhub.data.service.QuranAudioDownloaderService.Companion.downloadSura
 import app.quranhub.databinding.DialogAudioDownloadAmountBinding
+import app.quranhub.ui.downloads_manager.viewmodel.AudioDownloadAmountViewModel
 import app.quranhub.util.DialogUtils.DIALOG_STD_WIDTH_SCREEN_RATIO_LANDSCAPE
 import app.quranhub.util.DialogUtils.DIALOG_STD_WIDTH_SCREEN_RATIO_PORTRAIT
 import app.quranhub.util.DialogUtils.adjustDialogSize
 import app.quranhub.util.NetworkUtil.isNetworkAvailable
+import kotlinx.coroutines.launch
 
 /**
  * A `DialogFragment` that allows the user to choose the Quran audio amount he wants to download.
@@ -37,9 +39,18 @@ class AudioDownloadAmountDialogFragment : DialogFragment() {
     private var recitationId = 0
     private var reciterId: String? = null
     private var suraId = 0 // [optional, defaults to 1]
-    private var selectedOption = 0
     private var binding: DialogAudioDownloadAmountBinding? = null
     private var listener: AudioDownloadListener? = null
+
+    private val viewModel: AudioDownloadAmountViewModel by viewModels {
+        viewModelFactory {
+            initializer {
+                AudioDownloadAmountViewModel(
+                    requireActivity().application, recitationId, reciterId!!, suraId
+                )
+            }
+        }
+    }
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -82,8 +93,6 @@ class AudioDownloadAmountDialogFragment : DialogFragment() {
     }
 
     private fun initDialogView() {
-        setSelectedOption(OPTION_DOWNLOAD_SURA)
-
         // init surasSpinner
         val suras = resources.getStringArray(R.array.sura_name)
         val dataAdapter = ArrayAdapter(
@@ -92,7 +101,7 @@ class AudioDownloadAmountDialogFragment : DialogFragment() {
         )
         dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         binding!!.spinnerSuras.adapter = dataAdapter
-        binding!!.spinnerSuras.setSelection(suraId - 1)
+        binding!!.spinnerSuras.setSelection(viewModel.uiState.value.suraId - 1)
         binding!!.spinnerSuras.onItemSelectedListener =
             object : AdapterView.OnItemSelectedListener {
                 override fun onItemSelected(
@@ -106,24 +115,13 @@ class AudioDownloadAmountDialogFragment : DialogFragment() {
                             resources.getColor(R.color.white_color)
                         )
                     }
-                    setSelectedOption(OPTION_DOWNLOAD_SURA)
-                    suraId = position + 1
+                    viewModel.onSuraSelected(position + 1)
                 }
 
                 override fun onNothingSelected(parent: AdapterView<*>?) {}
             }
         attachListeners()
-    }
-
-    private fun setSelectedOption(option: Int) {
-        selectedOption = option
-        if (selectedOption == OPTION_DOWNLOAD_SURA) {
-            binding!!.ivCheckOptionSuraDownload.visibility = View.VISIBLE
-            binding!!.ivCheckOptionDownloadAll.visibility = View.INVISIBLE
-        } else if (selectedOption == OPTION_DOWNLOAD_ALL) {
-            binding!!.ivCheckOptionSuraDownload.visibility = View.INVISIBLE
-            binding!!.ivCheckOptionDownloadAll.visibility = View.VISIBLE
-        }
+        observeViewModel()
     }
 
     override fun onResume() {
@@ -140,60 +138,56 @@ class AudioDownloadAmountDialogFragment : DialogFragment() {
     }
 
     private fun attachListeners() {
-        binding!!.clOptionSuraDownload.setOnClickListener { v: View? -> onSuraDownloadOptionClick() }
-        binding!!.clOptionDownloadAll.setOnClickListener { v: View? -> onDownloadAllOptionClick() }
+        binding!!.clOptionSuraDownload.setOnClickListener { v: View? ->
+            viewModel.onSuraDownloadOptionSelected()
+        }
+        binding!!.clOptionDownloadAll.setOnClickListener { v: View? ->
+            viewModel.onDownloadAllOptionSelected()
+        }
         binding!!.btnCancel.setOnClickListener { v: View? -> onCancelButtonClick() }
         binding!!.btnDownload.setOnClickListener { v: View? -> onDownloadButtonClick() }
     }
 
-    private fun onSuraDownloadOptionClick() {
-        setSelectedOption(OPTION_DOWNLOAD_SURA)
-    }
-
-    private fun onDownloadAllOptionClick() {
-        setSelectedOption(OPTION_DOWNLOAD_ALL)
+    private fun observeViewModel() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    viewModel.uiState.collect { state ->
+                        binding?.ivCheckOptionSuraDownload?.visibility =
+                            if (state.selectedOption == OPTION_DOWNLOAD_SURA) View.VISIBLE else View.INVISIBLE
+                        binding?.ivCheckOptionDownloadAll?.visibility =
+                            if (state.selectedOption == OPTION_DOWNLOAD_ALL) View.VISIBLE else View.INVISIBLE
+                    }
+                }
+                launch {
+                    viewModel.events.collect { event ->
+                        when (event) {
+                            is AudioDownloadAmountViewModel.AudioDownloadAmountEvent.DownloadStarted -> {
+                                Toast.makeText(
+                                    requireContext(),
+                                    R.string.msg_quran_audio_download_started,
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                listener!!.onClickDownload()
+                                dismiss()
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private fun onCancelButtonClick() {
         dismiss()
     }
 
-    @SuppressLint("StaticFieldLeak")
     private fun onDownloadButtonClick() {
         if (!isNetworkAvailable(requireContext())) {
             Toast.makeText(activity, getString(R.string.no_internet), Toast.LENGTH_LONG).show()
             return
         }
-        object : AsyncTask<Void?, Void?, Void?>() {
-            override fun doInBackground(vararg voids: Void?): Void? {
-                // Store SheikhRecitation for the download recitation & reciter in DB
-                val userDatabase = UserDatabase.getInstance(requireContext())
-                if (userDatabase.reciterRecitationDao[recitationId, reciterId] == null) {
-                    userDatabase.reciterRecitationDao
-                        .insert(
-                            ReciterRecitation(
-                                recitationId = recitationId,
-                                reciterId = reciterId!!
-                            )
-                        )
-                }
-                return null
-            }
-
-            override fun onPostExecute(aVoid: Void?) {
-                if (selectedOption == OPTION_DOWNLOAD_SURA) {
-                    downloadSura(requireContext(), recitationId, reciterId, suraId)
-                } else if (selectedOption == OPTION_DOWNLOAD_ALL) {
-                    downloadQuran(requireContext(), recitationId, reciterId)
-                }
-                Toast.makeText(
-                    requireContext(), R.string.msg_quran_audio_download_started,
-                    Toast.LENGTH_SHORT
-                ).show()
-                listener!!.onClickDownload()
-                dismiss()
-            }
-        }.execute()
+        viewModel.startDownload()
     }
 
     interface AudioDownloadListener {
@@ -214,17 +208,9 @@ class AudioDownloadAmountDialogFragment : DialogFragment() {
          * Use this factory method to create a new instance of
          * this fragment using the provided parameters.
          *
-         * @param recitationId Recitation ID as in [Constants.Recitation]
+         * @param recitationId Recitation ID as in [app.quranhub.data.Constants.Recitation]
          * @param reciterId    A reciter ID.
          * @param suraId       A sura ID to be selected when opening the dialog.
-         * @return A new instance of fragment AudioDownloadAmountDialogFragment.
-         */
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param recitationId Recitation ID as in [Constants.Recitation]
-         * @param reciterId    A reciter ID.
          * @return A new instance of fragment AudioDownloadAmountDialogFragment.
          */
         @JvmOverloads

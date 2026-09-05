@@ -4,34 +4,32 @@ import app.quranhub.data.model.ReciterModel
 import com.google.android.gms.tasks.Task
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.QuerySnapshot
-import io.reactivex.Single
-import io.reactivex.SingleEmitter
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 class RecitationsRepository {
 
     private val db = FirebaseFirestore.getInstance()
 
-    fun getRecitersForRecitation(recitationKey: String): Single<List<ReciterModel>?> {
-
-        return Single.create { emitter: SingleEmitter<List<ReciterModel>?> ->
+    suspend fun getRecitersForRecitation(recitationKey: String): List<ReciterModel> {
+        return suspendCancellableCoroutine { continuation ->
             db.collection("recitations")
                 .document(recitationKey)
                 .collection("reciters")
                 .get()
                 .addOnCompleteListener { task: Task<QuerySnapshot> ->
                     if (task.isSuccessful) {
-                        val reciterModels = task.result.toObjects(
-                            ReciterModel::class.java
+                        continuation.resume(
+                            task.result.toObjects(ReciterModel::class.java)
                         )
-                        emitter.onSuccess(reciterModels)
                     } else {
-                        emitter.onError(task.exception!!)
+                        continuation.resumeWithException(
+                            task.exception
+                                ?: IllegalStateException("Firestore task failed without exception")
+                        )
                     }
                 }
         }
-    }
-
-    companion object {
-        private val TAG = RecitationsRepository::class.java.simpleName
     }
 }
