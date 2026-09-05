@@ -7,6 +7,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import app.quranhub.data.local.entity.TranslationBook
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface TranslationBookDao {
@@ -17,7 +18,7 @@ interface TranslationBookDao {
     fun getAllByIds(vararg ids: Int): LiveData<List<TranslationBook?>?>?
 
     @Query("SELECT * FROM TranslationBook WHERE language=:langCode")
-    fun getByLanguage(langCode: String?): LiveData<List<TranslationBook?>?>?
+    fun getByLanguage(langCode: String?): Flow<List<TranslationBook>>
 
     @Query("SELECT * FROM TranslationBook WHERE id=:id")
     suspend fun findById(id: String?): TranslationBook?

@@ -8,29 +8,25 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import app.quranhub.R
-import app.quranhub.data.local.db.UserDatabase
 import app.quranhub.data.local.entity.TranslationBook
 import app.quranhub.data.local.prefs.AppPreferencesManager.getQuranTranslationBook
 import app.quranhub.data.local.prefs.AppPreferencesManager.persistBookDbName
 import app.quranhub.data.local.prefs.AppPreferencesManager.persistBookName
 import app.quranhub.data.local.prefs.AppPreferencesManager.persistQuranTranslationBook
-import app.quranhub.data.remote.TranslationDownloader
-import app.quranhub.data.remote.TranslationDownloader.TranslationDownloadCallback
-import app.quranhub.data.repository.TranslationsRepository
 import app.quranhub.databinding.FragmentTranslationsDataBinding
 import app.quranhub.ui.common.interfaces.Searchable
 import app.quranhub.ui.mushaf.adapter.TranslationsAdapter
 import app.quranhub.ui.mushaf.model.DisplayableTranslation
-import app.quranhub.util.FragmentUtils.isSafeFragment
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.collectLatest
+import app.quranhub.ui.mushaf.viewmodel.TranslationsViewModel
 import kotlinx.coroutines.launch
 
 /**
@@ -38,21 +34,20 @@ import kotlinx.coroutines.launch
  * Use the [TranslationsDataFragment.newInstance] factory method to
  * create an instance of this fragment.
  */
-// TODO apply MVVM
-class TranslationsDataFragment : Fragment(), Searchable, TranslationsAdapter.ItemClickListener,
-    TranslationDownloadCallback {
+class TranslationsDataFragment : Fragment(), Searchable, TranslationsAdapter.ItemClickListener {
 
-    private val searchText = ""
     private var languageCode: String? = null
     private var listener: TranslationSelectionListener? = null
     private var binding: FragmentTranslationsDataBinding? = null
-    private var displayableTranslations: MutableList<DisplayableTranslation>? = null
     private var adapter: TranslationsAdapter? = null
-    private var remoteTranslationBooks: List<TranslationBook>? = null
-    private var translationBooksLiveData: LiveData<List<TranslationBook?>?>? = null
-    private var translationDownloaders: MutableList<TranslationDownloader>? = null
 
-    private val translationsRepository = TranslationsRepository()
+    private val viewModel: TranslationsViewModel by viewModels {
+        viewModelFactory {
+            initializer {
+                TranslationsViewModel(requireActivity().application, languageCode)
+            }
+        }
+    }
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -91,100 +86,47 @@ class TranslationsDataFragment : Fragment(), Searchable, TranslationsAdapter.Ite
             layoutManager.orientation
         )
         binding!!.rvTranslations.addItemDecoration(dividerItemDecoration)
-        displayableTranslations = ArrayList()
         adapter = TranslationsAdapter(
-            displayableTranslations,
+            ArrayList<DisplayableTranslation>(),
             getQuranTranslationBook(requireContext()),
             this
         )
         binding!!.rvTranslations.adapter = adapter
+        observeViewModel()
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        translationBooksLiveData = UserDatabase.getInstance(requireContext())
-            .translationBookDao
-            .getByLanguage(languageCode)
-        setupTranslationBooksLiveDataObserver()
-        fetchTranslationBooks()
-        translationDownloaders = ArrayList()
-        if (savedInstanceState != null) {
-            search(savedInstanceState.getString(STATE_SEARCH_TEXT))
-        }
-    }
-
-    private fun fetchTranslationBooks() {
+    private fun observeViewModel() {
         viewLifecycleOwner.lifecycleScope.launch {
-            translationsRepository.getTranslationsForLanguage(languageCode!!)
-                .flowWithLifecycle(viewLifecycleOwner.lifecycle, Lifecycle.State.STARTED)
-                .catch {
-                    Log.e(TAG, "Error fetching translations", it)
-
-                    binding!!.progressTranslation.visibility = View.GONE
-
-                    Toast.makeText(
-                        context,
-                        getString(R.string.error_translations_web_service),
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-                .collectLatest {
-                    remoteTranslationBooks = it
-                    for (book in remoteTranslationBooks!!) {
-                        val d = DisplayableTranslation(book)
-                        if (!displayableTranslations!!.contains(d)) {
-                            // only add if it's not there
-                            displayableTranslations!!.add(d)
-                        }
-                    }
-                    binding!!.progressTranslation.visibility = View.GONE
-                    adapter!!.setTranslations(displayableTranslations)
-                }
-        }
-    }
-
-    private fun setupTranslationBooksLiveDataObserver() {
-        translationBooksLiveData!!.observe(viewLifecycleOwner) { localTranslationBooks: List<TranslationBook?>? ->
-            Log.d(TAG, "translationBooksLiveData: localTranslationBooks = $localTranslationBooks")
-            if (displayableTranslations!!.size > 0) {
-                // there's a change in localTranslationBooks
-                // merge objects in remoteTranslationBooks & localTranslationBooks
-                displayableTranslations!!.clear()
-                for (book in localTranslationBooks!!) {
-                    displayableTranslations!!.add(DisplayableTranslation(book!!))
-                }
-                if (remoteTranslationBooks != null) {
-                    for (book in remoteTranslationBooks!!) {
-                        val d = DisplayableTranslation(book)
-                        if (!displayableTranslations!!.contains(d)) {
-                            // only add if it's not there
-                            displayableTranslations!!.add(d)
-                        }
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    viewModel.uiState.collect { state ->
+                        binding!!.progressTranslation.visibility =
+                            if (state.loading) View.VISIBLE else View.GONE
+                        adapter!!.setTranslations(state.translations.toMutableList())
                     }
                 }
-            } else {
-                // displayableTranslations is empty
-                // copy objects from localTranslationBooks
-                for (book in localTranslationBooks!!) {
-                    displayableTranslations!!.add(DisplayableTranslation(book!!))
+                launch {
+                    viewModel.events.collect { event ->
+                        when (event) {
+                            is TranslationsViewModel.TranslationsEvent.FetchFailed -> {
+                                Toast.makeText(
+                                    context,
+                                    getString(R.string.error_translations_web_service),
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
+                            is TranslationsViewModel.TranslationsEvent.DownloadFailed -> {
+                                Toast.makeText(
+                                    context,
+                                    getString(R.string.error_download_translation),
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
+                    }
                 }
             }
-            Log.d(
-                TAG,
-                "translationBooksLiveData: displayableTranslations = $displayableTranslations"
-            )
-            adapter!!.setTranslations(displayableTranslations)
         }
-    }
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        outState.putString(STATE_SEARCH_TEXT, searchText)
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        binding = null
     }
 
     override fun onDetach() {
@@ -204,39 +146,14 @@ class TranslationsDataFragment : Fragment(), Searchable, TranslationsAdapter.Ite
         translationBook: TranslationBook?,
         clickedItemIndex: Int
     ) {
-        Log.d(TAG, "onDownloadTranslationClick: translationBook = $translationBook")
-        val downloader = TranslationDownloader(translationBook!!, requireContext(), this)
-        translationDownloaders!!.add(downloader)
-        downloader.download()
+        viewModel.downloadTranslation(translationBook!!)
     }
 
     override fun onCancelDownloadTranslationClick(
         translationBook: TranslationBook?,
         clickedItemIndex: Int
     ) {
-        Log.d(TAG, "onCancelDownloadTranslationClick: translationBook = $translationBook")
-        for (downloader in translationDownloaders!!) {
-            if (downloader.translationBook.id == translationBook!!.id) {
-                Log.d(TAG, "Download canceled for : " + translationBook.id)
-                downloader.cancel()
-                translationDownloaders!!.remove(downloader)
-                break
-            }
-        }
-    }
-
-    override fun onDownloadStarted() {}
-    override fun onDownloadFinished() {}
-    override fun onDownloadCancelled() {}
-
-    override fun onDownloadFailed() {
-        if (isSafeFragment(this)) {
-            Toast.makeText(
-                context,
-                getString(R.string.error_download_translation),
-                Toast.LENGTH_SHORT
-            ).show()
-        }
+        viewModel.cancelDownload(translationBook!!)
     }
 
     override fun search(text: String?) {
@@ -254,7 +171,6 @@ class TranslationsDataFragment : Fragment(), Searchable, TranslationsAdapter.Ite
         private val TAG = TranslationsDataFragment::class.java.simpleName
 
         private const val ARG_LANGUAGE_CODE = "ARG_LANGUAGE_CODE"
-        private const val STATE_SEARCH_TEXT = "STATE_SEARCH_TEXT"
 
         /**
          * Use this factory method to create a new instance of

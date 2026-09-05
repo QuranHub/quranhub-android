@@ -9,6 +9,10 @@ import com.downloader.Error
 import com.downloader.OnDownloadListener
 import com.downloader.PRDownloader
 import com.downloader.Progress
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 class TranslationDownloader(
     val translationBook: TranslationBook,
@@ -18,6 +22,10 @@ class TranslationDownloader(
     private val appContext: Context
 
     private var downloadId = 0
+
+    // IO scope for the download bookkeeping DB writes (structured coroutines
+    // replacing the former raw Threads)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     init {
         this.appContext = appContext.applicationContext
@@ -31,12 +39,10 @@ class TranslationDownloader(
 
         // Make sure we have a path to the file
         dbPath.parentFile.mkdirs()
-        object : Thread() {
-            override fun run() {
-                translationBook.downloadStatus = NetworkUtil.STATUS_DOWNLOADING
-                UserDatabase.getInstance(appContext).translationBookDao.insert(translationBook)
-            }
-        }.start()
+        scope.launch {
+            translationBook.downloadStatus = NetworkUtil.STATUS_DOWNLOADING
+            UserDatabase.getInstance(appContext).translationBookDao.insert(translationBook)
+        }
         downloadId = PRDownloader.download(downloadUrl, dbPath.parent, dbPath.name)
             .build()
             .setOnStartOrResumeListener {
@@ -45,13 +51,11 @@ class TranslationDownloader(
             }
             .setOnCancelListener {
                 Log.d(TAG, "onCancel: downloadId = $downloadId")
-                object : Thread() {
-                    override fun run() {
-                        UserDatabase.getInstance(appContext).translationBookDao.delete(
-                            translationBook
-                        )
-                    }
-                }.start()
+                scope.launch {
+                    UserDatabase.getInstance(appContext).translationBookDao.delete(
+                        translationBook
+                    )
+                }
                 callback?.onDownloadCancelled()
             }
             .setOnProgressListener { progress: Progress ->
@@ -79,26 +83,22 @@ class TranslationDownloader(
             .start(object : OnDownloadListener {
                 override fun onDownloadComplete() {
                     Log.d(TAG, "PRDownloader: downloadId = $downloadId ->  completed")
-                    object : Thread() {
-                        override fun run() {
-                            translationBook.downloadStatus = NetworkUtil.STATUS_DOWNLOADED
-                            UserDatabase.getInstance(appContext).translationBookDao.insert(
-                                translationBook
-                            )
-                        }
-                    }.start()
+                    scope.launch {
+                        translationBook.downloadStatus = NetworkUtil.STATUS_DOWNLOADED
+                        UserDatabase.getInstance(appContext).translationBookDao.insert(
+                            translationBook
+                        )
+                    }
                     callback?.onDownloadFinished()
                 }
 
                 override fun onError(error: Error) {
                     Log.e(TAG, "PRDownloader: downloadId = $downloadId ->  error")
-                    object : Thread() {
-                        override fun run() {
-                            UserDatabase.getInstance(appContext).translationBookDao.delete(
-                                translationBook
-                            )
-                        }
-                    }.start()
+                    scope.launch {
+                        UserDatabase.getInstance(appContext).translationBookDao.delete(
+                            translationBook
+                        )
+                    }
                     callback?.onDownloadFailed()
                 }
             })
@@ -109,12 +109,10 @@ class TranslationDownloader(
     }
 
     private fun updateProgressPercentage(downloadLevelPercentage: Int) {
-        object : Thread() {
-            override fun run() {
-                translationBook.downloadLevelPercentage = downloadLevelPercentage
-                UserDatabase.getInstance(appContext).translationBookDao.insert(translationBook)
-            }
-        }.start()
+        scope.launch {
+            translationBook.downloadLevelPercentage = downloadLevelPercentage
+            UserDatabase.getInstance(appContext).translationBookDao.insert(translationBook)
+        }
     }
 
     interface TranslationDownloadCallback {
