@@ -30,7 +30,7 @@ import app.quranhub.data.local.entity.Aya
 import app.quranhub.data.local.entity.TranslationBook
 import app.quranhub.data.local.prefs.AppPreferencesManager
 import app.quranhub.data.model.ReciterModel
-import app.quranhub.data.service.QuranAudioDownloaderService.DownloadFinishEvent
+import app.quranhub.data.service.DownloadFinishedHolder
 import app.quranhub.databinding.FragmentMushafBinding
 import app.quranhub.ui.downloads_manager.dialogs.QuranRecitersDialogFragment
 import app.quranhub.ui.downloads_manager.dialogs.QuranRecitersDialogFragment.ReciterSelectionListener
@@ -68,9 +68,6 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior.BottomSheetCa
 import me.toptas.fancyshowcase.FancyShowCaseQueue
 import me.toptas.fancyshowcase.FancyShowCaseView
 import me.toptas.fancyshowcase.FocusShape
-import org.greenrobot.eventbus.EventBus
-import org.greenrobot.eventbus.Subscribe
-import org.greenrobot.eventbus.ThreadMode
 import kotlinx.coroutines.launch
 import java.util.Locale
 
@@ -176,6 +173,7 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
         checkOrientationType()
         observeQuranPageClicks()
         observeAudioPlaybackState()
+        observeDownloadFinished()
     }
 
     // Toggle the mushaf chrome bars whenever the user taps a Quran page image
@@ -184,6 +182,16 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 QuranPageClickHolder.pageClicks.collect { viewModel.toggleBars() }
+            }
+        }
+    }
+
+    // Refresh the audio repeat-group setup when a downloader service finished
+    // its downloads (typed flow holder replacing the former DownloadFinishEvent)
+    private fun observeDownloadFinished() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                DownloadFinishedHolder.finished.collect { onDownloadAudioFinished() }
             }
         }
     }
@@ -410,18 +418,12 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
 
     override fun onStart() {
         super.onStart()
-        registerEventBus()
         setupMus7afShowcase()
     }
 
     override fun onPause() {
         super.onPause()
         saveInteger(requireActivity(), "last_open_page", quranPageIndex)
-    }
-
-    override fun onStop() {
-        super.onStop()
-        unRegisterEventBus()
     }
 
     override fun onDestroyView() {
@@ -903,8 +905,7 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
     }
 
     // start audio of selected aya after it downloaded its sura audios
-    @Subscribe(threadMode = ThreadMode.MAIN_ORDERED)
-    fun onDownloadAudioFinished(event: DownloadFinishEvent?) {
+    private fun onDownloadAudioFinished() {
         if (!isAudioDialogOpen) return
         firstAyaInRepeatGroup = selectedAyaAudio!!.suraAya
         fromSuraDownloaded = selectedAyaAudio!!.sura
@@ -1036,14 +1037,6 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
         initAyaFromNotification = true
         notificationCurrentAya = aya
         binding.quranViewpager.currentItem = Constants.Quran.NUM_OF_PAGES - aya.page
-    }
-
-    private fun registerEventBus() {
-        if (!EventBus.getDefault().isRegistered(this)) EventBus.getDefault().register(this)
-    }
-
-    private fun unRegisterEventBus() {
-        if (EventBus.getDefault().isRegistered(this)) EventBus.getDefault().unregister(this)
     }
 
     // Playback-state subscriber: reflect audio states from the foreground

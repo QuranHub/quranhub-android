@@ -1,26 +1,38 @@
 package app.quranhub.ui.downloads_manager
 
-import android.annotation.SuppressLint
 import android.content.Context
-import android.os.AsyncTask
 import android.os.Bundle
+import android.view.View
 import android.widget.Toast
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import app.quranhub.R
-import app.quranhub.data.local.db.UserDatabase
-import app.quranhub.data.local.entity.ReciterRecitation
-import app.quranhub.data.local.prefs.AppPreferencesManager
-import app.quranhub.data.service.QuranAudioDownloaderService.Companion.downloadSura
 import app.quranhub.ui.downloads_manager.dialogs.DeleteConfirmationDialogFragment.Companion.newInstance
 import app.quranhub.ui.downloads_manager.dialogs.DeleteConfirmationDialogFragment.DeleteConfirmationCallbacks
 import app.quranhub.ui.downloads_manager.model.DisplayableDownload
-import app.quranhub.util.QuranAudioDeleteUtils.DeleteFinishListener
-import app.quranhub.util.QuranAudioDeleteUtils.deleteSuraAudio
+import app.quranhub.ui.downloads_manager.viewmodel.BaseDownloadsViewModel
+import app.quranhub.ui.downloads_manager.viewmodel.DownloadsSurasViewModel
+import kotlinx.coroutines.launch
 
 class DownloadsSurasFragment : BaseDownloadsFragment(), DeleteConfirmationCallbacks {
 
     private var recitationId = 0
     private var reciterId: String? = null
     private var reciterName: String? = null
+
+    override val viewModel: DownloadsSurasViewModel by viewModels {
+        viewModelFactory {
+            initializer {
+                DownloadsSurasViewModel(
+                    requireActivity().application, recitationId, reciterId!!
+                )
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,22 +43,26 @@ class DownloadsSurasFragment : BaseDownloadsFragment(), DeleteConfirmationCallba
         }
     }
 
-    override fun provideDisplayableDownloads(): List<DisplayableDownload> {
-        val displayableDownloadList: MutableList<DisplayableDownload> = ArrayList()
-        val suras = resources.getStringArray(R.array.sura_name)
-        for (i in suras.indices) {
-            val suraName = suras[i]
-            val displayableDownload = DisplayableDownload(suraName)
-            val suraId = i + 1
-            val isDownloadable = UserDatabase.getInstance(requireContext())
-                .quranAudioDao
-                .getForSura(recitationId, reciterId, suraId)
-                .isEmpty()
-            displayableDownload.isDownloadable = isDownloadable
-            displayableDownload.isDeletable = !isDownloadable
-            displayableDownloadList.add(displayableDownload)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        observeEvents()
+    }
+
+    private fun observeEvents() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.events.collect { event ->
+                    when (event) {
+                        is BaseDownloadsViewModel.DownloadsEvent.DownloadStarted ->
+                            Toast.makeText(
+                                requireContext(), R.string.msg_quran_audio_download_started,
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        is BaseDownloadsViewModel.DownloadsEvent.OpenAudioDownloadAmountDialog -> {}
+                    }
+                }
+            }
         }
-        return displayableDownloadList
     }
 
     override fun onClickItem(displayableDownload: DisplayableDownload?, position: Int) {}
@@ -60,54 +76,11 @@ class DownloadsSurasFragment : BaseDownloadsFragment(), DeleteConfirmationCallba
     }
 
     override fun onConfirmDelete(deletePosition: Int) {
-        val suraId = deletePosition + 1
-        deleteSuraAudio(
-            requireContext(),
-            recitationId,
-            reciterId!!,
-            suraId,
-            object : DeleteFinishListener {
-                override fun onDeleteFinish() {
-                    refresh()
-                }
-            })
+        viewModel.deleteSura(deletePosition)
     }
 
-    @SuppressLint("StaticFieldLeak")
     override fun onDownloadItem(displayableDownload: DisplayableDownload?, position: Int) {
-        val suraId = position + 1
-        object : AsyncTask<Void?, Void?, Void?>() {
-            override fun doInBackground(vararg voids: Void?): Void? {
-                val userDatabase = UserDatabase.getInstance(requireContext())
-                if (userDatabase.reciterDao.getById(reciterId) == null) {
-//                    userDatabase.getReciterDao()
-//                            .insert(new Reciter(reciterId, reciterName));
-                }
-                if (userDatabase.reciterRecitationDao[recitationId, reciterId] == null) {
-                    userDatabase.reciterRecitationDao
-                        .insert(
-                            ReciterRecitation(
-                                recitationId = recitationId,
-                                reciterId = reciterId!!
-                            )
-                        )
-                }
-                val recitationIdPreference =
-                    AppPreferencesManager.getRecitationSetting(requireContext())
-                if (recitationIdPreference == recitationId) {
-                    AppPreferencesManager.persistReciterSheikhSetting(requireContext(), reciterId)
-                }
-                return null
-            }
-
-            override fun onPostExecute(aVoid: Void?) {
-                downloadSura(requireContext(), recitationId, reciterId, suraId)
-                Toast.makeText(
-                    requireContext(), R.string.msg_quran_audio_download_started,
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        }.execute()
+        viewModel.downloadSura(position)
     }
 
     companion object {

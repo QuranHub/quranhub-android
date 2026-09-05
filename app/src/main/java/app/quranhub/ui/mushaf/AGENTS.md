@@ -33,7 +33,7 @@ This area is mid-migration from MVP to MVVM (see repo `.scratch/mvvm-migration/`
 ## Contracts & Invariants
 
 - Data access always goes through `interactor/*` interfaces; never import `data.local.db` DAOs into fragments/adapters.
-- Cross-fragment/service communication: audio playback state flows through the typed `flowholder/AudioPlaybackStateHolder` StateFlow (never via EventBus); the remaining greenrobot EventBus stream (download-finished) still requires matching `onStart`/`onStop` register/unregister pairs.
+- Cross-fragment/service communication: cross-component signaling flows through typed flow holders — `flowholder/AudioPlaybackStateHolder` (playback state), `flowholder/QuranPageClickHolder` (page taps), and `data/service/DownloadFinishedHolder` (downloader-service completion; collected with repeatOnLifecycle, no register/unregister pairs). There is no greenrobot EventBus usage in this area.
 - Async: legacy MVP code uses RxJava2; new MVVM code uses coroutines + Flow. Do not mix RxJava into new code.
 - Search/navigation depends on mushaf topology constants in `data/Constants` (aya counts, page mapping) — don't duplicate these.
 - Views are XML + ViewBinding only.

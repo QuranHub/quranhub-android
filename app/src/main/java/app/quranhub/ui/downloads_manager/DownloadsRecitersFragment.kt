@@ -1,29 +1,33 @@
 package app.quranhub.ui.downloads_manager
 
-import android.annotation.SuppressLint
 import android.content.Context
-import android.os.AsyncTask
 import android.os.Bundle
-import android.util.Log
+import android.view.View
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import app.quranhub.R
-import app.quranhub.data.Constants
-import app.quranhub.data.local.db.UserDatabase
-import app.quranhub.data.local.entity.Reciter
-import app.quranhub.data.local.entity.ReciterRecitation
-import app.quranhub.data.repository.RecitationsRepository
 import app.quranhub.ui.downloads_manager.dialogs.DeleteConfirmationDialogFragment.Companion.newInstance
 import app.quranhub.ui.downloads_manager.dialogs.DeleteConfirmationDialogFragment.DeleteConfirmationCallbacks
 import app.quranhub.ui.downloads_manager.model.DisplayableDownload
-import app.quranhub.util.QuranAudioDeleteUtils.DeleteFinishListener
-import app.quranhub.util.QuranAudioDeleteUtils.deleteReciterAudio
+import app.quranhub.ui.downloads_manager.viewmodel.BaseDownloadsViewModel
+import app.quranhub.ui.downloads_manager.viewmodel.DownloadsRecitersViewModel
+import kotlinx.coroutines.launch
 
 class DownloadsRecitersFragment : BaseDownloadsFragment(), DeleteConfirmationCallbacks {
 
     private var recitationId = 0
 
-    private var reciters: List<Reciter>? = null
-
-    private val recitationsRepository = RecitationsRepository()
+    override val viewModel: DownloadsRecitersViewModel by viewModels {
+        viewModelFactory {
+            initializer {
+                DownloadsRecitersViewModel(requireActivity().application, recitationId)
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,60 +36,29 @@ class DownloadsRecitersFragment : BaseDownloadsFragment(), DeleteConfirmationCal
         }
     }
 
-    override fun provideDisplayableDownloads(): List<DisplayableDownload> {
-        val displayableDownloadsList: MutableList<DisplayableDownload> = mutableListOf()
-
-        val recitationKey: String = when (recitationId) {
-            Constants.Recitation.HAFS_ID -> Constants.Recitation.HAFS_KEY
-            Constants.Recitation.WARSH_ID -> Constants.Recitation.WARSH_KEY
-            else -> error("Invalid recitation id: $recitationId")
-        }
-
-        reciters = try {
-            val reciterModels =
-                recitationsRepository.getRecitersForRecitation(recitationKey).blockingGet()
-            if (reciters != null) {
-                reciterModels!!.map {
-                    Reciter(
-                        it.id,
-                        it.getLocalizedName(requireContext()),
-                        it.getLocalizedNationality(requireContext()),
-                        it.audioBaseUrl
-                    )
-                }
-            } else {
-                Log.e(TAG, "reciterModels is null!")
-                retrieveLocalReciters()
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to retrieve reciters from RecitationsRepository.")
-            retrieveLocalReciters()
-        }
-
-        // process reciters list
-        for (r in reciters!!) {
-            val userDatabase = UserDatabase.getInstance(requireContext())
-            val displayableDownload = DisplayableDownload(
-                r.name
-            )
-            val downloadedSurasIds = userDatabase.reciterRecitationDao
-                .getSurasIdsForReciterInRecitation(recitationId, r.id)
-            displayableDownload.downloadedAmount =
-                getString(R.string.downloaded_amount_suras, downloadedSurasIds.size)
-            displayableDownload.isDownloadable = downloadedSurasIds.size < 114
-            displayableDownload.isDeletable = downloadedSurasIds.isNotEmpty()
-            displayableDownloadsList.add(displayableDownload)
-        }
-        return displayableDownloadsList
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        observeEvents()
     }
 
-    private fun retrieveLocalReciters(): List<Reciter> {
-        return UserDatabase.getInstance(requireContext())
-            .reciterDao.getAllForRecitation(recitationId)
+    private fun observeEvents() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.events.collect { event ->
+                    when (event) {
+                        is BaseDownloadsViewModel.DownloadsEvent.OpenAudioDownloadAmountDialog ->
+                            navigationCallbacks!!.openAudioDownloadAmountDialog(
+                                event.recitationId, event.reciterId
+                            )
+                        is BaseDownloadsViewModel.DownloadsEvent.DownloadStarted -> {}
+                    }
+                }
+            }
+        }
     }
 
     override fun onClickItem(displayableDownload: DisplayableDownload?, position: Int) {
-        val reciter = reciters!![position]
+        val reciter = viewModel.reciterAt(position)
         navigationCallbacks!!.gotoDownloadsSuras(recitationId, reciter.id, reciter.name)
     }
 
@@ -98,37 +71,11 @@ class DownloadsRecitersFragment : BaseDownloadsFragment(), DeleteConfirmationCal
     }
 
     override fun onConfirmDelete(deletePosition: Int) {
-        deleteReciterAudio(requireContext(),
-            recitationId,
-            reciters!![deletePosition].id,
-            object : DeleteFinishListener {
-                override fun onDeleteFinish() {
-                    refresh()
-                }
-            })
+        viewModel.deleteReciter(deletePosition)
     }
 
-    @SuppressLint("StaticFieldLeak")
     override fun onDownloadItem(displayableDownload: DisplayableDownload?, position: Int) {
-        val reciter = reciters!![position]
-        object : AsyncTask<Void?, Void?, Void?>() {
-            override fun doInBackground(vararg voids: Void?): Void? {
-                val userDatabase = UserDatabase.getInstance(requireContext())
-                if (userDatabase.reciterDao.getById(reciter.id) == null) {
-                    userDatabase.reciterDao.insert(reciter)
-                }
-                if (userDatabase.reciterRecitationDao[recitationId, reciter.id] == null) {
-                    userDatabase.reciterRecitationDao.insert(
-                        ReciterRecitation(recitationId = recitationId, reciterId = reciter.id)
-                    )
-                }
-                return null
-            }
-
-            override fun onPostExecute(aVoid: Void?) {
-                navigationCallbacks!!.openAudioDownloadAmountDialog(recitationId, reciter.id)
-            }
-        }.execute()
+        viewModel.onDownloadItem(position)
     }
 
     companion object {
