@@ -26,6 +26,11 @@ class DownloadsManagerActivity : BaseActivity(), DownloadsManagerNavigationCallb
 
     private var selectedTabIndex = 0
 
+    // True while restoring the selected tab after recreation, so the tab
+    // listener doesn't recreate the screen: FragmentManager already restored
+    // the fragment back stack (e.g. the suras list the user was viewing).
+    private var isRestoringTabSelection = false
+
     private lateinit var binding: ActivityDownloadsManagerBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,6 +46,7 @@ class DownloadsManagerActivity : BaseActivity(), DownloadsManagerNavigationCallb
 
             override fun onTabSelected(tab: TabLayout.Tab?) {
                 selectedTabIndex = tab?.position ?: 0
+                if (isRestoringTabSelection) return
                 when (tab?.position) {
                     0 -> showQuranImagesDownloadsTab()
                     1 -> showAudioDownloadsTab()
@@ -55,11 +61,17 @@ class DownloadsManagerActivity : BaseActivity(), DownloadsManagerNavigationCallb
             // restore saved instance state, if any,
             editable = savedInstanceState.getBoolean(STATE_EDITABLE)
             selectedTabIndex = savedInstanceState.getInt(STATE_SELECTED_TAB_INDEX, 0)
+            hasMenu = savedInstanceState.getBoolean(STATE_HAS_MENU)
+
+            // FragmentManager restores the fragment back stack automatically
+            // (the exact screen the user was viewing, incl. the suras list);
+            // only re-select the tab visually, without recreating the screen.
+            isRestoringTabSelection = true
+            binding.tabLayout.getTabAt(selectedTabIndex)?.select()
+            isRestoringTabSelection = false
         } else {
             showQuranImagesDownloadsTab()
         }
-
-        binding.tabLayout.getTabAt(selectedTabIndex)?.select()
 
         /* sync the activity's action bar with the BaseDownloadsFragment 'editable' state
            when user's back navigating */
@@ -105,6 +117,7 @@ class DownloadsManagerActivity : BaseActivity(), DownloadsManagerNavigationCallb
         super.onSaveInstanceState(outState)
         outState.putBoolean(STATE_EDITABLE, editable)
         outState.putInt(STATE_SELECTED_TAB_INDEX, selectedTabIndex)
+        outState.putBoolean(STATE_HAS_MENU, hasMenu)
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -210,5 +223,6 @@ class DownloadsManagerActivity : BaseActivity(), DownloadsManagerNavigationCallb
 
         private const val STATE_EDITABLE = "STATE_EDITABLE"
         private const val STATE_SELECTED_TAB_INDEX = "STATE_SELECTED_TAB_INDEX"
+        private const val STATE_HAS_MENU = "STATE_HAS_MENU"
     }
 }
