@@ -2,40 +2,23 @@ package app.quranhub.ui.downloads_manager
 
 import android.content.Context
 import android.os.Bundle
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import app.quranhub.R
-import app.quranhub.data.Constants
-import app.quranhub.data.local.db.UserDatabase
 import app.quranhub.ui.downloads_manager.dialogs.DeleteConfirmationDialogFragment.Companion.newInstance
 import app.quranhub.ui.downloads_manager.dialogs.DeleteConfirmationDialogFragment.DeleteConfirmationCallbacks
 import app.quranhub.ui.downloads_manager.model.DisplayableDownload
-import app.quranhub.util.FragmentUtils
-import app.quranhub.util.QuranAudioDeleteUtils.DeleteFinishListener
-import app.quranhub.util.QuranAudioDeleteUtils.deleteRecitationAudio
+import app.quranhub.ui.downloads_manager.viewmodel.DownloadsRecitationsViewModel
 
 class DownloadsRecitationsFragment : BaseDownloadsFragment(), DeleteConfirmationCallbacks {
 
-    override fun provideDisplayableDownloads(): List<DisplayableDownload> {
-
-        if (!FragmentUtils.isSafeFragment(this)) return emptyList()
-
-        val downloads: MutableList<DisplayableDownload> = ArrayList()
-
-        for (recitationStringResId in Constants.Recitation.NAMES_STR_IDS) {
-            downloads.add(DisplayableDownload(getString(recitationStringResId)))
+    override val viewModel: DownloadsRecitationsViewModel by viewModels {
+        viewModelFactory {
+            initializer {
+                DownloadsRecitationsViewModel(requireActivity().application)
+            }
         }
-
-        // check if recitations are downloadable and/or deletable & the number of downloaded reciters each.
-        for (i in downloads.indices) {
-            val displayableDownload = downloads[i]
-            val numOfDownloadedReciters = UserDatabase.getInstance(requireContext())
-                .reciterRecitationDao
-                .getNumOfRecitersWithDownloads(i)
-            displayableDownload.downloadedAmount =
-                getString(R.string.downloaded_reciters_num, numOfDownloadedReciters)
-            displayableDownload.isDeletable = numOfDownloadedReciters > 0
-            displayableDownload.isDownloadable = true // TODO check if it's not downloadable
-        }
-        return downloads
     }
 
     override fun onClickItem(displayableDownload: DisplayableDownload?, position: Int) {
@@ -51,14 +34,7 @@ class DownloadsRecitationsFragment : BaseDownloadsFragment(), DeleteConfirmation
     }
 
     override fun onConfirmDelete(deletePosition: Int) {
-        deleteRecitationAudio(
-            requireContext(),
-            deletePosition,
-            object : DeleteFinishListener {
-                override fun onDeleteFinish() {
-                    refresh()
-                }
-            })
+        viewModel.deleteRecitation(deletePosition)
     }
 
     override fun onDownloadItem(displayableDownload: DisplayableDownload?, position: Int) {

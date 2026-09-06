@@ -1,25 +1,24 @@
 package app.quranhub.ui.downloads_manager
 
-import android.annotation.SuppressLint
 import android.content.Context
-import android.os.AsyncTask
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
-import app.quranhub.data.service.QuranAudioDownloaderService.DownloadFinishEvent
+import app.quranhub.data.service.DownloadFinishedHolder
 import app.quranhub.databinding.FragmentDownloadsBinding
 import app.quranhub.ui.downloads_manager.BaseDownloadsFragment.DownloadsManagerNavigationCallbacks
 import app.quranhub.ui.downloads_manager.adapters.DownloadsAdapter
 import app.quranhub.ui.downloads_manager.model.DisplayableDownload
-import app.quranhub.util.FragmentUtils.isSafeFragment
-import org.greenrobot.eventbus.EventBus
-import org.greenrobot.eventbus.Subscribe
-import org.greenrobot.eventbus.ThreadMode
+import app.quranhub.ui.downloads_manager.viewmodel.BaseDownloadsViewModel
+import kotlinx.coroutines.launch
 
 /**
  * Base for downloads screen fragments.
@@ -35,10 +34,11 @@ import org.greenrobot.eventbus.ThreadMode
  */
 abstract class BaseDownloadsFragment : Fragment(), Editable, DownloadsAdapter.ItemClickListener {
 
+    /** The screen's ViewModel, providing the [DisplayableDownload] listing state. */
+    protected abstract val viewModel: BaseDownloadsViewModel
+
     private var binding: FragmentDownloadsBinding? = null
 
-    protected var displayableDownloads: List<DisplayableDownload>? = null
-        private set
     protected var downloadsAdapter: DownloadsAdapter? = null
         private set
     private var description: String? = null
@@ -83,7 +83,7 @@ abstract class BaseDownloadsFragment : Fragment(), Editable, DownloadsAdapter.It
         }
         setupDescription()
         setupDownloadsRecyclerView()
-        displayDownloadItems()
+        observeViewModel()
     }
 
     private fun setupDescription() {
@@ -105,66 +105,38 @@ abstract class BaseDownloadsFragment : Fragment(), Editable, DownloadsAdapter.It
             layoutManager.orientation
         )
         binding!!.rvDownloads.addItemDecoration(dividerItemDecoration)
-        displayableDownloads = mutableListOf()
-        downloadsAdapter = DownloadsAdapter(displayableDownloads!!, this, editable)
+        downloadsAdapter = DownloadsAdapter(emptyList<DisplayableDownload>(), this, editable)
         binding!!.rvDownloads.adapter = downloadsAdapter
     }
 
-    @SuppressLint("StaticFieldLeak")
-    private fun displayDownloadItems() {
-        object : AsyncTask<Void?, Void?, List<DisplayableDownload>>() {
-
-            override fun onPreExecute() {
-                binding!!.progressBar.visibility = View.VISIBLE
+    private fun observeViewModel() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    viewModel.uiState.collect { state ->
+                        binding!!.progressBar.visibility =
+                            if (state.loading) View.VISIBLE else View.GONE
+                        if (!state.loading) {
+                            Log.d(TAG, "Provided displayableDownloads=${state.downloads}")
+                            downloadsAdapter!!.setDisplayableDownloads(state.downloads)
+                        }
+                    }
+                }
+                launch {
+                    // refresh whenever a downloader service finishes its downloads
+                    DownloadFinishedHolder.finished.collect { viewModel.refresh() }
+                }
             }
-
-            override fun doInBackground(vararg voids: Void?): List<DisplayableDownload> {
-                if (!isSafeFragment(this@BaseDownloadsFragment)) return emptyList()
-
-                return provideDisplayableDownloads()
-            }
-
-            override fun onPostExecute(downloads: List<DisplayableDownload>) {
-                if (!isSafeFragment(this@BaseDownloadsFragment)) return
-
-                Log.d(TAG, "Provided displayableDownloads=$downloads")
-                displayableDownloads = downloads
-                downloadsAdapter!!.setDisplayableDownloads(displayableDownloads!!)
-                binding!!.progressBar.visibility = View.GONE
-            }
-        }.execute()
-    }
-
-    protected fun refresh() {
-        displayDownloadItems()
+        }
     }
 
     fun getEditable(): Boolean {
         return editable
     }
 
-    /**
-     * This method will be called from a background thread. You don't have to create a new one.
-     */
-    protected abstract fun provideDisplayableDownloads(): List<DisplayableDownload>
-    override fun onStart() {
-        super.onStart()
-        EventBus.getDefault().register(this)
-    }
-
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putBoolean(STATE_EDITABLE, editable)
-    }
-
-    override fun onStop() {
-        super.onStop()
-        EventBus.getDefault().unregister(this)
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun onDownloadFinishEvent(event: DownloadFinishEvent?) {
-        refresh()
     }
 
     override fun onDestroyView() {

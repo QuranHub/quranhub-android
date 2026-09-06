@@ -94,5 +94,12 @@ object Constants {
         /* It's important that the index of any recitation name is the same as the ID integer given for it above */
         @JvmField
         val NAMES_STR_IDS = intArrayOf(R.string.hafs_recitation, R.string.warsh_recitation)
+
+        /** Maps a recitation ID to its Firestore document key. */
+        fun keyForRecitation(recitationId: Int): String = when (recitationId) {
+            HAFS_ID -> HAFS_KEY
+            WARSH_ID -> WARSH_KEY
+            else -> error("Invalid recitation id: $recitationId")
+        }
     }
 }

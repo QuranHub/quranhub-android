@@ -2,10 +2,8 @@ package app.quranhub.data.service
 
 import android.content.Context
 import android.content.Intent
-import android.os.AsyncTask
 import android.os.Bundle
 import android.util.Log
-import android.util.Pair
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import app.quranhub.R
@@ -13,7 +11,6 @@ import app.quranhub.data.Constants
 import app.quranhub.data.local.db.MushafDatabase
 import app.quranhub.data.local.db.UserDatabase
 import app.quranhub.data.local.entity.QuranAudio
-import app.quranhub.data.service.QuranAudioDownloaderService.DownloadFinishEvent
 import app.quranhub.prdownloader_service.DownloadRequestInfo
 import app.quranhub.prdownloader_service.PRDownloaderService
 import app.quranhub.util.LocaleUtils
@@ -21,7 +18,12 @@ import app.quranhub.util.QuranAudioDownloadUtils
 import app.quranhub.util.QuranAudioFileUtils
 import com.downloader.Error
 import com.downloader.Progress
-import org.greenrobot.eventbus.EventBus
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * `PRDownloaderService` for Quran audio files.
@@ -33,7 +35,7 @@ import org.greenrobot.eventbus.EventBus
  *
  *
  *
- * You can subscribe to [DownloadFinishEvent] with `EventBus` to get notified when all
+ * You can collect [DownloadFinishedHolder.finished] to get notified when all
  * the downloads finish, either successfully or unsuccessfully, and this service stops.
  *
  *
@@ -117,29 +119,27 @@ class QuranAudioDownloaderService : PRDownloaderService() {
 
     override fun onDownloadComplete(downloadRequestInfo: DownloadRequestInfo) {
         Log.d(TAG, "onDownloadComplete :: downloadRequestInfo=$downloadRequestInfo")
-        object : Thread() {
-            override fun run() {
-                val recitationId = downloadRequestInfo.extraInfo!!.getInt(
-                    DRI_EXTRA_INFO_RECITATION_ID
-                )
-                val reciterId = downloadRequestInfo.extraInfo!!.getString(
-                    DRI_EXTRA_INFO_RECITER_ID
-                )
-                val ayaId = downloadRequestInfo.extraInfo!!.getInt(DRI_EXTRA_INFO_AYA_ID)
-                val mushafDatabase = MushafDatabase.getInstance(this@QuranAudioDownloaderService)
-                val userDatabase = UserDatabase.getInstance(this@QuranAudioDownloaderService)
-                val aya = mushafDatabase.ayaDao.findAyaById(ayaId)
-                val filePath = (QuranAudioFileUtils.getLocalRelativeDirPath(recitationId, reciterId)
-                        + downloadRequestInfo.fileName)
-                val sheikhRecitationId = userDatabase.reciterRecitationDao
-                    .getSheikhRecitationId(recitationId, reciterId)
-                val quranAudio = QuranAudio(
-                    page = aya!!.page, sura = aya.sura, aya = aya.suraAya,
-                    ayaId = ayaId, filePath = filePath, sheikhRecitationId = sheikhRecitationId
-                )
-                userDatabase.quranAudioDao.insert(quranAudio)
-            }
-        }.start()
+        serviceScope.launch {
+            val recitationId = downloadRequestInfo.extraInfo!!.getInt(
+                DRI_EXTRA_INFO_RECITATION_ID
+            )
+            val reciterId = downloadRequestInfo.extraInfo!!.getString(
+                DRI_EXTRA_INFO_RECITER_ID
+            )
+            val ayaId = downloadRequestInfo.extraInfo!!.getInt(DRI_EXTRA_INFO_AYA_ID)
+            val mushafDatabase = MushafDatabase.getInstance(this@QuranAudioDownloaderService)
+            val userDatabase = UserDatabase.getInstance(this@QuranAudioDownloaderService)
+            val aya = mushafDatabase.ayaDao.findAyaById(ayaId)
+            val filePath = (QuranAudioFileUtils.getLocalRelativeDirPath(recitationId, reciterId)
+                    + downloadRequestInfo.fileName)
+            val sheikhRecitationId = userDatabase.reciterRecitationDao
+                .getSheikhRecitationId(recitationId, reciterId)
+            val quranAudio = QuranAudio(
+                page = aya!!.page, sura = aya.sura, aya = aya.suraAya,
+                ayaId = ayaId, filePath = filePath, sheikhRecitationId = sheikhRecitationId
+            )
+            userDatabase.quranAudioDao.insert(quranAudio)
+        }
     }
 
     override fun onDownloadError(downloadRequestInfo: DownloadRequestInfo, error: Error) {
@@ -153,14 +153,15 @@ class QuranAudioDownloaderService : PRDownloaderService() {
         Log.d(TAG, "onStop")
 
 //        Toast.makeText(this, R.string.toast_download_quran_audio_finished, Toast.LENGTH_SHORT).show();
-        EventBus.getDefault().post(DownloadFinishEvent())
+        DownloadFinishedHolder.notifyFinished()
+    }
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    override fun onDestroy() {
+        serviceScope.cancel()
+        super.onDestroy()
     }
 
-    /**
-     * `EventBus` event that gets posted when all the downloads finish, either successfully or
-     * unsuccessfully, and [QuranAudioDownloaderService] stops.
-     */
-    class DownloadFinishEvent
     companion object {
         private val TAG = QuranAudioDownloaderService::class.java.simpleName
         private const val EXTRA_START_AYA_ID = "EXTRA_START_AYA_ID"
@@ -171,29 +172,28 @@ class QuranAudioDownloaderService : PRDownloaderService() {
         private const val DRI_EXTRA_INFO_RECITATION_ID = "DRI_EXTRA_INFO_RECITATION_ID"
         private const val DRI_EXTRA_INFO_RECITER_ID = "DRI_EXTRA_INFO_RECITER_ID"
 
+        // IO scope for resolving the aya range before the service starts
+        private val helperScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
         @JvmStatic
         fun downloadSura(
             context: Context, recitationId: Int, reciterId: String?,
             suraId: Int
         ) {
-            object : AsyncTask<Void?, Void?, Pair<Int?, Int?>?>() {
-                override fun doInBackground(vararg params: Void?): Pair<Int?, Int?> {
-                    val ayaDao = MushafDatabase.getInstance(context).ayaDao
-                    val startAyaId = ayaDao.getFirstAyaInSura(suraId)?.id
-                    val endAyaId = ayaDao.getLastAyaInSura(suraId)?.id
-                    return Pair(startAyaId, endAyaId)
-                }
-
-                override fun onPostExecute(ayaIdPair: Pair<Int?, Int?>?) {
+            helperScope.launch {
+                val ayaDao = MushafDatabase.getInstance(context).ayaDao
+                val startAyaId = ayaDao.getFirstAyaInSura(suraId)?.id
+                val endAyaId = ayaDao.getLastAyaInSura(suraId)?.id
+                withContext(Dispatchers.Main) {
                     downloadAyaRange(
                         context,
                         recitationId,
                         reciterId,
-                        ayaIdPair!!.first!!,
-                        ayaIdPair.second!!
+                        startAyaId!!,
+                        endAyaId!!
                     )
                 }
-            }.execute()
+            }
         }
 
         @JvmStatic
