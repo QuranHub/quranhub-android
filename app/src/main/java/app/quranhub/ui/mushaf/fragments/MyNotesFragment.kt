@@ -9,6 +9,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
@@ -115,11 +116,17 @@ class MyNotesFragment : Fragment(), NoteCallback, AddNoteListener, ItemSelection
                         applyEditMode(uiState.isEditMode)
                         binding!!.noNotesTv.visibility =
                             if (uiState.notes.isEmpty()) View.VISIBLE else View.GONE
+                        applyToolbarIconsState(uiState.isListEditable)
                     }
                 }
                 launch {
                     viewModel!!.notesEvents.collect { event ->
                         when (event) {
+                            is NotesViewModel.NotesEvent.ListNotEditable ->
+                                Toast.makeText(
+                                    activity, getString(R.string.no_notes), Toast.LENGTH_SHORT
+                                ).show()
+
                             is NotesViewModel.NotesEvent.ShowError ->
                                 Toast.makeText(
                                     activity, event.message, Toast.LENGTH_LONG
@@ -169,6 +176,22 @@ class MyNotesFragment : Fragment(), NoteCallback, AddNoteListener, ItemSelection
                 binding!!.editBtn.visibility = View.VISIBLE
                 binding!!.filterBtn.visibility = View.VISIBLE
             }
+        }
+    }
+
+    private fun applyToolbarIconsState(isListEditable: Boolean) {
+        if (isListEditable) {
+            binding!!.editBtn.setImageResource(R.drawable.edit_gold_ic)
+            binding!!.editBtn.setColorFilter(null)
+            binding!!.filterBtn.setColorFilter(null)
+        } else {
+            binding!!.editBtn.setImageResource(R.drawable.edit_gold_ic)
+            binding!!.editBtn.setColorFilter(
+                ContextCompat.getColor(requireContext(), R.color.dark_grey)
+            )
+            binding!!.filterBtn.setColorFilter(
+                ContextCompat.getColor(requireContext(), R.color.dark_grey)
+            )
         }
     }
 
@@ -241,8 +264,12 @@ class MyNotesFragment : Fragment(), NoteCallback, AddNoteListener, ItemSelection
     }
 
     private fun onClickFilter() {
-        val filterDialog = NotesFilterDialog.getInstance(viewModel!!.uiState.value.filterType)
-        filterDialog.show(childFragmentManager, "NotesFilterDialog")
+        if (viewModel!!.uiState.value.isListEditable) {
+            val filterDialog = NotesFilterDialog.getInstance(viewModel!!.uiState.value.filterType)
+            filterDialog.show(childFragmentManager, "NotesFilterDialog")
+        } else {
+            viewModel!!.onFilterClicked()
+        }
     }
 
     private fun onFinishEdit() {

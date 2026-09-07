@@ -20,6 +20,7 @@ import kotlinx.coroutines.launch
 class NotesViewModel(application: Application) : AndroidViewModel(application) {
 
     sealed interface NotesEvent {
+        data object ListNotEditable : NotesEvent
         data class ShowError(val message: String) : NotesEvent
     }
 
@@ -27,6 +28,7 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         val loading: Boolean = true,
         val notes: List<DisplayedNote> = emptyList(),
         val isEditMode: Boolean = false,
+        val isListEditable: Boolean = false,
         val searchQuery: String = "",
         val filterType: Int = 0,
     )
@@ -48,7 +50,13 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             try {
                 val displayedNotes = interactor.getNotes()
-                _uiState.update { it.copy(loading = false, notes = displayedNotes) }
+                _uiState.update {
+                    it.copy(
+                        loading = false,
+                        notes = displayedNotes,
+                        isListEditable = displayedNotes.isNotEmpty()
+                    )
+                }
             } catch (e: Exception) {
                 _uiState.update { it.copy(loading = false) }
                 _notesEvents.send(NotesEvent.ShowError(context.getString(R.string.data_failed)))
@@ -57,7 +65,21 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun onNoteEditClicked() {
-        _uiState.update { it.copy(isEditMode = true) }
+        if (!_uiState.value.isListEditable) {
+            viewModelScope.launch {
+                _notesEvents.send(NotesEvent.ListNotEditable)
+            }
+        } else {
+            _uiState.update { it.copy(isEditMode = true) }
+        }
+    }
+
+    fun onFilterClicked() {
+        if (!_uiState.value.isListEditable) {
+            viewModelScope.launch {
+                _notesEvents.send(NotesEvent.ListNotEditable)
+            }
+        }
     }
 
     fun onFinishEditClicked() {

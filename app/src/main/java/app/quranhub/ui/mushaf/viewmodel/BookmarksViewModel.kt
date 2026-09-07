@@ -112,6 +112,14 @@ class BookmarksViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
+    fun onFilterClicked() {
+        if (!_uiState.value.isListEditable) {
+            viewModelScope.launch {
+                _bookmarksEvents.send(BookmarksEvent.ListNotEditable)
+            }
+        }
+    }
+
     fun onFinishEditClicked() {
         _uiState.update { it.copy(isEditMode = false) }
     }

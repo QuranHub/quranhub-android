@@ -96,8 +96,17 @@ class BookmarksFragment : Fragment(), QuranNavigationCallbacks {
                         }
                         if (uiState.isListEditable) {
                             binding!!.editBtn.setImageResource(R.drawable.edit_gold_ic)
+                            binding!!.editBtn.setColorFilter(null)
+                            binding!!.filterBtn.setColorFilter(null)
                         } else {
+                            binding!!.editBtn.setImageResource(R.drawable.edit_gold_ic)
                             binding!!.editBtn.setColorFilter(
+                                ContextCompat.getColor(
+                                    requireContext(),
+                                    R.color.dark_grey
+                                )
+                            )
+                            binding!!.filterBtn.setColorFilter(
                                 ContextCompat.getColor(
                                     requireContext(),
                                     R.color.dark_grey
@@ -137,7 +146,11 @@ class BookmarksFragment : Fragment(), QuranNavigationCallbacks {
     }
 
     private fun filter() {
-        bookmarksListFragment!!.showFilterDialog()
+        if (viewModel!!.uiState.value.isListEditable) {
+            bookmarksListFragment!!.showFilterDialog()
+        } else {
+            viewModel!!.onFilterClicked()
+        }
     }
 
     private fun finishEdit() {
