@@ -232,6 +232,7 @@ class TafseerFragment : Fragment(), OptionDialog.ItemClickListener, TranslationS
         viewModel.onTranslationLanguageChanged(langCode)
         binding!!.langTv.text =
             getString(Constants.Language.NAMES_STR_IDS[itemIndex])
+        onOpenBooksFilter()
     }
 
     override fun onItemClick(optionName: String?, optionIndex: Int, requestCode: Int) {
