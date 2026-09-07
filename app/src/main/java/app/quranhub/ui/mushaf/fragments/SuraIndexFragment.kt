@@ -25,7 +25,7 @@ class SuraIndexFragment : Fragment(), ItemSelectionListener<Int> {
     private var binding: FragmentSuraIndexBinding? = null
 
     private var quranNavigationCallbacks: QuranNavigationCallbacks? = null
-    private var viewModel: SuraIndexViewModel? = null
+    private lateinit var viewModel: SuraIndexViewModel
     private var adapter: SuraIndexAdapter? = null
     private var currentQuery: String? = null
 
@@ -61,7 +61,7 @@ class SuraIndexFragment : Fragment(), ItemSelectionListener<Int> {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
-                    viewModel!!.uiState.collect { uiState ->
+                    viewModel.uiState.collect { uiState ->
                         binding!!.suraIndexProgressBar.visibility =
                             if (uiState.loading) View.VISIBLE else View.GONE
                         if (!uiState.loading) {
@@ -72,7 +72,7 @@ class SuraIndexFragment : Fragment(), ItemSelectionListener<Int> {
                     }
                 }
                 launch {
-                    viewModel!!.suraIndexEvents.collect { event ->
+                    viewModel.suraIndexEvents.collect { event ->
                         when (event) {
                             is SuraIndexViewModel.SuraIndexEvent.NavigateToSura -> {
                                 dismissKeyboard(requireActivity(), binding!!.root)
@@ -100,7 +100,7 @@ class SuraIndexFragment : Fragment(), ItemSelectionListener<Int> {
     }
 
     override fun onSelectItem(suraPage: Int) {
-        viewModel!!.onSuraItemClick(suraPage)
+        viewModel.onSuraItemClick(suraPage)
     }
 
     override fun onDestroyView() {

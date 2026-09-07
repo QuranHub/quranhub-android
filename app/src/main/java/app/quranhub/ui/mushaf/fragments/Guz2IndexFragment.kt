@@ -29,7 +29,7 @@ class Guz2IndexFragment : Fragment(), IndexItemClickListener {
     private var binding: FragmentGuz2IndexBinding? = null
 
     private var quranNavigationCallbacks: QuranNavigationCallbacks? = null
-    private var guz2IndexViewModel: Guz2IndexViewModel? = null
+    private lateinit var guz2IndexViewModel: Guz2IndexViewModel
     private var adapter: Guz2IndexAdapter? = null
     private var filterGuz2 = Guz2IndexAdapter.FILTER_GUZ2_ALL
 
@@ -70,14 +70,14 @@ class Guz2IndexFragment : Fragment(), IndexItemClickListener {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
-                    guz2IndexViewModel!!.uiState.collect { uiState ->
+                    guz2IndexViewModel.uiState.collect { uiState ->
                         binding!!.guz2IndexProgressBar.visibility =
                             if (uiState.loading) View.VISIBLE else View.GONE
                         adapter!!.setHizbQuarterDataModels(uiState.items.toMutableList())
                     }
                 }
                 launch {
-                    guz2IndexViewModel!!.indexItemClickEvents.collect { indexItemClickEvent: IndexItemClickEvent ->
+                    guz2IndexViewModel.indexItemClickEvents.collect { indexItemClickEvent: IndexItemClickEvent ->
                         quranNavigationCallbacks!!.gotoQuranPage(indexItemClickEvent.page)
                     }
                 }
@@ -109,7 +109,7 @@ class Guz2IndexFragment : Fragment(), IndexItemClickListener {
     }
 
     override fun onIndexItemClick(model: HizbQuarterDataModel?, clickedItemIndex: Int) {
-        guz2IndexViewModel!!.notifyIndexItemClick(clickedItemIndex)
+        guz2IndexViewModel.notifyIndexItemClick(clickedItemIndex)
     }
 
     fun filterForGuz2(guz2: Int) {

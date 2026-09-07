@@ -31,7 +31,7 @@ class QuranTopicsFragment : Fragment(), ItemSelectionListener<TopicCategory> {
     private var binding: FragmentQuranTopicsBinding? = null
 
     private var adapter: SubjectsAdapter? = null
-    private var viewModel: SubjectsViewModel? = null
+    private lateinit var viewModel: SubjectsViewModel
     private var navDrawerListener: ToolbarActionsListener? = null
     private var topicModels: List<TopicModel?>? = null
 
@@ -101,10 +101,10 @@ class QuranTopicsFragment : Fragment(), ItemSelectionListener<TopicCategory> {
         val subjectsCategory =
             listOf(*requireActivity().resources.getStringArray(R.array.subject_category_name))
         viewModel = ViewModelProvider(this)[SubjectsViewModel::class.java]
-        viewModel!!.getSubjects(subjects, subjectsCategory)
+        viewModel.getSubjects(subjects, subjectsCategory)
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel!!.uiState.collect { state ->
+                viewModel.uiState.collect { state ->
                     binding!!.progreesBar.visibility =
                         if (state.loading) View.VISIBLE else View.GONE
                     state.subjects?.let { topicModels ->

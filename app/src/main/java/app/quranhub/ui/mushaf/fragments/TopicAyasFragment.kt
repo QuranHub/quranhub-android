@@ -34,7 +34,7 @@ class TopicAyasFragment : Fragment(), ItemSelectionListener<SearchModel> {
     private var quranNavigationCallbacks: QuranNavigationCallbacks? = null
     private var navDrawerListener: ToolbarActionsListener? = null
     private var adapter: SearchAdapter? = null
-    private var viewModel: TopicViewModel? = null
+    private lateinit var viewModel: TopicViewModel
     private var category: TopicCategory? = null
 
     override fun onAttach(context: Context) {
@@ -100,10 +100,10 @@ class TopicAyasFragment : Fragment(), ItemSelectionListener<SearchModel> {
 
     private fun bindViewModel() {
         viewModel = ViewModelProvider(this)[TopicViewModel::class.java]
-        viewModel!!.getAyas(category!!.categoryId)
+        viewModel.getAyas(category!!.categoryId)
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel!!.uiState.collect { state ->
+                viewModel.uiState.collect { state ->
                     binding!!.progreesBar.visibility =
                         if (state.loading) View.VISIBLE else View.GONE
                     state.ayahs?.let { ayahs ->

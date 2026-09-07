@@ -47,7 +47,7 @@ class TafseerFragment : Fragment(), OptionDialog.ItemClickListener, TranslationS
     private var suraNumber = 0
     private var ayaNumber = 0
     private var adapter: TafseerAdapter? = null
-    private var viewModel: TafseerViewModel? = null
+    private lateinit var viewModel: TafseerViewModel
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -105,22 +105,22 @@ class TafseerFragment : Fragment(), OptionDialog.ItemClickListener, TranslationS
 
     private fun bindViewModel() {
         viewModel = ViewModelProvider(this)[TafseerViewModel::class.java]
-        viewModel!!.setSelectedBook(bookDbName, bookName)
+        viewModel.setSelectedBook(bookDbName, bookName)
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
-                    viewModel!!.uiState.collect { uiState ->
+                    viewModel.uiState.collect { uiState ->
                         renderUiState(uiState)
                     }
                 }
                 launch {
-                    viewModel!!.tafseerEvents.collect { event ->
+                    viewModel.tafseerEvents.collect { event ->
                         renderEvent(event)
                     }
                 }
             }
         }
-        viewModel!!.loadInitialTafseers(suraNumber)
+        viewModel.loadInitialTafseers(suraNumber)
     }
 
     private fun renderUiState(uiState: TafseerViewModel.TafseerUiState) {
@@ -221,7 +221,7 @@ class TafseerFragment : Fragment(), OptionDialog.ItemClickListener, TranslationS
     }
 
     override fun onTranslationSelected(translationBook: TranslationBook) {
-        viewModel!!.onBookSelected(
+        viewModel.onBookSelected(
             translationBook.databaseName, translationBook.id, translationBook.name
         )
     }
@@ -229,7 +229,7 @@ class TafseerFragment : Fragment(), OptionDialog.ItemClickListener, TranslationS
     override fun onItemSelected(requestCode: Int, itemIndex: Int) {
         val langCode = Constants.Language.CODES[itemIndex]
         persistQuranTranslationLanguage(requireContext(), langCode)
-        viewModel!!.onTranslationLanguageChanged(langCode)
+        viewModel.onTranslationLanguageChanged(langCode)
         binding!!.langTv.text =
             getString(Constants.Language.NAMES_STR_IDS[itemIndex])
     }
@@ -239,7 +239,7 @@ class TafseerFragment : Fragment(), OptionDialog.ItemClickListener, TranslationS
         suraName = optionName
         suraNumber = optionIndex + 1
         ayaNumber = 1
-        viewModel!!.onSuraSelected(suraNumber)
+        viewModel.onSuraSelected(suraNumber)
         binding!!.suraTv.text = suraName
     }
 
