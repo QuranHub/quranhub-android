@@ -32,7 +32,8 @@ import java.io.IOException
 
 class AddNoteDialog : DialogFragment(), MediaPlayerCallback {
 
-    private var binding: DialogAddNoteBinding? = null
+    private var _binding: DialogAddNoteBinding? = null
+    private val binding get() = _binding!!
 
     private var isRecord = false
     private var isPlaying = false
@@ -57,7 +58,7 @@ class AddNoteDialog : DialogFragment(), MediaPlayerCallback {
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        binding = DialogAddNoteBinding.inflate(layoutInflater)
+        _binding = DialogAddNoteBinding.inflate(layoutInflater)
         initializeDialog()
         readArgs()
         listenToSeekbarChanges()
@@ -78,7 +79,7 @@ class AddNoteDialog : DialogFragment(), MediaPlayerCallback {
     fun initializeDialog() {
         dialog = Dialog(requireActivity())
         dialog!!.window!!.requestFeature(Window.FEATURE_NO_TITLE)
-        dialog!!.setContentView(binding!!.root)
+        dialog!!.setContentView(binding.root)
         dialog!!.window?.setBackgroundDrawableResource(android.R.color.transparent)
         dialog!!.setCanceledOnTouchOutside(false)
         permissions = arrayOf(Manifest.permission.RECORD_AUDIO)
@@ -93,16 +94,16 @@ class AddNoteDialog : DialogFragment(), MediaPlayerCallback {
             if (note != null) {
                 isEditable = true
                 setEditView()
-                binding!!.saveBtn.text = getString(R.string.save)
+                binding.saveBtn.text = getString(R.string.save)
             }
         }
     }
 
     private fun setEditView() {
-        binding!!.tvTitle.text = getString(R.string.edit_note)
-        (binding!!.noteTypeGroup.getChildAt(note!!.noteType) as RadioButton).isChecked = true
+        binding.tvTitle.text = getString(R.string.edit_note)
+        (binding.noteTypeGroup.getChildAt(note!!.noteType) as RadioButton).isChecked = true
         if (note!!.noteText != null) {
-            binding!!.addNoteEt.setText(note!!.noteText)
+            binding.addNoteEt.setText(note!!.noteText)
         }
         if (note?.noteRecorderPath?.isNotEmpty() == true) {
             setAudioViewsVisible()
@@ -112,10 +113,10 @@ class AddNoteDialog : DialogFragment(), MediaPlayerCallback {
     }
 
     private fun setAudioViewsVisible() {
-        binding!!.voiceTimerTv.visibility = View.VISIBLE
-        binding!!.recordGroup.visibility = View.VISIBLE
-        binding!!.addRecorderIv.visibility = View.INVISIBLE
-        binding!!.voiceStatusTv.text = getString(R.string.voice_listen)
+        binding.voiceTimerTv.visibility = View.VISIBLE
+        binding.recordGroup.visibility = View.VISIBLE
+        binding.addRecorderIv.visibility = View.INVISIBLE
+        binding.voiceStatusTv.text = getString(R.string.voice_listen)
     }
 
     private fun createRecordingFile() {
@@ -131,15 +132,15 @@ class AddNoteDialog : DialogFragment(), MediaPlayerCallback {
     }
 
     private fun attachListeners() {
-        binding!!.saveBtn.setOnClickListener { onAddNote() }
-        binding!!.cancelBtn.setOnClickListener { onCancel() }
-        binding!!.addRecorderIv.setOnClickListener { onClickRecord() }
-        binding!!.playIv.setOnClickListener { onPlayRecorder() }
-        binding!!.removeRecordIv.setOnClickListener { onRemoveRecord() }
+        binding.saveBtn.setOnClickListener { onAddNote() }
+        binding.cancelBtn.setOnClickListener { onCancel() }
+        binding.addRecorderIv.setOnClickListener { onClickRecord() }
+        binding.playIv.setOnClickListener { onPlayRecorder() }
+        binding.removeRecordIv.setOnClickListener { onRemoveRecord() }
     }
 
     private fun onAddNote() {
-        if (TextUtils.isEmpty(binding!!.addNoteEt.text) && !isRecorderAttached && !isRecord) {
+        if (TextUtils.isEmpty(binding.addNoteEt.text) && !isRecorderAttached && !isRecord) {
             Toast.makeText(activity, getString(R.string.note_empty), Toast.LENGTH_LONG).show()
         } else {
             var path: String? = ""
@@ -148,14 +149,14 @@ class AddNoteDialog : DialogFragment(), MediaPlayerCallback {
             } else {
                 deleteRecorderFile()
             }
-            val selectedType = binding!!.noteTypeGroup.indexOfChild(
-                binding!!.root.findViewById(binding!!.noteTypeGroup.checkedRadioButtonId)
+            val selectedType = binding.noteTypeGroup.indexOfChild(
+                binding.root.findViewById(binding.noteTypeGroup.checkedRadioButtonId)
             )
             listener!!.onAddNote(
                 Note(
                     ayaId,
                     selectedType,
-                    binding!!.addNoteEt.text.toString(),
+                    binding.addNoteEt.text.toString(),
                     path
                 ), isEditable
             )
@@ -212,26 +213,26 @@ class AddNoteDialog : DialogFragment(), MediaPlayerCallback {
 
     private fun onPlayRecorder() {
         if (isPlaying) {
-            binding!!.playIv.setImageResource(R.drawable.player_play_white_ic)
+            binding.playIv.setImageResource(R.drawable.player_play_white_ic)
             recorderMediaHelper!!.pause()
         } else {
-            binding!!.playIv.setImageResource(R.drawable.ic_pause)
+            binding.playIv.setImageResource(R.drawable.ic_pause)
             recorderMediaHelper!!.play()
             recorderMediaHelper!!.startUpdatingAudioTime()
             if (firstPlay) {
                 firstPlay = false
-                binding!!.voiceTimerTv.text = "0:00"
+                binding.voiceTimerTv.text = "0:00"
             }
         }
         isPlaying = !isPlaying
     }
 
     private fun onRemoveRecord() {
-        binding!!.recordGroup.visibility = View.GONE
-        binding!!.voiceTimerTv.visibility = View.GONE
-        binding!!.addRecorderIv.visibility = View.VISIBLE
-        binding!!.addRecorderIv.setBackgroundResource(R.drawable.corner_primary_dialog)
-        binding!!.voiceStatusTv.text = getString(R.string.add_voice)
+        binding.recordGroup.visibility = View.GONE
+        binding.voiceTimerTv.visibility = View.GONE
+        binding.addRecorderIv.visibility = View.VISIBLE
+        binding.addRecorderIv.setBackgroundResource(R.drawable.corner_primary_dialog)
+        binding.voiceStatusTv.text = getString(R.string.add_voice)
         recorderMediaHelper!!.release()
         isRecorderAttached = false
     }
@@ -243,7 +244,7 @@ class AddNoteDialog : DialogFragment(), MediaPlayerCallback {
     }
 
     private fun listenToSeekbarChanges() {
-        binding!!.recorderProgress.setOnSeekBarChangeListener(object : OnSeekBarChangeListener {
+        binding.recorderProgress.setOnSeekBarChangeListener(object : OnSeekBarChangeListener {
             override fun onStartTrackingTouch(seekBar: SeekBar) {
                 userIsSeeking = true
             }
@@ -263,8 +264,8 @@ class AddNoteDialog : DialogFragment(), MediaPlayerCallback {
 
     private fun initRecording() {
         isRecord = true
-        binding!!.addRecorderIv.setBackgroundResource(R.drawable.red_corner)
-        binding!!.voiceStatusTv.text = getString(R.string.voice_recorded)
+        binding.addRecorderIv.setBackgroundResource(R.drawable.red_corner)
+        binding.voiceStatusTv.text = getString(R.string.voice_recorded)
         startTimer()
         startRecord()
     }
@@ -284,14 +285,14 @@ class AddNoteDialog : DialogFragment(), MediaPlayerCallback {
     }
 
     private fun stopTimer() {
-        binding!!.recorderChronometer.visibility = View.GONE
-        binding!!.recorderChronometer.stop()
+        binding.recorderChronometer.visibility = View.GONE
+        binding.recorderChronometer.stop()
     }
 
     private fun startTimer() {
-        binding!!.recorderChronometer.visibility = View.VISIBLE
-        binding!!.recorderChronometer.base = SystemClock.elapsedRealtime()
-        binding!!.recorderChronometer.start()
+        binding.recorderChronometer.visibility = View.VISIBLE
+        binding.recorderChronometer.base = SystemClock.elapsedRealtime()
+        binding.recorderChronometer.start()
     }
 
     override fun onRequestPermissionsResult(
@@ -318,34 +319,34 @@ class AddNoteDialog : DialogFragment(), MediaPlayerCallback {
         super.onDestroyView()
         listener!!.onDismissDialog()
         stopRecorderMedia()
-        binding = null
+        _binding = null
     }
 
     override fun onGetMaxDuration(duration: Int) {
-        binding!!.recorderProgress.max = duration
+        binding.recorderProgress.max = duration
     }
 
     override fun onPositionChanged(position: Int) {
         if (!userIsSeeking) {
             if (Build.VERSION.SDK_INT >= 24) {
-                binding!!.recorderProgress.setProgress(position, true)
+                binding.recorderProgress.setProgress(position, true)
             } else {
-                binding!!.recorderProgress.progress = position
+                binding.recorderProgress.progress = position
             }
         }
     }
 
     override fun onStateChanged(state: PlaybackState) {
         if (state == PlaybackState.COMPLETED) {
-            binding!!.recorderProgress.progress = 0
+            binding.recorderProgress.progress = 0
             isPlaying = false
             firstPlay = true
-            binding!!.playIv.setImageResource(R.drawable.player_play_white_ic)
+            binding.playIv.setImageResource(R.drawable.player_play_white_ic)
         }
     }
 
     override fun onUpdatedTime(time: String?) {
-        binding!!.voiceTimerTv.text = time
+        binding.voiceTimerTv.text = time
     }
 
     interface AddNoteListener {

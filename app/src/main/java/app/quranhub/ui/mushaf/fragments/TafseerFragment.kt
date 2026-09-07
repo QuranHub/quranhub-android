@@ -37,7 +37,8 @@ import kotlinx.coroutines.launch
 class TafseerFragment : Fragment(), OptionDialog.ItemClickListener, TranslationSelectionListener,
     OptionsListDialogFragment.ItemSelectionListener {
 
-    private var binding: FragmentTafseerBinding? = null
+    private var _binding: FragmentTafseerBinding? = null
+    private val binding get() = _binding!!
 
     private var inputSearch: String? = ""
     private var navDrawerListener: ToolbarActionsListener? = null
@@ -60,13 +61,13 @@ class TafseerFragment : Fragment(), OptionDialog.ItemClickListener, TranslationS
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        binding = FragmentTafseerBinding.inflate(inflater, container, false)
-        return binding!!.root
+        _binding = FragmentTafseerBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        InsetsUtils.padTopForStatusBar(binding!!.toolbarLayout)
+        InsetsUtils.padTopForStatusBar(binding.toolbarLayout)
         readArgumentsData()
         savedInstanceState?.let { getPrevState(it) }
         initRecycler()
@@ -76,17 +77,17 @@ class TafseerFragment : Fragment(), OptionDialog.ItemClickListener, TranslationS
 
     private fun attachListeners() {
         observeOnInputSearch()
-        binding!!.filterSuraBtn.setOnClickListener { onOpenSuraFilter() }
-        binding!!.filterBookBtn.setOnClickListener { onOpenBooksFilter() }
-        binding!!.filterLangBtn.setOnClickListener { onOpenLangFilter() }
-        binding!!.hamburgerIv.setOnClickListener { onNavHamburgerClick() }
+        binding.filterSuraBtn.setOnClickListener { onOpenSuraFilter() }
+        binding.filterBookBtn.setOnClickListener { onOpenBooksFilter() }
+        binding.filterLangBtn.setOnClickListener { onOpenLangFilter() }
+        binding.hamburgerIv.setOnClickListener { onNavHamburgerClick() }
     }
 
     private fun getPrevState(savedInstanceState: Bundle) {
         inputSearch = savedInstanceState.getString("input_search")
         suraName = savedInstanceState.getString("sura_name")
         suraNumber = savedInstanceState.getInt("sura_number")
-        binding!!.suraTv.text = suraName
+        binding.suraTv.text = suraName
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -98,9 +99,9 @@ class TafseerFragment : Fragment(), OptionDialog.ItemClickListener, TranslationS
 
     private fun initRecycler() {
         adapter = TafseerAdapter(requireActivity())
-        binding!!.tafseerRv.layoutManager = LinearLayoutManager(activity)
-        binding!!.tafseerRv.setHasFixedSize(true)
-        binding!!.tafseerRv.adapter = adapter
+        binding.tafseerRv.layoutManager = LinearLayoutManager(activity)
+        binding.tafseerRv.setHasFixedSize(true)
+        binding.tafseerRv.adapter = adapter
     }
 
     private fun bindViewModel() {
@@ -124,17 +125,17 @@ class TafseerFragment : Fragment(), OptionDialog.ItemClickListener, TranslationS
     }
 
     private fun renderUiState(uiState: TafseerViewModel.TafseerUiState) {
-        binding!!.progreesBar.visibility = if (uiState.loading) View.VISIBLE else View.GONE
-        uiState.bookName?.let { bookName -> binding!!.bookTv.text = bookName }
+        binding.progreesBar.visibility = if (uiState.loading) View.VISIBLE else View.GONE
+        uiState.bookName?.let { bookName -> binding.bookTv.text = bookName }
         if (uiState.loading) {
             return
         }
         val tafseerModels = uiState.tafseerItems
         adapter!!.setTafseerModelList(tafseerModels)
         if (ayaNumber <= tafseerModels.size) {
-            binding!!.tafseerRv.scrollToPosition(ayaNumber - 1)
+            binding.tafseerRv.scrollToPosition(ayaNumber - 1)
         } else {
-            binding!!.tafseerRv.scrollToPosition(0)
+            binding.tafseerRv.scrollToPosition(0)
         }
         if (inputSearch != null && !TextUtils.isEmpty(inputSearch!!.trim { it <= ' ' })) {
             adapter!!.filter(inputSearch!!)
@@ -144,8 +145,8 @@ class TafseerFragment : Fragment(), OptionDialog.ItemClickListener, TranslationS
     private fun renderEvent(event: TafseerViewModel.TafseerEvent) {
         when (event) {
             is TafseerViewModel.TafseerEvent.NoDownloadedBooks -> {
-                binding!!.progreesBar.visibility = View.GONE
-                binding!!.bookTv.text = getString(R.string.choose_book)
+                binding.progreesBar.visibility = View.GONE
+                binding.bookTv.text = getString(R.string.choose_book)
                 Toast.makeText(activity, getString(R.string.no_downloaded_books), Toast.LENGTH_LONG)
                     .show()
             }
@@ -156,7 +157,7 @@ class TafseerFragment : Fragment(), OptionDialog.ItemClickListener, TranslationS
     }
 
     private fun observeOnInputSearch() {
-        binding!!.etSearch.addTextChangedListener(object : TextWatcher {
+        binding.etSearch.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
                 adapter!!.filter(s.toString())
@@ -174,12 +175,12 @@ class TafseerFragment : Fragment(), OptionDialog.ItemClickListener, TranslationS
             bookDbName = requireArguments().getString(ARG_BOOK_DB_NAME)
             bookName = requireArguments().getString(ARG_BOOK_NAME)
             ayaNumber = requireArguments().getInt("ARG_AYA_NUMBER")
-            binding!!.suraTv.text = suraName
+            binding.suraTv.text = suraName
         }
         val currentTranslationLanguageIndex = Constants.Language.CODES.indexOf(
             getQuranTranslationLanguage(requireContext())
         )
-        binding!!.langTv.text = getString(
+        binding.langTv.text = getString(
             Constants.Language.NAMES_STR_IDS[currentTranslationLanguageIndex]
         )
     }
@@ -230,18 +231,18 @@ class TafseerFragment : Fragment(), OptionDialog.ItemClickListener, TranslationS
         val langCode = Constants.Language.CODES[itemIndex]
         persistQuranTranslationLanguage(requireContext(), langCode)
         viewModel.onTranslationLanguageChanged(langCode)
-        binding!!.langTv.text =
+        binding.langTv.text =
             getString(Constants.Language.NAMES_STR_IDS[itemIndex])
         onOpenBooksFilter()
     }
 
     override fun onItemClick(optionName: String?, optionIndex: Int, requestCode: Int) {
-        binding!!.etSearch.text.clear()
+        binding.etSearch.text.clear()
         suraName = optionName
         suraNumber = optionIndex + 1
         ayaNumber = 1
         viewModel.onSuraSelected(suraNumber)
-        binding!!.suraTv.text = suraName
+        binding.suraTv.text = suraName
     }
 
     companion object {

@@ -29,7 +29,8 @@ import kotlinx.coroutines.launch
 
 class FirstTimeWizardActivity : BaseActivity(), OnOptionClickListener {
 
-    private var binding: ActivityFirstTimeWizardBinding? = null
+    private var _binding: ActivityFirstTimeWizardBinding? = null
+    private val binding get() = _binding!!
     private var wizardStepPagerAdapter: WizardStepPagerAdapter? = null
     private var layoutDir = View.LAYOUT_DIRECTION_LTR
     private var appliedSearchQuery: String? = null
@@ -44,15 +45,15 @@ class FirstTimeWizardActivity : BaseActivity(), OnOptionClickListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityFirstTimeWizardBinding.inflate(layoutInflater)
-        setContentView(binding!!.root)
-        setSupportActionBar(binding!!.toolbar)
-        InsetsUtils.padTopForStatusBar(binding!!.appBar)
-        InsetsUtils.padBottomForNavigationBar(binding!!.clBottomBar)
+        _binding = ActivityFirstTimeWizardBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        setSupportActionBar(binding.toolbar)
+        InsetsUtils.padTopForStatusBar(binding.appBar)
+        InsetsUtils.padBottomForNavigationBar(binding.clBottomBar)
         layoutDir = resources.configuration.layoutDirection
         wizardStepPagerAdapter = WizardStepPagerAdapter(supportFragmentManager)
-        binding!!.pagerSteps.adapter = wizardStepPagerAdapter
-        binding!!.pagerSteps.currentItem = pagerIndexOfStep(viewModel.currentStep.value)
+        binding.pagerSteps.adapter = wizardStepPagerAdapter
+        binding.pagerSteps.currentItem = pagerIndexOfStep(viewModel.currentStep.value)
         updateViews(viewModel.currentStep.value)
         attachListeners()
         observeViewModel()
@@ -64,8 +65,8 @@ class FirstTimeWizardActivity : BaseActivity(), OnOptionClickListener {
                 launch {
                     viewModel.currentStep.collect { step ->
                         val pagerIndex = pagerIndexOfStep(step)
-                        if (binding!!.pagerSteps.currentItem != pagerIndex) {
-                            binding!!.pagerSteps.currentItem = pagerIndex
+                        if (binding.pagerSteps.currentItem != pagerIndex) {
+                            binding.pagerSteps.currentItem = pagerIndex
                         }
                         updateViews(step)
                     }
@@ -76,12 +77,12 @@ class FirstTimeWizardActivity : BaseActivity(), OnOptionClickListener {
                         // query to its own options list
                         if (query != appliedSearchQuery) {
                             appliedSearchQuery = query
-                            if (binding!!.etSearch.text.toString() != query) {
+                            if (binding.etSearch.text.toString() != query) {
                                 if (query.isEmpty()) {
-                                    binding!!.etSearch.text.clear()
-                                    binding!!.etSearch.clearFocus()
+                                    binding.etSearch.text.clear()
+                                    binding.etSearch.clearFocus()
                                 } else {
-                                    binding!!.etSearch.setText(query)
+                                    binding.etSearch.setText(query)
                                 }
                             }
                         }
@@ -113,7 +114,7 @@ class FirstTimeWizardActivity : BaseActivity(), OnOptionClickListener {
     }
 
     private fun attachListeners() {
-        binding!!.pagerSteps.addOnPageChangeListener(object : ViewPager.OnPageChangeListener {
+        binding.pagerSteps.addOnPageChangeListener(object : ViewPager.OnPageChangeListener {
             override fun onPageScrolled(
                 position: Int,
                 positionOffset: Float,
@@ -128,7 +129,7 @@ class FirstTimeWizardActivity : BaseActivity(), OnOptionClickListener {
 
             override fun onPageScrollStateChanged(state: Int) {}
         })
-        binding!!.etSearch.addTextChangedListener(object : TextWatcher {
+        binding.etSearch.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
                 viewModel.onSearchQueryChanged(s.toString())
@@ -136,8 +137,8 @@ class FirstTimeWizardActivity : BaseActivity(), OnOptionClickListener {
 
             override fun afterTextChanged(s: Editable) {}
         })
-        binding!!.btnBack.setOnClickListener { backButtonClicked() }
-        binding!!.btnNext.setOnClickListener { nextButtonClicked() }
+        binding.btnBack.setOnClickListener { backButtonClicked() }
+        binding.btnNext.setOnClickListener { nextButtonClicked() }
     }
 
     /**
@@ -171,7 +172,7 @@ class FirstTimeWizardActivity : BaseActivity(), OnOptionClickListener {
     private fun nextButtonClicked() {
         if (viewModel.currentStep.value == FirstTimeWizardViewModel.LAST_STEP) {
             // disable the button while finishing to avoid duplicate clicks
-            binding!!.btnNext.isEnabled = false
+            binding.btnNext.isEnabled = false
         }
         viewModel.onNextClicked()
     }
@@ -182,17 +183,17 @@ class FirstTimeWizardActivity : BaseActivity(), OnOptionClickListener {
         when (currentStep) {
             FirstTimeWizardViewModel.FIRST_STEP -> {
                 title = getString(R.string.first_wizard_title_app_language_step)
-                binding!!.tvStepHint.setText(R.string.first_wizard_hint_app_langauge)
+                binding.tvStepHint.setText(R.string.first_wizard_hint_app_langauge)
             }
 
             FirstTimeWizardViewModel.TRANSLATIONS_STEP -> {
                 title = getString(R.string.first_wizard_title_translation_languages_step)
-                binding!!.tvStepHint.text = getString(R.string.first_wizard_hint_translation_languages)
+                binding.tvStepHint.text = getString(R.string.first_wizard_hint_translation_languages)
             }
 
             FirstTimeWizardViewModel.LAST_STEP -> {
                 title = getString(R.string.first_wizard_title_recitations_step)
-                binding!!.tvStepHint.text = getString(R.string.first_wizard_hint_recitations)
+                binding.tvStepHint.text = getString(R.string.first_wizard_hint_recitations)
             }
         }
 
@@ -202,16 +203,16 @@ class FirstTimeWizardActivity : BaseActivity(), OnOptionClickListener {
         // update buttons
         if (currentStep == FirstTimeWizardViewModel.LAST_STEP) {
             // on last page
-            binding!!.btnNext.setText(R.string.finish)
-            binding!!.btnBack.isEnabled = true
+            binding.btnNext.setText(R.string.finish)
+            binding.btnBack.isEnabled = true
         } else if (currentStep == FirstTimeWizardViewModel.FIRST_STEP) {
             // on first page
-            binding!!.btnNext.setText(R.string.next)
-            binding!!.btnBack.isEnabled = false
+            binding.btnNext.setText(R.string.next)
+            binding.btnBack.isEnabled = false
         } else {
             // default
-            binding!!.btnNext.setText(R.string.next)
-            binding!!.btnBack.isEnabled = true
+            binding.btnNext.setText(R.string.next)
+            binding.btnBack.isEnabled = true
         }
     }
 
@@ -219,38 +220,38 @@ class FirstTimeWizardActivity : BaseActivity(), OnOptionClickListener {
         when (currentStep) {
             FirstTimeWizardViewModel.FIRST_STEP -> {
                 // first step
-                binding!!.ivProgressPage1.setImageResource(R.drawable.check_gold_ic)
-                binding!!.ivProgressPage1.setBackgroundResource(R.drawable.progress_circle_checked)
-                binding!!.separatorPages12.setBackgroundResource(R.color.color_control_highlight)
-                binding!!.ivProgressPage2.setImageDrawable(null)
-                binding!!.ivProgressPage2.setBackgroundResource(R.drawable.progress_circle_unchecked)
-                binding!!.separatorPages23.setBackgroundResource(R.color.color_control_highlight)
-                binding!!.ivProgressPage3.setImageDrawable(null)
-                binding!!.ivProgressPage3.setBackgroundResource(R.drawable.progress_circle_unchecked)
+                binding.ivProgressPage1.setImageResource(R.drawable.check_gold_ic)
+                binding.ivProgressPage1.setBackgroundResource(R.drawable.progress_circle_checked)
+                binding.separatorPages12.setBackgroundResource(R.color.color_control_highlight)
+                binding.ivProgressPage2.setImageDrawable(null)
+                binding.ivProgressPage2.setBackgroundResource(R.drawable.progress_circle_unchecked)
+                binding.separatorPages23.setBackgroundResource(R.color.color_control_highlight)
+                binding.ivProgressPage3.setImageDrawable(null)
+                binding.ivProgressPage3.setBackgroundResource(R.drawable.progress_circle_unchecked)
             }
 
             FirstTimeWizardViewModel.TRANSLATIONS_STEP -> {
                 // second step
-                binding!!.ivProgressPage1.setImageResource(R.drawable.check_gold_ic)
-                binding!!.ivProgressPage1.setBackgroundResource(R.drawable.progress_circle_checked)
-                binding!!.separatorPages12.setBackgroundResource(R.color.color_primary)
-                binding!!.ivProgressPage2.setImageResource(R.drawable.check_gold_ic)
-                binding!!.ivProgressPage2.setBackgroundResource(R.drawable.progress_circle_checked)
-                binding!!.separatorPages23.setBackgroundResource(R.color.color_control_highlight)
-                binding!!.ivProgressPage3.setImageDrawable(null)
-                binding!!.ivProgressPage3.setBackgroundResource(R.drawable.progress_circle_unchecked)
+                binding.ivProgressPage1.setImageResource(R.drawable.check_gold_ic)
+                binding.ivProgressPage1.setBackgroundResource(R.drawable.progress_circle_checked)
+                binding.separatorPages12.setBackgroundResource(R.color.color_primary)
+                binding.ivProgressPage2.setImageResource(R.drawable.check_gold_ic)
+                binding.ivProgressPage2.setBackgroundResource(R.drawable.progress_circle_checked)
+                binding.separatorPages23.setBackgroundResource(R.color.color_control_highlight)
+                binding.ivProgressPage3.setImageDrawable(null)
+                binding.ivProgressPage3.setBackgroundResource(R.drawable.progress_circle_unchecked)
             }
 
             FirstTimeWizardViewModel.LAST_STEP -> {
                 // last (third) step
-                binding!!.ivProgressPage1.setImageResource(R.drawable.check_gold_ic)
-                binding!!.ivProgressPage1.setBackgroundResource(R.drawable.progress_circle_checked)
-                binding!!.separatorPages12.setBackgroundResource(R.color.color_primary)
-                binding!!.ivProgressPage2.setImageResource(R.drawable.check_gold_ic)
-                binding!!.ivProgressPage2.setBackgroundResource(R.drawable.progress_circle_checked)
-                binding!!.separatorPages23.setBackgroundResource(R.color.color_primary)
-                binding!!.ivProgressPage3.setImageResource(R.drawable.check_gold_ic)
-                binding!!.ivProgressPage3.setBackgroundResource(R.drawable.progress_circle_checked)
+                binding.ivProgressPage1.setImageResource(R.drawable.check_gold_ic)
+                binding.ivProgressPage1.setBackgroundResource(R.drawable.progress_circle_checked)
+                binding.separatorPages12.setBackgroundResource(R.color.color_primary)
+                binding.ivProgressPage2.setImageResource(R.drawable.check_gold_ic)
+                binding.ivProgressPage2.setBackgroundResource(R.drawable.progress_circle_checked)
+                binding.separatorPages23.setBackgroundResource(R.color.color_primary)
+                binding.ivProgressPage3.setImageResource(R.drawable.check_gold_ic)
+                binding.ivProgressPage3.setBackgroundResource(R.drawable.progress_circle_checked)
             }
         }
     }

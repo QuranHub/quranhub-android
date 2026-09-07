@@ -29,7 +29,8 @@ class SuraGuz2IndexFragment : Fragment(),
     private var inputSearch: String? = ""
     private var selectedGUZ2Filter = Guz2IndexAdapter.FILTER_GUZ2_ALL
 
-    private var binding: FragmentSuraGuz2IndexBinding? = null
+    private var _binding: FragmentSuraGuz2IndexBinding? = null
+    private val binding get() = _binding!!
 
     val currentSearchQuery: String?
         get() = inputSearch
@@ -54,13 +55,13 @@ class SuraGuz2IndexFragment : Fragment(),
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        binding = FragmentSuraGuz2IndexBinding.inflate(inflater, container, false)
-        return binding!!.root
+        _binding = FragmentSuraGuz2IndexBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        InsetsUtils.padTopForStatusBar(binding!!.toolbarLayout)
+        InsetsUtils.padTopForStatusBar(binding.toolbarLayout)
         restoreSavedInstanceState(savedInstanceState)
         addIndexFragment(selectedTab)
         attachListeners()
@@ -69,13 +70,13 @@ class SuraGuz2IndexFragment : Fragment(),
     private fun attachListeners() {
         listenOnSelectedTab()
         observeOnInputSearch()
-        binding!!.hamburgerIv.setOnClickListener { onNavHamburgerClick() }
-        binding!!.filterBtn.setOnClickListener { onFilterButtonClick() }
+        binding.hamburgerIv.setOnClickListener { onNavHamburgerClick() }
+        binding.filterBtn.setOnClickListener { onFilterButtonClick() }
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
-        binding = null
+        _binding = null
     }
 
     override fun onDetach() {
@@ -99,10 +100,10 @@ class SuraGuz2IndexFragment : Fragment(),
     }
 
     private fun observeOnInputSearch() {
-        binding!!.etSearch.addTextChangedListener(object : TextWatcher {
+        binding.etSearch.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
-                if (binding!!.tabLayout.selectedTabPosition == SURA_INDEX_TAB && suraIndexFragment != null) {
+                if (binding.tabLayout.selectedTabPosition == SURA_INDEX_TAB && suraIndexFragment != null) {
                     inputSearch = s.toString()
                     suraIndexFragment!!.onSearchSura(inputSearch)
                 }
@@ -113,9 +114,9 @@ class SuraGuz2IndexFragment : Fragment(),
     }
 
     private fun listenOnSelectedTab() {
-        binding!!.tabLayout.addOnTabSelectedListener(object : OnTabSelectedListener {
+        binding.tabLayout.addOnTabSelectedListener(object : OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab) {
-                addIndexFragment(binding!!.tabLayout.selectedTabPosition)
+                addIndexFragment(binding.tabLayout.selectedTabPosition)
             }
 
             override fun onTabUnselected(tab: TabLayout.Tab) {}
@@ -125,7 +126,7 @@ class SuraGuz2IndexFragment : Fragment(),
 
     private fun addIndexFragment(tab: Int) {
         selectedTab = tab
-        binding!!.tabLayout.getTabAt(selectedTab)!!.select()
+        binding.tabLayout.getTabAt(selectedTab)!!.select()
         if (tab == SURA_INDEX_TAB) {
             suraIndexFragment =
                 childFragmentManager.findFragmentByTag(FRAGMENT_SURA_INDEX) as SuraIndexFragment?
@@ -135,8 +136,8 @@ class SuraGuz2IndexFragment : Fragment(),
                     .replace(R.id.index_container, suraIndexFragment!!, FRAGMENT_SURA_INDEX)
                     .commit()
             }
-            binding!!.filterBtn.visibility = View.INVISIBLE
-            binding!!.etSearch.visibility = View.VISIBLE
+            binding.filterBtn.visibility = View.INVISIBLE
+            binding.etSearch.visibility = View.VISIBLE
         } else if (tab == GUZ2_INDEX_TAB) {
             guz2IndexFragment =
                 childFragmentManager.findFragmentByTag(FRAGMENT_GUZ2_INDEX) as Guz2IndexFragment?
@@ -146,10 +147,10 @@ class SuraGuz2IndexFragment : Fragment(),
                     .replace(R.id.index_container, guz2IndexFragment!!, FRAGMENT_GUZ2_INDEX)
                     .commit()
             }
-            binding!!.filterBtn.visibility = View.VISIBLE
-            binding!!.etSearch.text.clear()
+            binding.filterBtn.visibility = View.VISIBLE
+            binding.etSearch.text.clear()
             inputSearch = ""
-            binding!!.etSearch.visibility = View.GONE
+            binding.etSearch.visibility = View.GONE
         }
     }
 
@@ -158,7 +159,7 @@ class SuraGuz2IndexFragment : Fragment(),
     }
 
     private fun onFilterButtonClick() {
-        if (binding!!.tabLayout.selectedTabPosition == GUZ2_INDEX_TAB && guz2IndexFragment != null) {
+        if (binding.tabLayout.selectedTabPosition == GUZ2_INDEX_TAB && guz2IndexFragment != null) {
             val guz2Options: MutableList<String?> = ArrayList()
             guz2Options.add(getString(R.string.all_guz2))
             guz2Options.addAll(Arrays.asList(*resources.getStringArray(R.array.agza2_name)))

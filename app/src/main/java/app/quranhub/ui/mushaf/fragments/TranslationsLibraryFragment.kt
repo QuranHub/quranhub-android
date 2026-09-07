@@ -23,7 +23,8 @@ class TranslationsLibraryFragment : Fragment(), TranslationSelectionListener {
     private var inputSearch: String? = ""
     private var navDrawerListener: ToolbarActionsListener? = null
 
-    private var binding: FragmentTranslationsLibraryBinding? = null
+    private var _binding: FragmentTranslationsLibraryBinding? = null
+    private val binding get() = _binding!!
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -36,13 +37,13 @@ class TranslationsLibraryFragment : Fragment(), TranslationSelectionListener {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        binding = FragmentTranslationsLibraryBinding.inflate(inflater, container, false)
-        return binding!!.root
+        _binding = FragmentTranslationsLibraryBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        InsetsUtils.padTopForStatusBar(binding!!.toolbarLayout)
+        InsetsUtils.padTopForStatusBar(binding.toolbarLayout)
         restoreSavedInstanceState(savedInstanceState)
         addFragment()
         attachListeners()
@@ -50,7 +51,7 @@ class TranslationsLibraryFragment : Fragment(), TranslationSelectionListener {
 
     private fun attachListeners() {
         observeOnInputSearch()
-        binding!!.hamburgerIv.setOnClickListener { v: View? -> onNavHamburgerClick() }
+        binding.hamburgerIv.setOnClickListener { v: View? -> onNavHamburgerClick() }
     }
 
     private fun restoreSavedInstanceState(savedInstanceState: Bundle?) {
@@ -65,7 +66,7 @@ class TranslationsLibraryFragment : Fragment(), TranslationSelectionListener {
     }
 
     private fun observeOnInputSearch() {
-        binding!!.etSearch.addTextChangedListener(object : TextWatcher {
+        binding.etSearch.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
                 inputSearch = s.toString()
@@ -77,7 +78,7 @@ class TranslationsLibraryFragment : Fragment(), TranslationSelectionListener {
     }
 
     private fun addFragment() {
-        binding!!.etSearch.text.clear()
+        binding.etSearch.text.clear()
         inputSearch = ""
 
         translationsDataFragment =
@@ -103,7 +104,7 @@ class TranslationsLibraryFragment : Fragment(), TranslationSelectionListener {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        binding = null
+        _binding = null
     }
 
     companion object {

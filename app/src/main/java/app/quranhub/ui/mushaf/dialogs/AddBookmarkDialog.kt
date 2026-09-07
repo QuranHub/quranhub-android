@@ -19,7 +19,8 @@ import app.quranhub.util.DialogUtils.wrapDialogHeight
 
 class AddBookmarkDialog : DialogFragment(), ItemSelectionListener<Int> {
 
-    private var binding: DialogAddBookmarkBinding? = null
+    private var _binding: DialogAddBookmarkBinding? = null
+    private val binding get() = _binding!!
     private var dialog: Dialog? = null
     private var selectedType = 0
     private var bookmarkTypes: List<BookmarkType>? = null
@@ -38,7 +39,7 @@ class AddBookmarkDialog : DialogFragment(), ItemSelectionListener<Int> {
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        binding = DialogAddBookmarkBinding.inflate(layoutInflater)
+        _binding = DialogAddBookmarkBinding.inflate(layoutInflater)
         bookmarkTypes = viewModel.uiState.value.bookmarkTypes
         initializeDialog()
         observeOnSelectedColor()
@@ -47,8 +48,8 @@ class AddBookmarkDialog : DialogFragment(), ItemSelectionListener<Int> {
 
     private fun observeOnSelectedColor() {
         val colors = requireActivity().resources.getIntArray(R.array.bookmark_colors)
-        binding!!.palette.setSelectedColor(colors[0])
-        binding!!.palette.setOnColorSelectedListener { color: Int ->
+        binding.palette.setSelectedColor(colors[0])
+        binding.palette.setOnColorSelectedListener { color: Int ->
             for (i in colors.indices) {
                 if (color == colors[i]) {
                     colorIndex = i
@@ -62,31 +63,31 @@ class AddBookmarkDialog : DialogFragment(), ItemSelectionListener<Int> {
     fun initializeDialog() {
         dialog = Dialog(requireActivity())
         dialog!!.window!!.requestFeature(Window.FEATURE_NO_TITLE)
-        dialog!!.setContentView(binding!!.root)
+        dialog!!.setContentView(binding.root)
         dialog!!.window?.setBackgroundDrawableResource(android.R.color.transparent)
         adapter = BookmarkTypeAdapter(bookmarkTypes, requireActivity(), this)
-        binding!!.bookmarkTypesRv.layoutManager = LinearLayoutManager(activity)
-        binding!!.bookmarkTypesRv.adapter = adapter
+        binding.bookmarkTypesRv.layoutManager = LinearLayoutManager(activity)
+        binding.bookmarkTypesRv.adapter = adapter
         selectedType = 1
         attachListeners()
     }
 
     private fun attachListeners() {
-        binding!!.addCustomGroup.setOnClickListener { onAddCustomBookmark() }
-        binding!!.btnShow.setOnClickListener { onShowFilterList() }
-        binding!!.btnBack.setOnClickListener { onBackDialog() }
+        binding.addCustomGroup.setOnClickListener { onAddCustomBookmark() }
+        binding.btnShow.setOnClickListener { onShowFilterList() }
+        binding.btnBack.setOnClickListener { onBackDialog() }
     }
 
     private fun onAddCustomBookmark() {
-        binding!!.addCustomCheckIv.visibility = View.VISIBLE
-        binding!!.customBookmarkGroup.visibility = View.VISIBLE
+        binding.addCustomCheckIv.visibility = View.VISIBLE
+        binding.customBookmarkGroup.visibility = View.VISIBLE
         adapter!!.hideCheck()
         isAddCustom = true
     }
 
     private fun onShowFilterList() {
         if (isAddCustom) {
-            if (binding!!.bookmarkTitleEt.text.toString().isEmpty()) {
+            if (binding.bookmarkTitleEt.text.toString().isEmpty()) {
                 Toast.makeText(
                     activity,
                     getString(R.string.enter_bookmark_title),
@@ -94,7 +95,7 @@ class AddBookmarkDialog : DialogFragment(), ItemSelectionListener<Int> {
                 ).show()
             } else {
                 viewModel.addCustomBookmark(
-                    binding!!.bookmarkTitleEt.text.toString(), colorIndex
+                    binding.bookmarkTitleEt.text.toString(), colorIndex
                 )
                 dismiss()
             }
@@ -111,11 +112,11 @@ class AddBookmarkDialog : DialogFragment(), ItemSelectionListener<Int> {
     override fun onSelectItem(type: Int) {
         selectedType = type
         isAddCustom = false
-        binding!!.addCustomCheckIv.visibility = View.GONE
+        binding.addCustomCheckIv.visibility = View.GONE
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
-        binding = null
+        _binding = null
     }
 }

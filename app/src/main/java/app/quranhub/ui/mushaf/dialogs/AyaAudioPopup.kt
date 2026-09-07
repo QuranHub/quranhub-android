@@ -13,7 +13,8 @@ import app.quranhub.util.LocaleUtils.appLanguage
 class AyaAudioPopup(private val context: Context, private val listener: AyaAudioListener) {
 
     private var popupWindow: PopupWindow? = null
-    private var binding: AyaAudioViewBinding? = null
+    private var _binding: AyaAudioViewBinding? = null
+    private val binding get() = _binding!!
 
     init {
         setWindowView()
@@ -21,9 +22,9 @@ class AyaAudioPopup(private val context: Context, private val listener: AyaAudio
 
     private fun setWindowView() {
         val inflater = context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
-        binding = AyaAudioViewBinding.inflate(inflater)
+        _binding = AyaAudioViewBinding.inflate(inflater)
         popupWindow = PopupWindow(
-            binding!!.root,
+            binding.root,
             ViewGroup.LayoutParams.WRAP_CONTENT,
             ViewGroup.LayoutParams.WRAP_CONTENT,
             false
@@ -36,8 +37,8 @@ class AyaAudioPopup(private val context: Context, private val listener: AyaAudio
 
     private fun setViewDirections() {
         if (appLanguage == "ar") {
-            binding!!.prevAyaIv.setImageResource(R.drawable.player_fast_forward_white_ic)
-            binding!!.nextAyaIv.setImageResource(R.drawable.player_fast_rewind_white_ic)
+            binding.prevAyaIv.setImageResource(R.drawable.player_fast_forward_white_ic)
+            binding.nextAyaIv.setImageResource(R.drawable.player_fast_rewind_white_ic)
         }
     }
 
@@ -53,13 +54,13 @@ class AyaAudioPopup(private val context: Context, private val listener: AyaAudio
     }
 
     private fun attachListeners() {
-        binding!!.playIv.setOnClickListener { onPlayAudio() }
-        binding!!.recordIv.setOnClickListener { onClickRecord() }
-        binding!!.nextAyaIv.setOnClickListener { playNextAya() }
-        binding!!.prevAyaIv.setOnClickListener { playPrevAya() }
-        binding!!.repeatIv.setOnClickListener { onClickRepeat() }
-        binding!!.reciterIv.setOnClickListener { onClickReciter() }
-        binding!!.stopIv.setOnClickListener { onClickStop() }
+        binding.playIv.setOnClickListener { onPlayAudio() }
+        binding.recordIv.setOnClickListener { onClickRecord() }
+        binding.nextAyaIv.setOnClickListener { playNextAya() }
+        binding.prevAyaIv.setOnClickListener { playPrevAya() }
+        binding.repeatIv.setOnClickListener { onClickRepeat() }
+        binding.reciterIv.setOnClickListener { onClickReciter() }
+        binding.stopIv.setOnClickListener { onClickStop() }
     }
 
     private fun onPlayAudio() {
@@ -98,18 +99,18 @@ class AyaAudioPopup(private val context: Context, private val listener: AyaAudio
 
     fun setRecordState(hasRecorder: Boolean) {
         if (hasRecorder) {
-            binding!!.recordIv.setImageResource(R.drawable.play_record)
+            binding.recordIv.setImageResource(R.drawable.play_record)
         } else {
-            binding!!.recordIv.setImageResource(R.drawable.player_record_white_ic)
+            binding.recordIv.setImageResource(R.drawable.player_record_white_ic)
         }
     }
 
     fun setPlayState() {
-        binding!!.playIv.setImageResource(R.drawable.ic_pause)
+        binding.playIv.setImageResource(R.drawable.ic_pause)
     }
 
     fun setPauseState() {
-        binding!!.playIv.setImageResource(R.drawable.player_play_white_ic)
+        binding.playIv.setImageResource(R.drawable.player_play_white_ic)
     }
 
     interface AyaAudioListener {

@@ -38,7 +38,8 @@ class TranslationsDataFragment : Fragment(), Searchable, TranslationsAdapter.Ite
 
     private var languageCode: String? = null
     private var listener: TranslationSelectionListener? = null
-    private var binding: FragmentTranslationsDataBinding? = null
+    private var _binding: FragmentTranslationsDataBinding? = null
+    private val binding get() = _binding!!
     private var adapter: TranslationsAdapter? = null
 
     private val viewModel: TranslationsViewModel by viewModels {
@@ -71,27 +72,27 @@ class TranslationsDataFragment : Fragment(), Searchable, TranslationsAdapter.Ite
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        binding = FragmentTranslationsDataBinding.inflate(inflater, container, false)
+        _binding = FragmentTranslationsDataBinding.inflate(inflater, container, false)
         initView()
-        return binding!!.root
+        return binding.root
     }
 
     private fun initView() {
         // setup translationsRecyclerView
-        binding!!.rvTranslations.setHasFixedSize(true)
+        binding.rvTranslations.setHasFixedSize(true)
         val layoutManager = LinearLayoutManager(context)
-        binding!!.rvTranslations.layoutManager = layoutManager
+        binding.rvTranslations.layoutManager = layoutManager
         val dividerItemDecoration = DividerItemDecoration(
             requireContext(),
             layoutManager.orientation
         )
-        binding!!.rvTranslations.addItemDecoration(dividerItemDecoration)
+        binding.rvTranslations.addItemDecoration(dividerItemDecoration)
         adapter = TranslationsAdapter(
             ArrayList<DisplayableTranslation>(),
             getQuranTranslationBook(requireContext()),
             this
         )
-        binding!!.rvTranslations.adapter = adapter
+        binding.rvTranslations.adapter = adapter
         observeViewModel()
     }
 
@@ -100,7 +101,7 @@ class TranslationsDataFragment : Fragment(), Searchable, TranslationsAdapter.Ite
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     viewModel.uiState.collect { state ->
-                        binding!!.progressTranslation.visibility =
+                        binding.progressTranslation.visibility =
                             if (state.loading) View.VISIBLE else View.GONE
                         adapter!!.setTranslations(state.translations.toMutableList())
                     }

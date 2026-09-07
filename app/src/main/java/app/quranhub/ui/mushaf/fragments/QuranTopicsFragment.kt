@@ -28,7 +28,8 @@ import kotlinx.coroutines.launch
 
 class QuranTopicsFragment : Fragment(), ItemSelectionListener<TopicCategory> {
 
-    private var binding: FragmentQuranTopicsBinding? = null
+    private var _binding: FragmentQuranTopicsBinding? = null
+    private val binding get() = _binding!!
 
     private var adapter: SubjectsAdapter? = null
     private lateinit var viewModel: SubjectsViewModel
@@ -46,13 +47,13 @@ class QuranTopicsFragment : Fragment(), ItemSelectionListener<TopicCategory> {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        binding = FragmentQuranTopicsBinding.inflate(inflater, container, false)
-        return binding!!.root
+        _binding = FragmentQuranTopicsBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        InsetsUtils.padTopForStatusBar(binding!!.toolbarLayout)
+        InsetsUtils.padTopForStatusBar(binding.toolbarLayout)
         intiRecycler()
         bindViewModel()
         attachListeners()
@@ -60,11 +61,11 @@ class QuranTopicsFragment : Fragment(), ItemSelectionListener<TopicCategory> {
 
     private fun attachListeners() {
         observeOnInputSearch()
-        binding!!.hamburgerIv.setOnClickListener { onNavHamburgerClick() }
+        binding.hamburgerIv.setOnClickListener { onNavHamburgerClick() }
     }
 
     private fun observeOnInputSearch() {
-        binding!!.etSearch.addTextChangedListener(object : TextWatcher {
+        binding.etSearch.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
                 filter(s.toString())
@@ -77,7 +78,7 @@ class QuranTopicsFragment : Fragment(), ItemSelectionListener<TopicCategory> {
     private fun filter(inputQuery: String) {
         if (inputQuery.isEmpty()) {
             adapter = SubjectsAdapter(topicModels, this)
-            binding!!.topicsRv.adapter = adapter
+            binding.topicsRv.adapter = adapter
         } else {
             val filteredList: MutableList<TopicModel?> = ArrayList()
             for (row in topicModels!!) {
@@ -91,7 +92,7 @@ class QuranTopicsFragment : Fragment(), ItemSelectionListener<TopicCategory> {
                 }
             }
             adapter = SubjectsAdapter(filteredList, this)
-            binding!!.topicsRv.adapter = adapter
+            binding.topicsRv.adapter = adapter
         }
     }
 
@@ -105,12 +106,12 @@ class QuranTopicsFragment : Fragment(), ItemSelectionListener<TopicCategory> {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
-                    binding!!.progreesBar.visibility =
+                    binding.progreesBar.visibility =
                         if (state.loading) View.VISIBLE else View.GONE
                     state.subjects?.let { topicModels ->
                         this@QuranTopicsFragment.topicModels = topicModels
                         adapter = SubjectsAdapter(topicModels, this@QuranTopicsFragment)
-                        binding!!.topicsRv.adapter = adapter
+                        binding.topicsRv.adapter = adapter
                     }
                 }
             }
@@ -119,7 +120,7 @@ class QuranTopicsFragment : Fragment(), ItemSelectionListener<TopicCategory> {
 
     private fun intiRecycler() {
         topicModels = ArrayList()
-        binding!!.topicsRv.layoutManager = LinearLayoutManager(activity)
+        binding.topicsRv.layoutManager = LinearLayoutManager(activity)
     }
 
     override fun onSelectItem(category: TopicCategory) {

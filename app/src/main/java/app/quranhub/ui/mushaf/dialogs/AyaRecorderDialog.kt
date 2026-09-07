@@ -19,7 +19,8 @@ class AyaRecorderDialog : DialogFragment() {
     private var listener: StopRecordingListener? = null
     private var ayaId = 0
     private lateinit var voiceRecorderViewModel: VoiceRecorderViewModel
-    private var binding: DialogAyaRecorderBinding? = null
+    private var _binding: DialogAyaRecorderBinding? = null
+    private val binding get() = _binding!!
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -27,7 +28,7 @@ class AyaRecorderDialog : DialogFragment() {
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        binding = DialogAyaRecorderBinding.inflate(layoutInflater)
+        _binding = DialogAyaRecorderBinding.inflate(layoutInflater)
         readArgs()
         initializeDialog()
         initReorder(savedInstanceState == null)
@@ -47,7 +48,7 @@ class AyaRecorderDialog : DialogFragment() {
         super.onSaveInstanceState(outState)
         outState.putLong(
             "chronometer_time",
-            binding!!.recorderChronometer.base - SystemClock.elapsedRealtime()
+            binding.recorderChronometer.base - SystemClock.elapsedRealtime()
         )
     }
 
@@ -73,34 +74,34 @@ class AyaRecorderDialog : DialogFragment() {
         dialog!!.setCanceledOnTouchOutside(false)
         val layoutParams = dialog!!.window!!.attributes
         layoutParams.gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
-        dialog!!.setContentView(binding!!.root)
+        dialog!!.setContentView(binding.root)
         dialog!!.window?.setBackgroundDrawableResource(R.color.transparent_color)
         attachListeners()
     }
 
     private fun startTimer(base: Long) {
-        binding!!.recorderChronometer.base = base
-        binding!!.recorderChronometer.start()
+        binding.recorderChronometer.base = base
+        binding.recorderChronometer.start()
     }
 
     private fun attachListeners() {
-        binding!!.stopRecordingView.setOnClickListener { v: View? -> onStopRecording() }
+        binding.stopRecordingView.setOnClickListener { v: View? -> onStopRecording() }
     }
 
     private fun onStopRecording() {
         voiceRecorderViewModel.releaseRecorder()
-        binding!!.recorderChronometer.stop()
+        binding.recorderChronometer.stop()
         listener!!.onStopRecording(voiceRecorderViewModel.outputRecorderPath)
         dismiss()
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
-        binding!!.recorderChronometer.stop()
+        binding.recorderChronometer.stop()
         if (!requireActivity().isChangingConfigurations) {
             voiceRecorderViewModel.releaseRecorder()
         }
-        binding = null
+        _binding = null
     }
 
     interface StopRecordingListener {

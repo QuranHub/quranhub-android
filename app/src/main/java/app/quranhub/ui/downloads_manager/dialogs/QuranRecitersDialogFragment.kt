@@ -42,7 +42,8 @@ class QuranRecitersDialogFragment : DialogFragment(), OptionsListAdapter.ItemCli
 
     private var recitationId = 0
     private var selectedReciterId: String? = null
-    private var binding: DialogQuranRecitersBinding? = null
+    private var _binding: DialogQuranRecitersBinding? = null
+    private val binding get() = _binding!!
     private var adapter: OptionsListAdapter? = null
     private var reciterSelectionListener: ReciterSelectionListener? = null
 
@@ -89,17 +90,17 @@ class QuranRecitersDialogFragment : DialogFragment(), OptionsListAdapter.ItemCli
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        binding = DialogQuranRecitersBinding.inflate(inflater, container, false)
+        _binding = DialogQuranRecitersBinding.inflate(inflater, container, false)
         initDialogView()
-        return binding!!.root
+        return binding.root
     }
 
     private fun initDialogView() {
-        binding!!.tvMsgDownloadedRecitersOnly.visibility = View.GONE
-        binding!!.tvMsgInternetConnectionFailed.visibility = View.GONE
-        binding!!.btnSelect.isEnabled = false
-        binding!!.btnSelect.setOnClickListener { onSelectClick() }
-        binding!!.btnBack.setOnClickListener { onBackClick() }
+        binding.tvMsgDownloadedRecitersOnly.visibility = View.GONE
+        binding.tvMsgInternetConnectionFailed.visibility = View.GONE
+        binding.btnSelect.isEnabled = false
+        binding.btnSelect.setOnClickListener { onSelectClick() }
+        binding.btnBack.setOnClickListener { onBackClick() }
         observeViewModel()
     }
 
@@ -133,7 +134,7 @@ class QuranRecitersDialogFragment : DialogFragment(), OptionsListAdapter.ItemCli
     }
 
     private fun render(state: ReciterPickerViewModel.ReciterPickerUiState) {
-        val binding = binding ?: return
+        val binding = _binding ?: return
 
         binding.progressBar.visibility = if (state.loading) View.VISIBLE else View.GONE
         binding.tvMsgDownloadedRecitersOnly.visibility =
@@ -178,7 +179,7 @@ class QuranRecitersDialogFragment : DialogFragment(), OptionsListAdapter.ItemCli
 
     override fun onDestroyView() {
         super.onDestroyView()
-        binding = null
+        _binding = null
         adapter = null
     }
 

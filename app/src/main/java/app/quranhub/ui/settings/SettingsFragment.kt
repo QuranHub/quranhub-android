@@ -31,7 +31,8 @@ import kotlinx.coroutines.launch
 class SettingsFragment : Fragment(), OptionsListDialogFragment.ItemSelectionListener,
     ReciterSelectionListener {
 
-    private var binding: FragmentSettingsBinding? = null
+    private var _binding: FragmentSettingsBinding? = null
+    private val binding get() = _binding!!
 
     private val viewModel: SettingsViewModel by viewModels {
         viewModelFactory {
@@ -45,8 +46,8 @@ class SettingsFragment : Fragment(), OptionsListDialogFragment.ItemSelectionList
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        binding = FragmentSettingsBinding.inflate(inflater, container, false)
-        return binding!!.root
+        _binding = FragmentSettingsBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -57,7 +58,7 @@ class SettingsFragment : Fragment(), OptionsListDialogFragment.ItemSelectionList
 
     override fun onDestroyView() {
         super.onDestroyView()
-        binding = null
+        _binding = null
     }
 
     private fun observeViewModel() {
@@ -92,7 +93,7 @@ class SettingsFragment : Fragment(), OptionsListDialogFragment.ItemSelectionList
     }
 
     private fun setSettingsViewsListeners() {
-        binding!!.settingAppLang.setOnClickListener {
+        binding.settingAppLang.setOnClickListener {
             val appLangDialog = OptionsListDialogFragment.getInstance(
                 getString(R.string.app_lang_setting_dialog_title),
                 Constants.Language.NAMES_STR_IDS,
@@ -103,7 +104,7 @@ class SettingsFragment : Fragment(), OptionsListDialogFragment.ItemSelectionList
                 requireActivity().supportFragmentManager, "AppLangDialog"
             )
         }
-        binding!!.settingTranslationLang.setOnClickListener {
+        binding.settingTranslationLang.setOnClickListener {
             val translationLangDialog = OptionsListDialogFragment.getInstance(
                 getString(R.string.translation_lang_setting_dialog_title),
                 Constants.Language.NAMES_STR_IDS,
@@ -114,19 +115,19 @@ class SettingsFragment : Fragment(), OptionsListDialogFragment.ItemSelectionList
                 requireActivity().supportFragmentManager, "TransLangDialog"
             )
         }
-        binding!!.settingScreenReadingBacklight.setOnCheckedChangeListener(object :
+        binding.settingScreenReadingBacklight.setOnCheckedChangeListener(object :
             MushafSettingSwitch.OnCheckedChangeListener {
             override fun onCheckedChanged(settingSwitch: MushafSettingSwitch, checked: Boolean) {
                 viewModel.onScreenReadingBacklightChanged(checked)
             }
         })
-        binding!!.settingLastReadPage.setOnCheckedChangeListener(object :
+        binding.settingLastReadPage.setOnCheckedChangeListener(object :
             MushafSettingSwitch.OnCheckedChangeListener {
             override fun onCheckedChanged(settingSwitch: MushafSettingSwitch, checked: Boolean) {
                 viewModel.onLastReadPageChanged(checked)
             }
         })
-        binding!!.settingRecitation.setOnClickListener {
+        binding.settingRecitation.setOnClickListener {
             val recitationDialog = OptionsListDialogFragment.getInstance(
                 resources.getString(R.string.recitation_setting_dialog_title),
                 Constants.Recitation.NAMES_STR_IDS,
@@ -136,24 +137,24 @@ class SettingsFragment : Fragment(), OptionsListDialogFragment.ItemSelectionList
             )
             recitationDialog.show(requireActivity().supportFragmentManager, "RecitationDialog")
         }
-        binding!!.settingQuranReader.setOnClickListener {
+        binding.settingQuranReader.setOnClickListener {
             val recitationId = viewModel.uiState.value.recitationIndex
             val reciterId = viewModel.uiState.value.reciterId
             val recitersDialog = QuranRecitersDialogFragment
                 .newInstance(recitationId, reciterId)
             recitersDialog.show(childFragmentManager, "QuranRecitersDialogFragment")
         }
-        binding!!.settingAudioDownloadManager.setOnClickListener {
+        binding.settingAudioDownloadManager.setOnClickListener {
             startActivity(Intent(requireContext(), DownloadsManagerActivity::class.java))
         }
-        binding!!.settingAboutAppVersion.setOnClickListener {
+        binding.settingAboutAppVersion.setOnClickListener {
             // TODO aboutAppVersionSetting click listener
             Toast.makeText(
                 requireContext(), "v" + BuildConfig.VERSION_NAME,
                 Toast.LENGTH_SHORT
             ).show()
         }
-        binding!!.settingShareApp.setOnClickListener {
+        binding.settingShareApp.setOnClickListener {
             // TODO shareAppSetting click listener
             val shareIntent = Intent(Intent.ACTION_SEND)
             shareIntent.type = "text/plain"

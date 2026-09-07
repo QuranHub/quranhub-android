@@ -37,7 +37,8 @@ abstract class BaseDownloadsFragment : Fragment(), Editable, DownloadsAdapter.It
     /** The screen's ViewModel, providing the [DisplayableDownload] listing state. */
     protected abstract val viewModel: BaseDownloadsViewModel
 
-    private var binding: FragmentDownloadsBinding? = null
+    private var _binding: FragmentDownloadsBinding? = null
+    private val binding get() = _binding!!
 
     protected var downloadsAdapter: DownloadsAdapter? = null
         private set
@@ -72,8 +73,8 @@ abstract class BaseDownloadsFragment : Fragment(), Editable, DownloadsAdapter.It
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        binding = FragmentDownloadsBinding.inflate(inflater, container, false)
-        return binding!!.root
+        _binding = FragmentDownloadsBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -88,25 +89,25 @@ abstract class BaseDownloadsFragment : Fragment(), Editable, DownloadsAdapter.It
 
     private fun setupDescription() {
         if (description != null) {
-            binding!!.tvDescription.text = description
+            binding.tvDescription.text = description
         } else {
-            binding!!.tvDescription.visibility = View.GONE
+            binding.tvDescription.visibility = View.GONE
         }
     }
 
     private fun setupDownloadsRecyclerView() {
-        binding!!.rvDownloads.setHasFixedSize(true)
+        binding.rvDownloads.setHasFixedSize(true)
         val layoutManager = LinearLayoutManager(requireContext())
-        binding!!.rvDownloads.layoutManager = layoutManager
+        binding.rvDownloads.layoutManager = layoutManager
 
         // add dividers between RecyclerView items
         val dividerItemDecoration = DividerItemDecoration(
             requireContext(),
             layoutManager.orientation
         )
-        binding!!.rvDownloads.addItemDecoration(dividerItemDecoration)
+        binding.rvDownloads.addItemDecoration(dividerItemDecoration)
         downloadsAdapter = DownloadsAdapter(emptyList<DisplayableDownload>(), this, editable)
-        binding!!.rvDownloads.adapter = downloadsAdapter
+        binding.rvDownloads.adapter = downloadsAdapter
     }
 
     private fun observeViewModel() {
@@ -114,7 +115,7 @@ abstract class BaseDownloadsFragment : Fragment(), Editable, DownloadsAdapter.It
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     viewModel.uiState.collect { state ->
-                        binding!!.progressBar.visibility =
+                        binding.progressBar.visibility =
                             if (state.loading) View.VISIBLE else View.GONE
                         if (!state.loading) {
                             Log.d(TAG, "Provided displayableDownloads=${state.downloads}")
@@ -141,7 +142,7 @@ abstract class BaseDownloadsFragment : Fragment(), Editable, DownloadsAdapter.It
 
     override fun onDestroyView() {
         super.onDestroyView()
-        binding = null
+        _binding = null
     }
 
     override var isEditable: Boolean

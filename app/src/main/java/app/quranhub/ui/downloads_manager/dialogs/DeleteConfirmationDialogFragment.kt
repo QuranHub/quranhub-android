@@ -23,7 +23,8 @@ class DeleteConfirmationDialogFragment : DialogFragment() {
     private var title: String? = null
     private var description: String? = null
     private var deletePosition = 0
-    private var binding: DialogConfirmationBinding? = null
+    private var _binding: DialogConfirmationBinding? = null
+    private val binding get() = _binding!!
     private var callbacks: DeleteConfirmationCallbacks? = null
 
     override fun onAttach(context: Context) {
@@ -61,14 +62,14 @@ class DeleteConfirmationDialogFragment : DialogFragment() {
         savedInstanceState: Bundle?
     ): View {
         // Inflate the layout for this fragment
-        binding = DialogConfirmationBinding.inflate(inflater, container, false)
+        _binding = DialogConfirmationBinding.inflate(inflater, container, false)
         initDialogView()
-        return binding!!.root
+        return binding.root
     }
 
     private fun initDialogView() {
-        binding!!.tvTitle.text = title
-        binding!!.tvDescription.text = description
+        binding.tvTitle.text = title
+        binding.tvDescription.text = description
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -77,8 +78,8 @@ class DeleteConfirmationDialogFragment : DialogFragment() {
     }
 
     private fun attachListeners() {
-        binding!!.btnCancel.setOnClickListener { onCancelBtnClick() }
-        binding!!.btnConfirm.setOnClickListener { onConfirmBtnClick() }
+        binding.btnCancel.setOnClickListener { onCancelBtnClick() }
+        binding.btnConfirm.setOnClickListener { onConfirmBtnClick() }
     }
 
     override fun onResume() {
@@ -88,7 +89,7 @@ class DeleteConfirmationDialogFragment : DialogFragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        binding = null
+        _binding = null
     }
 
     private fun onCancelBtnClick() {

@@ -32,7 +32,8 @@ class AyaRepeatDialogFragment : DialogFragment() {
     private var toSuraNumber = 0
     private var fromUser = false
 
-    private var binding: DialogAyaRepeatBinding? = null
+    private var _binding: DialogAyaRepeatBinding? = null
+    private val binding get() = _binding!!
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -40,7 +41,7 @@ class AyaRepeatDialogFragment : DialogFragment() {
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        binding = DialogAyaRepeatBinding.inflate(layoutInflater)
+        _binding = DialogAyaRepeatBinding.inflate(layoutInflater)
         initializeDialog()
         readArgs()
         setFromToViews()
@@ -50,27 +51,27 @@ class AyaRepeatDialogFragment : DialogFragment() {
     }
 
     private fun observeOnInputEditText() {
-        binding!!.fromEt.addTextChangedListener(object : TextWatcher {
+        binding.fromEt.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
                 if (s.toString().isEmpty()) return
                 if (s.toString().toInt() > maxFromAyaNumber) {
-                    binding!!.fromEt.error = getString(R.string.enter_valid_aya)
+                    binding.fromEt.error = getString(R.string.enter_valid_aya)
                 } else {
-                    binding!!.fromEt.error = null
+                    binding.fromEt.error = null
                 }
             }
 
             override fun afterTextChanged(s: Editable) {}
         })
-        binding!!.toEt.addTextChangedListener(object : TextWatcher {
+        binding.toEt.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
                 if (s.toString().isEmpty()) return
                 if (s.toString().toInt() > maxToAyaNumber) {
-                    binding!!.toEt.error = getString(R.string.enter_valid_aya)
+                    binding.toEt.error = getString(R.string.enter_valid_aya)
                 } else {
-                    binding!!.toEt.error = null
+                    binding.toEt.error = null
                 }
             }
 
@@ -79,7 +80,7 @@ class AyaRepeatDialogFragment : DialogFragment() {
     }
 
     private fun observeSpinnerSelection() {
-        binding!!.fromAyaSp.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+        binding.fromAyaSp.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(
                 parent: AdapterView<*>?,
                 view: View?,
@@ -93,14 +94,14 @@ class AyaRepeatDialogFragment : DialogFragment() {
                 }
                 maxFromAyaNumber = suraVersesNumberArrayList!![position].ayas
                 if (fromUser) {
-                    binding!!.fromEt.setText("1")
+                    binding.fromEt.setText("1")
                     fromSuraNumber = position
                 }
             }
 
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
-        binding!!.toAyaSp.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+        binding.toAyaSp.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(
                 parent: AdapterView<*>?,
                 view: View?,
@@ -112,7 +113,7 @@ class AyaRepeatDialogFragment : DialogFragment() {
                 )
                 maxToAyaNumber = suraVersesNumberArrayList!![position].ayas
                 if (fromUser) {
-                    binding!!.toEt.setText(maxToAyaNumber.toString())
+                    binding.toEt.setText(maxToAyaNumber.toString())
                     toSuraNumber = position
                 } else {
                     fromUser = true
@@ -130,23 +131,23 @@ class AyaRepeatDialogFragment : DialogFragment() {
             android.R.layout.simple_spinner_item, surahs
         )
         dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        binding!!.fromAyaSp.adapter = dataAdapter
-        binding!!.toAyaSp.adapter = dataAdapter
+        binding.fromAyaSp.adapter = dataAdapter
+        binding.toAyaSp.adapter = dataAdapter
         if (selectedAya != null) {
             lastAyaInPage = suraVersesNumberArrayList!![selectedAya!!.sura - 1].ayas
-            binding!!.fromEt.setText(selectedAya!!.suraAya.toString())
-            binding!!.toEt.setText(lastAyaInPage.toString())
-            binding!!.fromAyaSp.setSelection(selectedAya!!.sura - 1)
-            binding!!.toAyaSp.setSelection(selectedAya!!.sura - 1)
+            binding.fromEt.setText(selectedAya!!.suraAya.toString())
+            binding.toEt.setText(lastAyaInPage.toString())
+            binding.fromAyaSp.setSelection(selectedAya!!.sura - 1)
+            binding.toAyaSp.setSelection(selectedAya!!.sura - 1)
             maxFromAyaNumber = suraVersesNumberArrayList!![selectedAya!!.sura - 1].ayas
             maxToAyaNumber = maxFromAyaNumber
             fromSuraNumber = selectedAya!!.sura - 1
             toSuraNumber = fromSuraNumber
         } else {
-            binding!!.fromEt.setText("1")
-            binding!!.toEt.setText("1")
-            binding!!.fromAyaSp.setSelection(0)
-            binding!!.toAyaSp.setSelection(0)
+            binding.fromEt.setText("1")
+            binding.toEt.setText("1")
+            binding.fromAyaSp.setSelection(0)
+            binding.toAyaSp.setSelection(0)
             maxFromAyaNumber = suraVersesNumberArrayList!![0].ayas
             maxToAyaNumber = maxFromAyaNumber
             fromSuraNumber = 0
@@ -166,7 +167,7 @@ class AyaRepeatDialogFragment : DialogFragment() {
     fun initializeDialog() {
         dialog = Dialog(requireActivity())
         dialog!!.window!!.requestFeature(Window.FEATURE_NO_TITLE)
-        dialog!!.setContentView(binding!!.root)
+        dialog!!.setContentView(binding.root)
         dialog!!.window?.setBackgroundDrawableResource(android.R.color.transparent)
         dialog!!.setCanceledOnTouchOutside(false)
         attachListeners()
@@ -180,14 +181,14 @@ class AyaRepeatDialogFragment : DialogFragment() {
     }
 
     private fun attachListeners() {
-        binding!!.repeatBtn.setOnClickListener { v: View? -> onClickRepeat() }
-        binding!!.btnBack.setOnClickListener { v: View? -> onClickBack() }
+        binding.repeatBtn.setOnClickListener { v: View? -> onClickRepeat() }
+        binding.btnBack.setOnClickListener { v: View? -> onClickBack() }
     }
 
     private fun onClickRepeat() {
-        if (binding!!.fromEt.error != null || binding!!.toEt.error != null) {
+        if (binding.fromEt.error != null || binding.toEt.error != null) {
             Toast.makeText(activity, getString(R.string.enter_valid_aya), Toast.LENGTH_LONG).show()
-        } else if (binding!!.fromEt.text.toString().isEmpty() || binding!!.toEt.text.toString()
+        } else if (binding.fromEt.text.toString().isEmpty() || binding.toEt.text.toString()
                 .isEmpty()
         ) {
             Toast.makeText(activity, getString(R.string.enter_repeat_interval), Toast.LENGTH_LONG)
@@ -195,32 +196,32 @@ class AyaRepeatDialogFragment : DialogFragment() {
         } else if (fromSuraNumber > toSuraNumber) {
             Toast.makeText(activity, getString(R.string.invalid_repeat_interval), Toast.LENGTH_LONG)
                 .show()
-        } else if (fromSuraNumber == toSuraNumber && binding!!.fromEt.text.toString()
-                .toInt() > binding!!.toEt.text.toString().toInt()
+        } else if (fromSuraNumber == toSuraNumber && binding.fromEt.text.toString()
+                .toInt() > binding.toEt.text.toString().toInt()
         ) {
             Toast.makeText(activity, getString(R.string.enter_valid_aya), Toast.LENGTH_LONG).show()
         } else {
             val repeatModel = RepeatModel()
             repeatModel.fromSura = fromSuraNumber + 1
             repeatModel.fromAyaId =
-                getFromAyaId(binding!!.fromEt.text.toString().toInt(), fromSuraNumber + 1)
-            repeatModel.fromAya = binding!!.fromEt.text.toString().toInt()
+                getFromAyaId(binding.fromEt.text.toString().toInt(), fromSuraNumber + 1)
+            repeatModel.fromAya = binding.fromEt.text.toString().toInt()
             repeatModel.toSura = toSuraNumber + 1
             repeatModel.toAyaId =
-                getToAyaId(binding!!.toEt.text.toString().toInt(), toSuraNumber + 1)
-            repeatModel.toAya = binding!!.toEt.text.toString().toInt()
+                getToAyaId(binding.toEt.text.toString().toInt(), toSuraNumber + 1)
+            repeatModel.toAya = binding.toEt.text.toString().toInt()
             repeatModel.groupRepeatNum =
-                if (binding!!.ayaGroupNumberEt.text.toString().trim { it <= ' ' }
-                        .isEmpty() || binding!!.ayaGroupNumberEt.text.toString()
+                if (binding.ayaGroupNumberEt.text.toString().trim { it <= ' ' }
+                        .isEmpty() || binding.ayaGroupNumberEt.text.toString()
                         .toInt() == 0
-                ) 1 else binding!!.ayaGroupNumberEt.text.toString().trim { it <= ' ' }.toInt()
+                ) 1 else binding.ayaGroupNumberEt.text.toString().trim { it <= ' ' }.toInt()
             repeatModel.ayaRepeatNum =
-                if (binding!!.ayaGroupNumberEt.text.toString().trim { it <= ' ' }
-                        .isEmpty() || binding!!.ayaGroupNumberEt.text.toString()
+                if (binding.ayaGroupNumberEt.text.toString().trim { it <= ' ' }
+                        .isEmpty() || binding.ayaGroupNumberEt.text.toString()
                         .toInt() == 0
-                ) 1 else binding!!.ayaGroupNumberEt.text.toString().trim { it <= ' ' }.toInt()
-            repeatModel.delayTime = if (binding!!.delayEt.text.toString().trim { it <= ' ' }
-                    .isEmpty()) 1 else binding!!.delayEt.text.toString().trim { it <= ' ' }.toInt()
+                ) 1 else binding.ayaGroupNumberEt.text.toString().trim { it <= ' ' }.toInt()
+            repeatModel.delayTime = if (binding.delayEt.text.toString().trim { it <= ' ' }
+                    .isEmpty()) 1 else binding.delayEt.text.toString().trim { it <= ' ' }.toInt()
             listener!!.onAyasRepeat(repeatModel)
             dismiss()
         }
@@ -248,7 +249,7 @@ class AyaRepeatDialogFragment : DialogFragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        binding = null
+        _binding = null
     }
 
     interface AyaRepeatListener {

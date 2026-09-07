@@ -35,7 +35,8 @@ class OptionsListFragment : Fragment(), OptionsListAdapter.ItemClickListener, Se
     private var listener: OnOptionClickListener? = null
     private var optionsListAdapter: OptionsListAdapter? = null
     private var searchText: String? = ""
-    private var binding: FragmentOptionsListBinding? = null
+    private var _binding: FragmentOptionsListBinding? = null
+    private val binding get() = _binding!!
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,9 +53,9 @@ class OptionsListFragment : Fragment(), OptionsListAdapter.ItemClickListener, Se
         savedInstanceState: Bundle?
     ): View {
         // Inflate the layout for this fragment
-        binding = FragmentOptionsListBinding.inflate(inflater, container, false)
+        _binding = FragmentOptionsListBinding.inflate(inflater, container, false)
         initOptionsRecyclerView()
-        return binding!!.root
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -110,19 +111,19 @@ class OptionsListFragment : Fragment(), OptionsListAdapter.ItemClickListener, Se
     }
 
     private fun initOptionsRecyclerView() {
-        binding!!.rvOptions.setHasFixedSize(true)
-        binding!!.rvOptions.layoutManager = LinearLayoutManager(
+        binding.rvOptions.setHasFixedSize(true)
+        binding.rvOptions.layoutManager = LinearLayoutManager(
             context, RecyclerView.VERTICAL, false
         )
         val dividerItemDecoration = DividerItemDecoration(
             context,
             DividerItemDecoration.VERTICAL
         )
-        binding!!.rvOptions.addItemDecoration(dividerItemDecoration)
+        binding.rvOptions.addItemDecoration(dividerItemDecoration)
         optionsListAdapter = OptionsListAdapter(
             options, optionsThumbnailsDrawableIds, currentSelectedOptionIndex(), this
         )
-        binding!!.rvOptions.adapter = optionsListAdapter
+        binding.rvOptions.adapter = optionsListAdapter
     }
 
     /**
@@ -157,7 +158,7 @@ class OptionsListFragment : Fragment(), OptionsListAdapter.ItemClickListener, Se
 
     override fun onDestroyView() {
         super.onDestroyView()
-        binding = null
+        _binding = null
     }
 
     override fun onDetach() {

@@ -34,7 +34,8 @@ import kotlinx.coroutines.launch
 class SearchFragment : Fragment(), ItemSelectionListener<SearchModel>,
     OptionDialog.ItemClickListener, OptionsListDialogFragment.ItemSelectionListener {
 
-    private var binding: FragmentSearchBinding? = null
+    private var _binding: FragmentSearchBinding? = null
+    private val binding get() = _binding!!
 
     private var isOriented = false
     private var isFilterOptionsShow = false
@@ -68,13 +69,13 @@ class SearchFragment : Fragment(), ItemSelectionListener<SearchModel>,
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        binding = FragmentSearchBinding.inflate(inflater, container, false)
-        return binding!!.root
+        _binding = FragmentSearchBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        InsetsUtils.padTopForStatusBar(binding!!.toolbarLayout)
+        InsetsUtils.padTopForStatusBar(binding.toolbarLayout)
         if (savedInstanceState != null) {
             isOriented = true
             getPrevState(savedInstanceState)
@@ -87,41 +88,41 @@ class SearchFragment : Fragment(), ItemSelectionListener<SearchModel>,
 
     private fun attachListeners() {
         observeOnInputSearch()
-        binding!!.ibClearSearch.setOnClickListener { clearSearch() }
-        binding!!.hamburgerIv.setOnClickListener { onNavHamburgerClick() }
-        binding!!.filterContainer.partContainer.setOnClickListener { onClickPartFilter() }
-        binding!!.filterContainer.suraContainer.setOnClickListener { onClickSuraFilter() }
-        binding!!.filterContainer.hezbContainer.setOnClickListener { onClickHezbFilter() }
-        binding!!.filterContainer.rob3Container.setOnClickListener { onClickQuarterFilter() }
-        binding!!.moreIv.setOnClickListener { onGetMoreFilterOptions() }
+        binding.ibClearSearch.setOnClickListener { clearSearch() }
+        binding.hamburgerIv.setOnClickListener { onNavHamburgerClick() }
+        binding.filterContainer.partContainer.setOnClickListener { onClickPartFilter() }
+        binding.filterContainer.suraContainer.setOnClickListener { onClickSuraFilter() }
+        binding.filterContainer.hezbContainer.setOnClickListener { onClickHezbFilter() }
+        binding.filterContainer.rob3Container.setOnClickListener { onClickQuarterFilter() }
+        binding.moreIv.setOnClickListener { onGetMoreFilterOptions() }
     }
 
     private fun setViewsFromBackStack() {
         if (isFilterOptionsShow) {
-            binding!!.filterContainer.root.visibility = View.VISIBLE
+            binding.filterContainer.root.visibility = View.VISIBLE
         }
         if (selectedSura != 0) {
-            binding!!.filterContainer.suraTv.text =
+            binding.filterContainer.suraTv.text =
                 requireActivity().resources.getStringArray(R.array.sura_name)[selectedSura - 1]
         }
         if (selectedJuz != 0) {
-            binding!!.filterContainer.chapterTv.text = refactorOptionText(
+            binding.filterContainer.chapterTv.text = refactorOptionText(
                 requireActivity().resources.getStringArray(R.array.agza2_name)[selectedJuz - 1]
             )
         }
         if (selectedHezb != 0) {
-            binding!!.filterContainer.hezbTv.text =
+            binding.filterContainer.hezbTv.text =
                 requireActivity().resources.getStringArray(R.array.hezb_name)[selectedHezb - 1]
         }
         if (selectedQuarter != 0) {
-            binding!!.filterContainer.rob3Tv.text =
+            binding.filterContainer.rob3Tv.text =
                 requireActivity().resources.getStringArray(R.array.quarter_name)[selectedQuarter - 1]
         }
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
-        binding = null
+        _binding = null
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -134,7 +135,7 @@ class SearchFragment : Fragment(), ItemSelectionListener<SearchModel>,
     }
 
     private fun observeOnInputSearch() {
-        binding!!.etSearch.addTextChangedListener(object : TextWatcher {
+        binding.etSearch.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
                 inputSearch = s.toString()
@@ -146,9 +147,9 @@ class SearchFragment : Fragment(), ItemSelectionListener<SearchModel>,
 
                 // show or hide clear button in search field
                 if (TextUtils.isEmpty(s)) {
-                    binding!!.ibClearSearch.visibility = View.INVISIBLE
+                    binding.ibClearSearch.visibility = View.INVISIBLE
                 } else {
-                    binding!!.ibClearSearch.visibility = View.VISIBLE
+                    binding.ibClearSearch.visibility = View.VISIBLE
                 }
             }
 
@@ -157,7 +158,7 @@ class SearchFragment : Fragment(), ItemSelectionListener<SearchModel>,
     }
 
     private fun clearSearch() {
-        binding!!.etSearch.text.clear()
+        binding.etSearch.text.clear()
     }
 
     private fun searchAya() {
@@ -191,8 +192,8 @@ class SearchFragment : Fragment(), ItemSelectionListener<SearchModel>,
 
     private fun clearResult() {
         searchAdapter!!.setSearchModels(ArrayList())
-        binding!!.noresultTv.visibility = View.VISIBLE
-        binding!!.progreesBar.visibility = View.GONE
+        binding.noresultTv.visibility = View.VISIBLE
+        binding.progreesBar.visibility = View.GONE
     }
 
     private fun initViewModel() {
@@ -201,13 +202,13 @@ class SearchFragment : Fragment(), ItemSelectionListener<SearchModel>,
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     searchViewModel.uiState.collect { state ->
-                        binding!!.progreesBar.visibility =
+                        binding.progreesBar.visibility =
                             if (state.loading) View.VISIBLE else View.GONE
                         val results = state.results ?: return@collect
                         if (results.isEmpty()) {
                             clearResult()
                         } else if (inputSearch!!.trim().isNotEmpty()) {
-                            binding!!.noresultTv.visibility = View.GONE
+                            binding.noresultTv.visibility = View.GONE
                             searchAdapter!!.setSearchModels(results)
                         }
                     }
@@ -224,7 +225,7 @@ class SearchFragment : Fragment(), ItemSelectionListener<SearchModel>,
                     searchViewModel.events.collect { event ->
                         when (event) {
                             is SearchViewModel.SearchEvent.ShowError -> {
-                                binding!!.progreesBar.visibility = View.GONE
+                                binding.progreesBar.visibility = View.GONE
                                 Toast.makeText(activity, event.message, Toast.LENGTH_LONG).show()
                             }
                         }
@@ -244,8 +245,8 @@ class SearchFragment : Fragment(), ItemSelectionListener<SearchModel>,
 
     private fun initRecycler() {
         searchAdapter = SearchAdapter(requireContext(), this)
-        binding!!.searchRv.layoutManager = LinearLayoutManager(activity)
-        binding!!.searchRv.adapter = searchAdapter
+        binding.searchRv.layoutManager = LinearLayoutManager(activity)
+        binding.searchRv.adapter = searchAdapter
     }
 
     private fun getPrevState(savedInstanceState: Bundle) {
@@ -255,20 +256,20 @@ class SearchFragment : Fragment(), ItemSelectionListener<SearchModel>,
         selectedHezb = savedInstanceState.getInt("input_hezb")
         selectedQuarter = savedInstanceState.getInt("input_qurater")
         if (selectedJuz != 0) {
-            binding!!.filterContainer.chapterTv.text = refactorOptionText(
+            binding.filterContainer.chapterTv.text = refactorOptionText(
                 requireActivity().resources.getStringArray(R.array.agza2_name)[selectedJuz - 1]
             )
         }
         if (selectedSura != 0) {
-            binding!!.filterContainer.suraTv.text =
+            binding.filterContainer.suraTv.text =
                 requireActivity().resources.getStringArray(R.array.sura_name)[selectedSura - 1]
         }
         if (selectedHezb != 0) {
-            binding!!.filterContainer.hezbTv.text =
+            binding.filterContainer.hezbTv.text =
                 requireActivity().resources.getStringArray(R.array.hezb_name)[selectedHezb - 1]
         }
         if (selectedQuarter != 0) {
-            binding!!.filterContainer.rob3Tv.text =
+            binding.filterContainer.rob3Tv.text =
                 requireActivity().resources.getStringArray(R.array.quarter_name)[selectedQuarter - 1]
         }
     }
@@ -356,25 +357,25 @@ class SearchFragment : Fragment(), ItemSelectionListener<SearchModel>,
     }
 
     override fun onSelectItem(item: SearchModel) {
-        dismissKeyboard(requireContext(), binding!!.etSearch)
+        dismissKeyboard(requireContext(), binding.etSearch)
         quranNavigationCallbacks!!.gotoQuranPageAya(item.page, item.id, true)
     }
 
     override fun onItemClick(optionName: String?, optionIndex: Int, requestCode: Int) {
         if (requestCode == SURA_FILTER_CODE) {
-            binding!!.filterContainer.suraTv.text = optionName
+            binding.filterContainer.suraTv.text = optionName
             selectedSura = if (selectedJuz == 0) optionIndex else juzSuraNumbers!![optionIndex]
             searchAya()
         } else if (requestCode == JUZ_FILTER_CODE) {
-            binding!!.filterContainer.chapterTv.text =
+            binding.filterContainer.chapterTv.text =
                 if (optionIndex == 0) optionName else refactorOptionText(optionName)
-            binding!!.filterContainer.suraTv.text = getString(R.string.sura)
+            binding.filterContainer.suraTv.text = getString(R.string.sura)
             selectedSura = 0
             if (optionIndex == 0) {
                 selectedQuarter = 0
                 selectedHezb = 0
-                binding!!.filterContainer.rob3Tv.text = getString(R.string.rub3)
-                binding!!.filterContainer.hezbTv.text = getString(R.string.hizb)
+                binding.filterContainer.rob3Tv.text = getString(R.string.rub3)
+                binding.filterContainer.hezbTv.text = getString(R.string.hizb)
             } else {
                 searchViewModel.getChapterSuras(optionIndex)
             }
@@ -392,24 +393,24 @@ class SearchFragment : Fragment(), ItemSelectionListener<SearchModel>,
     override fun onItemSelected(requestCode: Int, itemIndex: Int) {
         if (requestCode == HEZB_FILTER_CODE) {
             selectedHezb = itemIndex
-            binding!!.filterContainer.hezbTv.text = hezbOptions!![itemIndex]
+            binding.filterContainer.hezbTv.text = hezbOptions!![itemIndex]
             if (selectedHezb == 0) {
                 selectedQuarter = 0
-                binding!!.filterContainer.rob3Tv.text = getString(R.string.rub3)
+                binding.filterContainer.rob3Tv.text = getString(R.string.rub3)
             }
             searchAya()
         } else if (requestCode == QUARTER_FILTER_CODE) {
             selectedQuarter = itemIndex
-            binding!!.filterContainer.rob3Tv.text = quarterOptions!![itemIndex]
+            binding.filterContainer.rob3Tv.text = quarterOptions!![itemIndex]
             searchAya()
         }
     }
 
     private fun onGetMoreFilterOptions() {
         if (isFilterOptionsShow) {
-            binding!!.filterContainer.root.visibility = View.GONE
+            binding.filterContainer.root.visibility = View.GONE
         } else {
-            binding!!.filterContainer.root.visibility = View.VISIBLE
+            binding.filterContainer.root.visibility = View.VISIBLE
         }
         isFilterOptionsShow = !isFilterOptionsShow
     }

@@ -17,7 +17,8 @@ import app.quranhub.util.InsetsUtils
 
 class MushafTopBarFragment : Fragment() {
 
-    private var binding: FragmentMushafTopBarBinding? = null
+    private var _binding: FragmentMushafTopBarBinding? = null
+    private val binding get() = _binding!!
 
     private var toolbarActionsListener: ToolbarActionsListener? = null
     private var pageDirLiveData: MutableLiveData<Int>? = null
@@ -38,18 +39,18 @@ class MushafTopBarFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        binding = FragmentMushafTopBarBinding.inflate(inflater, container, false)
-        return binding!!.root
+        _binding = FragmentMushafTopBarBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        InsetsUtils.padTopForStatusBar(binding!!.llRoot)
+        InsetsUtils.padTopForStatusBar(binding.llRoot)
         initViews()
         pageDirLiveData!!.observe(viewLifecycleOwner) { pageDir: Int? ->
             when (pageDir) {
-                PAGE_DIR_RIGHT -> binding!!.ivPageDir.setImageResource(R.drawable.ic_quran_page_right)
-                PAGE_DIR_LEFT -> binding!!.ivPageDir.setImageResource(R.drawable.ic_quran_page_left)
+                PAGE_DIR_RIGHT -> binding.ivPageDir.setImageResource(R.drawable.ic_quran_page_right)
+                PAGE_DIR_LEFT -> binding.ivPageDir.setImageResource(R.drawable.ic_quran_page_left)
                 else -> throw IllegalArgumentException("Invalid page dir")
             }
         }
@@ -57,22 +58,22 @@ class MushafTopBarFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        binding = null
+        _binding = null
     }
 
     @SuppressLint("ClickableViewAccessibility")
     private fun initViews() {
-        TooltipCompat.setTooltipText(binding!!.ivPageDir, getText(R.string.tooltip_page_dir))
-        binding!!.llRoot.setOnTouchListener { v: View?, event: MotionEvent? ->
+        TooltipCompat.setTooltipText(binding.ivPageDir, getText(R.string.tooltip_page_dir))
+        binding.llRoot.setOnTouchListener { v: View?, event: MotionEvent? ->
             true // To prevent event bubbling to the views below this one
         }
         attachListeners()
     }
 
     private fun attachListeners() {
-        binding!!.ivMenu.setOnClickListener { onNavHamburgerClick() }
-        binding!!.btnPageGuz2.setOnClickListener { onGuz2Click() }
-        binding!!.btnPageSura.setOnClickListener { onSuraClick() }
+        binding.ivMenu.setOnClickListener { onNavHamburgerClick() }
+        binding.btnPageGuz2.setOnClickListener { onGuz2Click() }
+        binding.btnPageSura.setOnClickListener { onSuraClick() }
     }
 
     private fun onNavHamburgerClick() {
@@ -88,11 +89,11 @@ class MushafTopBarFragment : Fragment() {
     }
 
     fun setSuraText(suraName: String?) {
-        binding!!.btnPageSura.text = suraName
+        binding.btnPageSura.text = suraName
     }
 
     fun setGuz2Text(currentGuz2: String?) {
-        binding!!.btnPageGuz2.text = currentGuz2
+        binding.btnPageGuz2.text = currentGuz2
     }
 
     /**
