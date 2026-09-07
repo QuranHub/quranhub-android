@@ -20,7 +20,8 @@ class NotesFilterDialog : DialogFragment(), OptionClickListener {
     private var selectedOption = 0
     private var adapter: FilterAdapter? = null
     private var options: Array<String> = arrayOf()
-    private var binding: DialogNoteFilterBinding? = null
+    private var _binding: DialogNoteFilterBinding? = null
+    private val binding get() = _binding!!
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -28,7 +29,7 @@ class NotesFilterDialog : DialogFragment(), OptionClickListener {
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        binding = DialogNoteFilterBinding.inflate(layoutInflater)
+        _binding = DialogNoteFilterBinding.inflate(layoutInflater)
         initializeDialog()
         setFilterOptions()
         initViews()
@@ -45,15 +46,15 @@ class NotesFilterDialog : DialogFragment(), OptionClickListener {
     }
 
     private fun initViews() {
-        binding!!.noteFilterRv.layoutManager = LinearLayoutManager(activity)
+        binding.noteFilterRv.layoutManager = LinearLayoutManager(activity)
         adapter = FilterAdapter(Arrays.asList(*options), options[selectedOption], this, 0)
-        binding!!.noteFilterRv.adapter = adapter
+        binding.noteFilterRv.adapter = adapter
     }
 
     fun initializeDialog() {
         dialog = Dialog(requireActivity())
         dialog!!.window!!.requestFeature(Window.FEATURE_NO_TITLE)
-        dialog!!.setContentView(binding!!.root)
+        dialog!!.setContentView(binding.root)
         dialog!!.window?.setBackgroundDrawableResource(android.R.color.transparent)
         arguments?.let {
             selectedOption = it.getInt(NOTE_TYPE_ARGS)
@@ -79,7 +80,7 @@ class NotesFilterDialog : DialogFragment(), OptionClickListener {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        binding = null
+        _binding = null
     }
 
     companion object {

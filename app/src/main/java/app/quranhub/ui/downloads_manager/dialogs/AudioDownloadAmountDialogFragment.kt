@@ -39,7 +39,8 @@ class AudioDownloadAmountDialogFragment : DialogFragment() {
     private var recitationId = 0
     private var reciterId: String? = null
     private var suraId = 0 // [optional, defaults to 1]
-    private var binding: DialogAudioDownloadAmountBinding? = null
+    private var _binding: DialogAudioDownloadAmountBinding? = null
+    private val binding get() = _binding!!
     private var listener: AudioDownloadListener? = null
 
     private val viewModel: AudioDownloadAmountViewModel by viewModels {
@@ -87,9 +88,9 @@ class AudioDownloadAmountDialogFragment : DialogFragment() {
         savedInstanceState: Bundle?
     ): View {
         // Inflate the layout for this fragment
-        binding = DialogAudioDownloadAmountBinding.inflate(inflater, container, false)
+        _binding = DialogAudioDownloadAmountBinding.inflate(inflater, container, false)
         initDialogView()
-        return binding!!.root
+        return binding.root
     }
 
     private fun initDialogView() {
@@ -100,9 +101,9 @@ class AudioDownloadAmountDialogFragment : DialogFragment() {
             android.R.layout.simple_spinner_item, suras
         )
         dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        binding!!.spinnerSuras.adapter = dataAdapter
-        binding!!.spinnerSuras.setSelection(viewModel.uiState.value.suraId - 1)
-        binding!!.spinnerSuras.onItemSelectedListener =
+        binding.spinnerSuras.adapter = dataAdapter
+        binding.spinnerSuras.setSelection(viewModel.uiState.value.suraId - 1)
+        binding.spinnerSuras.onItemSelectedListener =
             object : AdapterView.OnItemSelectedListener {
                 override fun onItemSelected(
                     parent: AdapterView<*>?,
@@ -134,18 +135,18 @@ class AudioDownloadAmountDialogFragment : DialogFragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        binding = null
+        _binding = null
     }
 
     private fun attachListeners() {
-        binding!!.clOptionSuraDownload.setOnClickListener { v: View? ->
+        binding.clOptionSuraDownload.setOnClickListener { v: View? ->
             viewModel.onSuraDownloadOptionSelected()
         }
-        binding!!.clOptionDownloadAll.setOnClickListener { v: View? ->
+        binding.clOptionDownloadAll.setOnClickListener { v: View? ->
             viewModel.onDownloadAllOptionSelected()
         }
-        binding!!.btnCancel.setOnClickListener { v: View? -> onCancelButtonClick() }
-        binding!!.btnDownload.setOnClickListener { v: View? -> onDownloadButtonClick() }
+        binding.btnCancel.setOnClickListener { v: View? -> onCancelButtonClick() }
+        binding.btnDownload.setOnClickListener { v: View? -> onDownloadButtonClick() }
     }
 
     private fun observeViewModel() {
@@ -153,9 +154,9 @@ class AudioDownloadAmountDialogFragment : DialogFragment() {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     viewModel.uiState.collect { state ->
-                        binding?.ivCheckOptionSuraDownload?.visibility =
+                        _binding?.ivCheckOptionSuraDownload?.visibility =
                             if (state.selectedOption == OPTION_DOWNLOAD_SURA) View.VISIBLE else View.INVISIBLE
-                        binding?.ivCheckOptionDownloadAll?.visibility =
+                        _binding?.ivCheckOptionDownloadAll?.visibility =
                             if (state.selectedOption == OPTION_DOWNLOAD_ALL) View.VISIBLE else View.INVISIBLE
                     }
                 }

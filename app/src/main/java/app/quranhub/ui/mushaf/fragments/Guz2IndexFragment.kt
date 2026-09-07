@@ -26,7 +26,8 @@ import kotlinx.coroutines.launch
  */
 class Guz2IndexFragment : Fragment(), IndexItemClickListener {
 
-    private var binding: FragmentGuz2IndexBinding? = null
+    private var _binding: FragmentGuz2IndexBinding? = null
+    private val binding get() = _binding!!
 
     private var quranNavigationCallbacks: QuranNavigationCallbacks? = null
     private lateinit var guz2IndexViewModel: Guz2IndexViewModel
@@ -55,8 +56,8 @@ class Guz2IndexFragment : Fragment(), IndexItemClickListener {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        binding = FragmentGuz2IndexBinding.inflate(inflater, container, false)
-        return binding!!.root
+        _binding = FragmentGuz2IndexBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -71,7 +72,7 @@ class Guz2IndexFragment : Fragment(), IndexItemClickListener {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     guz2IndexViewModel.uiState.collect { uiState ->
-                        binding!!.guz2IndexProgressBar.visibility =
+                        binding.guz2IndexProgressBar.visibility =
                             if (uiState.loading) View.VISIBLE else View.GONE
                         adapter!!.setHizbQuarterDataModels(uiState.items.toMutableList())
                     }
@@ -86,16 +87,16 @@ class Guz2IndexFragment : Fragment(), IndexItemClickListener {
     }
 
     private fun initGuz2IndexRecyclerView() {
-        binding!!.rvGuz2Index.setHasFixedSize(true)
+        binding.rvGuz2Index.setHasFixedSize(true)
         val layoutManager = LinearLayoutManager(context)
-        binding!!.rvGuz2Index.layoutManager = layoutManager
+        binding.rvGuz2Index.layoutManager = layoutManager
         val dividerItemDecoration = DividerItemDecoration(
             requireContext(),
             layoutManager.orientation
         )
-        binding!!.rvGuz2Index.addItemDecoration(dividerItemDecoration)
+        binding.rvGuz2Index.addItemDecoration(dividerItemDecoration)
         adapter = Guz2IndexAdapter(null, filterGuz2, this)
-        binding!!.rvGuz2Index.adapter = adapter
+        binding.rvGuz2Index.adapter = adapter
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -105,7 +106,7 @@ class Guz2IndexFragment : Fragment(), IndexItemClickListener {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        binding = null
+        _binding = null
     }
 
     override fun onIndexItemClick(model: HizbQuarterDataModel?, clickedItemIndex: Int) {

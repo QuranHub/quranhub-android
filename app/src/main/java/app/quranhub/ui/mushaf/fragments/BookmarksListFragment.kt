@@ -35,7 +35,8 @@ class BookmarksListFragment : Fragment(), BookmarkActionListener, BookmarkFilter
     private lateinit var bookMarksViewModel: BookmarksViewModel
     private var quranNavigationCallbacks: QuranNavigationCallbacks? = null
     private var editedBookmarkId = -1
-    private var binding: FragmentBookmarksListBinding? = null
+    private var _binding: FragmentBookmarksListBinding? = null
+    private val binding get() = _binding!!
     private var adapter: BookmarksAdapter? = null
     private var lastAppliedSearchQuery: String? = null
     private var lastAppliedFilterType = -1
@@ -57,9 +58,9 @@ class BookmarksListFragment : Fragment(), BookmarkActionListener, BookmarkFilter
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        binding = FragmentBookmarksListBinding.inflate(inflater, container, false)
+        _binding = FragmentBookmarksListBinding.inflate(inflater, container, false)
         setupBookmarksRecyclerView()
-        return binding!!.root
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -76,14 +77,14 @@ class BookmarksListFragment : Fragment(), BookmarkActionListener, BookmarkFilter
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     bookMarksViewModel.uiState.collect { uiState ->
-                        binding!!.loadingIndicator.visibility =
+                        binding.loadingIndicator.visibility =
                             if (uiState.loading) View.VISIBLE else View.GONE
                         val bookmarksChanged = uiState.bookmarks != lastRenderedBookmarks
                         renderBookmarks(uiState.bookmarks)
                         lastRenderedBookmarks = uiState.bookmarks
                         applyListState(uiState.searchQuery, uiState.filterType, bookmarksChanged)
                         applyEditMode(uiState.isEditMode)
-                        binding!!.tvEmptyListMsg.visibility =
+                        binding.tvEmptyListMsg.visibility =
                             if (uiState.bookmarks.isEmpty()) View.VISIBLE else View.GONE
                     }
                 }
@@ -117,18 +118,18 @@ class BookmarksListFragment : Fragment(), BookmarkActionListener, BookmarkFilter
     }
 
     private fun setupBookmarksRecyclerView() {
-        binding!!.bookmarksRv.addItemDecoration(
+        binding.bookmarksRv.addItemDecoration(
             DividerItemDecoration(context, DividerItemDecoration.VERTICAL)
         )
-        binding!!.bookmarksRv.setHasFixedSize(true)
-        binding!!.bookmarksRv.layoutManager = LinearLayoutManager(context)
+        binding.bookmarksRv.setHasFixedSize(true)
+        binding.bookmarksRv.layoutManager = LinearLayoutManager(context)
         adapter = BookmarksAdapter(requireContext(), this)
-        binding!!.bookmarksRv.adapter = adapter
+        binding.bookmarksRv.adapter = adapter
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
-        binding = null
+        _binding = null
     }
 
     override fun onSelectItem(displayableBookmark: DisplayableBookmark?) {

@@ -28,7 +28,8 @@ import kotlinx.coroutines.launch
 
 class TopicAyasFragment : Fragment(), ItemSelectionListener<SearchModel> {
 
-    private var binding: FragmentTopicAyasBinding? = null
+    private var _binding: FragmentTopicAyasBinding? = null
+    private val binding get() = _binding!!
 
     private var inputSearch: String? = ""
     private var quranNavigationCallbacks: QuranNavigationCallbacks? = null
@@ -51,13 +52,13 @@ class TopicAyasFragment : Fragment(), ItemSelectionListener<SearchModel> {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        binding = FragmentTopicAyasBinding.inflate(inflater, container, false)
-        return binding!!.root
+        _binding = FragmentTopicAyasBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        InsetsUtils.padTopForStatusBar(binding!!.toolbarLayout)
+        InsetsUtils.padTopForStatusBar(binding.toolbarLayout)
         setViews()
         getPrevState(savedInstanceState)
         intiRecycler()
@@ -67,7 +68,7 @@ class TopicAyasFragment : Fragment(), ItemSelectionListener<SearchModel> {
 
     private fun attachListeners() {
         observeOnInputSearch()
-        binding!!.hamburgerIv.setOnClickListener { onNavHamburgerClick() }
+        binding.hamburgerIv.setOnClickListener { onNavHamburgerClick() }
     }
 
     private fun getPrevState(savedInstanceState: Bundle?) {
@@ -83,11 +84,11 @@ class TopicAyasFragment : Fragment(), ItemSelectionListener<SearchModel> {
 
     private fun setViews() {
         category = requireArguments().getParcelable(CATEGORY_ARGS)
-        binding!!.topicTv.text = category?.categoryName
+        binding.topicTv.text = category?.categoryName
     }
 
     private fun observeOnInputSearch() {
-        binding!!.etSearch.addTextChangedListener(object : TextWatcher {
+        binding.etSearch.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
                 inputSearch = s.toString()
@@ -104,7 +105,7 @@ class TopicAyasFragment : Fragment(), ItemSelectionListener<SearchModel> {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
-                    binding!!.progreesBar.visibility =
+                    binding.progreesBar.visibility =
                         if (state.loading) View.VISIBLE else View.GONE
                     state.ayahs?.let { ayahs ->
                         adapter!!.setSearchModels(ayahs)
@@ -118,13 +119,13 @@ class TopicAyasFragment : Fragment(), ItemSelectionListener<SearchModel> {
     }
 
     private fun intiRecycler() {
-        binding!!.topicsRv.layoutManager = LinearLayoutManager(activity)
+        binding.topicsRv.layoutManager = LinearLayoutManager(activity)
         adapter = SearchAdapter(requireActivity(), this)
-        binding!!.topicsRv.adapter = adapter
+        binding.topicsRv.adapter = adapter
     }
 
     override fun onSelectItem(item: SearchModel) {
-        dismissKeyboard(requireContext(), binding!!.etSearch)
+        dismissKeyboard(requireContext(), binding.etSearch)
         quranNavigationCallbacks!!.gotoQuranPageAya(item.page, item.id, false)
     }
 

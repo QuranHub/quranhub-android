@@ -32,7 +32,8 @@ class AyaRecorderPlayerDialog : DialogFragment(), MediaPlayerCallback {
     private var userIsSeeking = false
     private var firstPlay = true
     private var userSelectedPosition = 0
-    private var binding: DialogPlayAyaRecorderBinding? = null
+    private var _binding: DialogPlayAyaRecorderBinding? = null
+    private val binding get() = _binding!!
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -40,7 +41,7 @@ class AyaRecorderPlayerDialog : DialogFragment(), MediaPlayerCallback {
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        binding = DialogPlayAyaRecorderBinding.inflate(layoutInflater)
+        _binding = DialogPlayAyaRecorderBinding.inflate(layoutInflater)
         initializeDialog()
         setRecordingFile()
         initSoundMedia()
@@ -59,7 +60,7 @@ class AyaRecorderPlayerDialog : DialogFragment(), MediaPlayerCallback {
 
     private fun restorePlayingState() {
         if (isPlaying) {
-            binding!!.playIv.setImageResource(R.drawable.ic_pause)
+            binding.playIv.setImageResource(R.drawable.ic_pause)
             recorderMediaHelper!!.play()
         }
     }
@@ -75,7 +76,7 @@ class AyaRecorderPlayerDialog : DialogFragment(), MediaPlayerCallback {
         dialog!!.window!!.requestFeature(Window.FEATURE_NO_TITLE)
         val layoutParams = dialog!!.window!!.attributes
         layoutParams.gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
-        dialog!!.setContentView(binding!!.root)
+        dialog!!.setContentView(binding.root)
         dialog!!.window?.setBackgroundDrawableResource(android.R.color.transparent)
         arguments?.let {
             ayaId = it.getInt(ARG_AYA_ID)
@@ -101,7 +102,7 @@ class AyaRecorderPlayerDialog : DialogFragment(), MediaPlayerCallback {
     }
 
     private fun listenToSeekbarChanges() {
-        binding!!.recorderProgress.setOnSeekBarChangeListener(object : OnSeekBarChangeListener {
+        binding.recorderProgress.setOnSeekBarChangeListener(object : OnSeekBarChangeListener {
             override fun onStartTrackingTouch(seekBar: SeekBar) {
                 userIsSeeking = true
             }
@@ -128,8 +129,8 @@ class AyaRecorderPlayerDialog : DialogFragment(), MediaPlayerCallback {
     }
 
     private fun attachListeners() {
-        binding!!.removeRecordIv.setOnClickListener { v: View? -> onRemoveRecorder() }
-        binding!!.playIv.setOnClickListener { v: View? -> onPlayRecorder() }
+        binding.removeRecordIv.setOnClickListener { v: View? -> onRemoveRecorder() }
+        binding.playIv.setOnClickListener { v: View? -> onPlayRecorder() }
     }
 
     private fun onRemoveRecorder() {
@@ -140,44 +141,44 @@ class AyaRecorderPlayerDialog : DialogFragment(), MediaPlayerCallback {
 
     fun onPlayRecorder() {
         if (isPlaying) {
-            binding!!.playIv.setImageResource(R.drawable.player_play_white_ic)
+            binding.playIv.setImageResource(R.drawable.player_play_white_ic)
             recorderMediaHelper!!.pause()
         } else {
-            binding!!.playIv.setImageResource(R.drawable.ic_pause)
+            binding.playIv.setImageResource(R.drawable.ic_pause)
             recorderMediaHelper!!.play()
             recorderMediaHelper!!.startUpdatingAudioTime()
             if (firstPlay) {
                 firstPlay = false
-                binding!!.recorderTimeTv.text = "0:00"
+                binding.recorderTimeTv.text = "0:00"
             }
         }
         isPlaying = !isPlaying
     }
 
     override fun onGetMaxDuration(duration: Int) {
-        binding!!.recorderProgress.max = duration
+        binding.recorderProgress.max = duration
     }
 
     override fun onPositionChanged(position: Int) {
         if (!userIsSeeking) {
             if (Build.VERSION.SDK_INT >= 24) {
-                binding!!.recorderProgress.setProgress(position, true)
+                binding.recorderProgress.setProgress(position, true)
             } else {
-                binding!!.recorderProgress.progress = position
+                binding.recorderProgress.progress = position
             }
         }
     }
 
     override fun onUpdatedTime(time: String?) {
-        binding!!.recorderTimeTv.text = time
+        binding.recorderTimeTv.text = time
     }
 
     override fun onStateChanged(state: PlaybackState) {
         if (state == PlaybackState.COMPLETED) {
-            binding!!.recorderProgress.progress = 0
+            binding.recorderProgress.progress = 0
             isPlaying = false
             firstPlay = true
-            binding!!.playIv.setImageResource(R.drawable.player_play_white_ic)
+            binding.playIv.setImageResource(R.drawable.player_play_white_ic)
         }
     }
 
@@ -186,7 +187,7 @@ class AyaRecorderPlayerDialog : DialogFragment(), MediaPlayerCallback {
         if (!requireActivity().isChangingConfigurations && recorderMediaHelper != null) {
             recorderMediaHelper!!.release()
         }
-        binding = null
+        _binding = null
     }
 
     interface AyaRecorderPlayerListener {

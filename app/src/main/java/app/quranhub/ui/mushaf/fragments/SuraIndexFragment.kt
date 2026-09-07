@@ -22,7 +22,8 @@ import kotlinx.coroutines.launch
 
 class SuraIndexFragment : Fragment(), ItemSelectionListener<Int> {
 
-    private var binding: FragmentSuraIndexBinding? = null
+    private var _binding: FragmentSuraIndexBinding? = null
+    private val binding get() = _binding!!
 
     private var quranNavigationCallbacks: QuranNavigationCallbacks? = null
     private lateinit var viewModel: SuraIndexViewModel
@@ -49,8 +50,8 @@ class SuraIndexFragment : Fragment(), ItemSelectionListener<Int> {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        binding = FragmentSuraIndexBinding.inflate(inflater, container, false)
-        return binding!!.root
+        _binding = FragmentSuraIndexBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -62,11 +63,11 @@ class SuraIndexFragment : Fragment(), ItemSelectionListener<Int> {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     viewModel.uiState.collect { uiState ->
-                        binding!!.suraIndexProgressBar.visibility =
+                        binding.suraIndexProgressBar.visibility =
                             if (uiState.loading) View.VISIBLE else View.GONE
                         if (!uiState.loading) {
                             adapter!!.setSuraIndexModelList(uiState.items)
-                            binding!!.suraIndexRv.recycledViewPool.clear()
+                            binding.suraIndexRv.recycledViewPool.clear()
                             currentQuery?.let { adapter!!.filter(it) }
                         }
                     }
@@ -75,7 +76,7 @@ class SuraIndexFragment : Fragment(), ItemSelectionListener<Int> {
                     viewModel.suraIndexEvents.collect { event ->
                         when (event) {
                             is SuraIndexViewModel.SuraIndexEvent.NavigateToSura -> {
-                                dismissKeyboard(requireActivity(), binding!!.root)
+                                dismissKeyboard(requireActivity(), binding.root)
                                 quranNavigationCallbacks!!.gotoQuranPage(event.page)
                             }
 
@@ -89,9 +90,9 @@ class SuraIndexFragment : Fragment(), ItemSelectionListener<Int> {
     }
 
     private fun initRecycler() {
-        binding!!.suraIndexRv.layoutManager = LinearLayoutManager(activity)
+        binding.suraIndexRv.layoutManager = LinearLayoutManager(activity)
         adapter = SuraIndexAdapter(requireActivity(), this)
-        binding!!.suraIndexRv.adapter = adapter
+        binding.suraIndexRv.adapter = adapter
     }
 
     fun onSearchSura(inputQuery: String?) {
@@ -105,6 +106,6 @@ class SuraIndexFragment : Fragment(), ItemSelectionListener<Int> {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        binding = null
+        _binding = null
     }
 }

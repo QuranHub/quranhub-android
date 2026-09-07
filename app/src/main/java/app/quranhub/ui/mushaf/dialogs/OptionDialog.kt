@@ -24,7 +24,8 @@ class OptionDialog : DialogFragment(), OptionClickListener {
     private var options: ArrayList<String>? = null
     private var requestCode = 0
 
-    private var binding: DialogSuraListBinding? = null
+    private var _binding: DialogSuraListBinding? = null
+    private val binding get() = _binding!!
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -32,7 +33,7 @@ class OptionDialog : DialogFragment(), OptionClickListener {
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        binding = DialogSuraListBinding.inflate(layoutInflater)
+        _binding = DialogSuraListBinding.inflate(layoutInflater)
         initializeDialog()
         setRecyclerList()
         observeOnInputSearch()
@@ -49,7 +50,7 @@ class OptionDialog : DialogFragment(), OptionClickListener {
     }
 
     private fun observeOnInputSearch() {
-        binding!!.etSearch.addTextChangedListener(object : TextWatcher {
+        binding.etSearch.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
                 adapter!!.filter(s.toString())
@@ -61,26 +62,26 @@ class OptionDialog : DialogFragment(), OptionClickListener {
 
     private fun setRecyclerList() {
         adapter = FilterAdapter(options!!, suraName!!, this, requestCode)
-        binding!!.suraRv.layoutManager = LinearLayoutManager(activity)
-        binding!!.suraRv.addItemDecoration(
+        binding.suraRv.layoutManager = LinearLayoutManager(activity)
+        binding.suraRv.addItemDecoration(
             DividerItemDecoration(
                 requireContext(),
                 DividerItemDecoration.VERTICAL
             )
         )
-        binding!!.suraRv.adapter = adapter
+        binding.suraRv.adapter = adapter
     }
 
     private fun initializeDialog() {
         dialog = Dialog(requireActivity())
         dialog!!.window!!.requestFeature(Window.FEATURE_NO_TITLE)
-        dialog!!.setContentView(binding!!.root)
+        dialog!!.setContentView(binding.root)
         dialog!!.window?.setBackgroundDrawableResource(R.color.transparent_color)
         arguments?.let {
             suraName = it.getString(SURA_NAME_ARGS)
             options = it.getStringArrayList(ALL_ITEMS_ARGS)
             requestCode = it.getInt(CODE_ARGS, 1)
-            binding!!.tvTitle.text = it.getString(HEADER_ARGS)
+            binding.tvTitle.text = it.getString(HEADER_ARGS)
         }
     }
 
@@ -91,7 +92,7 @@ class OptionDialog : DialogFragment(), OptionClickListener {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        binding = null
+        _binding = null
     }
 
     interface ItemClickListener {

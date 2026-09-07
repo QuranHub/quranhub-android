@@ -22,7 +22,8 @@ import kotlinx.coroutines.launch
 
 class MushafBottomBarFragment : Fragment() {
 
-    private var binding: FragmentMushafBottomBarBinding? = null
+    private var _binding: FragmentMushafBottomBarBinding? = null
+    private val binding get() = _binding!!
 
     // Shared host ViewModel: the footer wires directly to the mushaf ViewModel
     private val viewModel: MushafViewModel by viewModels({ requireParentFragment() })
@@ -46,16 +47,16 @@ class MushafBottomBarFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        binding = FragmentMushafBottomBarBinding.inflate(inflater, container, false)
-        return binding!!.root
+        _binding = FragmentMushafBottomBarBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        InsetsUtils.padBottomForNavigationBar(binding!!.llRoot)
+        InsetsUtils.padBottomForNavigationBar(binding.llRoot)
         initViews()
         observeViewModel()
-        binding!!.quranPageTv.text = pageNumText
+        binding.quranPageTv.text = pageNumText
     }
 
     private fun observeViewModel() {
@@ -77,19 +78,19 @@ class MushafBottomBarFragment : Fragment() {
     }
 
     private fun setupZoomButtons() {
-        binding!!.ibZoomOut.isEnabled = QuranPageZoom.canZoomOut(quranPageZoomScaleFactor)
-        binding!!.ibZoomIn.isEnabled = QuranPageZoom.canZoomIn(quranPageZoomScaleFactor)
+        binding.ibZoomOut.isEnabled = QuranPageZoom.canZoomOut(quranPageZoomScaleFactor)
+        binding.ibZoomIn.isEnabled = QuranPageZoom.canZoomIn(quranPageZoomScaleFactor)
     }
 
     @SuppressLint("ClickableViewAccessibility")
     private fun attachListeners() {
-        binding!!.llRoot.setOnTouchListener { _: View?, _: MotionEvent? ->
+        binding.llRoot.setOnTouchListener { _: View?, _: MotionEvent? ->
             true // To prevent event bubbling to the views below this one
         }
-        binding!!.quranSearchIb.setOnClickListener { onQuranSearchClick() }
-        binding!!.quranNightModeIb.setOnClickListener { onQuranNightModeClick() }
-        binding!!.ibZoomIn.setOnClickListener { zoomIn() }
-        binding!!.ibZoomOut.setOnClickListener { zoomOut() }
+        binding.quranSearchIb.setOnClickListener { onQuranSearchClick() }
+        binding.quranNightModeIb.setOnClickListener { onQuranNightModeClick() }
+        binding.ibZoomIn.setOnClickListener { zoomIn() }
+        binding.ibZoomOut.setOnClickListener { zoomOut() }
     }
 
     private fun zoomIn() {
@@ -106,26 +107,26 @@ class MushafBottomBarFragment : Fragment() {
 
     private fun setupButtonsTooltips() {
         TooltipCompat.setTooltipText(
-            binding!!.ibZoomIn,
+            binding.ibZoomIn,
             getString(R.string.tooltip_zoom_in_quran_page)
         )
         TooltipCompat.setTooltipText(
-            binding!!.ibZoomOut,
+            binding.ibZoomOut,
             getString(R.string.tooltip_zoom_out_quran_page)
         )
         TooltipCompat.setTooltipText(
-            binding!!.quranNightModeIb,
+            binding.quranNightModeIb,
             getString(R.string.tooltip_quran_night_mode)
         )
         TooltipCompat.setTooltipText(
-            binding!!.quranSearchIb,
+            binding.quranSearchIb,
             getString(R.string.tooltip_quran_search)
         )
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
-        binding = null
+        _binding = null
     }
 
     private fun onQuranSearchClick() {
@@ -137,14 +138,14 @@ class MushafBottomBarFragment : Fragment() {
     }
 
     private fun setupNightModeButton(nightMode: Boolean) {
-        binding!!.quranNightModeIb.setImageResource(
+        binding.quranNightModeIb.setImageResource(
             if (nightMode) R.drawable.ic_nightmode_on else R.drawable.ic_nightmode_off
         )
     }
 
     fun setCurrentPage(pageNumText: String) {
         this.pageNumText = pageNumText
-        binding?.quranPageTv?.text = pageNumText
+        _binding?.quranPageTv?.text = pageNumText
     }
 
     interface QuranFooterCallbacks {

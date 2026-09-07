@@ -26,7 +26,8 @@ class AyaActionsDialog : DialogFragment() {
     private var yLocation = 0
     private var dialog: Dialog? = null
     private var ayaPropertiesListener: AyaPropertiesListener? = null
-    private var binding: DialogAyaPropertiesBinding? = null
+    private var _binding: DialogAyaPropertiesBinding? = null
+    private val binding get() = _binding!!
 
     // Shares the host page's ViewModel (UI shell over one ViewModel per feature)
     private val viewModel: QuranPageViewModel by lazy {
@@ -52,7 +53,7 @@ class AyaActionsDialog : DialogFragment() {
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        binding = DialogAyaPropertiesBinding.inflate(layoutInflater)
+        _binding = DialogAyaPropertiesBinding.inflate(layoutInflater)
         initializeDialog()
         observeAyaState()
         return dialog!!
@@ -83,7 +84,7 @@ class AyaActionsDialog : DialogFragment() {
         val layoutParams = dialog!!.window!!.attributes
         layoutParams.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
         layoutParams.y = yLocation
-        dialog!!.setContentView(binding!!.root)
+        dialog!!.setContentView(binding.root)
         dialog!!.window?.setBackgroundDrawableResource(android.R.color.transparent)
         attachListeners()
     }
@@ -92,34 +93,34 @@ class AyaActionsDialog : DialogFragment() {
         // handle if set image after orientation change
         when (bookmarkModel.bookmarkTypeId) {
             Constants.BookmarkType.NOTE -> {
-                binding!!.bookmarkIv.setImageResource(R.drawable.bookmark_green_selected)
+                binding.bookmarkIv.setImageResource(R.drawable.bookmark_green_selected)
             }
 
             Constants.BookmarkType.MEMORIZE -> {
-                binding!!.bookmarkIv.setImageResource(R.drawable.bookmark_red_selected)
+                binding.bookmarkIv.setImageResource(R.drawable.bookmark_red_selected)
             }
 
             Constants.BookmarkType.RECITING -> {
-                binding!!.bookmarkIv.setImageResource(R.drawable.bookmark_gold_selected)
+                binding.bookmarkIv.setImageResource(R.drawable.bookmark_gold_selected)
             }
 
             Constants.BookmarkType.FAVORITE -> {
-                binding!!.bookmarkIv.setImageResource(R.drawable.fav_added__gold_ic)
+                binding.bookmarkIv.setImageResource(R.drawable.fav_added__gold_ic)
             }
 
             else -> {    // CUSTOM BOOKMARK
-                binding!!.bookmarkIv.setImageResource(R.drawable.bookmark_green_selected)
-                binding!!.bookmarkIv.setColorFilter(requireActivity().resources.getIntArray(R.array.bookmark_colors)[bookmarkModel.colorIndex])
+                binding.bookmarkIv.setImageResource(R.drawable.bookmark_green_selected)
+                binding.bookmarkIv.setColorFilter(requireActivity().resources.getIntArray(R.array.bookmark_colors)[bookmarkModel.colorIndex])
             }
         }
     }
 
     private fun attachListeners() {
-        binding!!.shareContainer.setOnClickListener { onShareClick() }
-        binding!!.faselContainer.setOnClickListener { onFasilClick() }
-        binding!!.listenContainer.setOnClickListener { onListenClick() }
-        binding!!.tafseerContainer.setOnClickListener { onTafserClick() }
-        binding!!.notesContainer.setOnClickListener { onNotesClick() }
+        binding.shareContainer.setOnClickListener { onShareClick() }
+        binding.faselContainer.setOnClickListener { onFasilClick() }
+        binding.listenContainer.setOnClickListener { onListenClick() }
+        binding.tafseerContainer.setOnClickListener { onTafserClick() }
+        binding.notesContainer.setOnClickListener { onNotesClick() }
     }
 
     private fun onShareClick() {
@@ -148,12 +149,12 @@ class AyaActionsDialog : DialogFragment() {
     }
 
     fun setAyaHasNote() {
-        binding!!.noteIv.setImageResource(R.drawable.notes_gold_sidemenu_ic)
+        binding.noteIv.setImageResource(R.drawable.notes_gold_sidemenu_ic)
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
-        binding = null
+        _binding = null
     }
 
     interface AyaPropertiesListener {

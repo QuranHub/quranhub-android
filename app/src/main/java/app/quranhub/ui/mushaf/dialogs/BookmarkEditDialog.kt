@@ -24,7 +24,8 @@ class BookmarkEditDialog : DialogFragment(), ItemSelectionListener<Int> {
     private var adapter: BookmarkTypeAdapter? = null
     private var bookmarkTypes: List<BookmarkType>? = null
     private var editDialog = false
-    private var binding: DialogBookmarkFilterBinding? = null
+    private var _binding: DialogBookmarkFilterBinding? = null
+    private val binding get() = _binding!!
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -38,7 +39,7 @@ class BookmarkEditDialog : DialogFragment(), ItemSelectionListener<Int> {
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        binding = DialogBookmarkFilterBinding.inflate(layoutInflater)
+        _binding = DialogBookmarkFilterBinding.inflate(layoutInflater)
         readArgs()
         initializeDialog()
         setDialogTypeViews()
@@ -47,9 +48,9 @@ class BookmarkEditDialog : DialogFragment(), ItemSelectionListener<Int> {
 
     private fun setDialogTypeViews() {
         if (editDialog) {
-            binding!!.btnShow.text = getString(R.string.edit)
-            binding!!.allBookmarkCheckbox.visibility = View.GONE
-            binding!!.allBookmark.visibility = View.GONE
+            binding.btnShow.text = getString(R.string.edit)
+            binding.allBookmarkCheckbox.visibility = View.GONE
+            binding.allBookmark.visibility = View.GONE
         }
     }
 
@@ -69,28 +70,28 @@ class BookmarkEditDialog : DialogFragment(), ItemSelectionListener<Int> {
     fun initializeDialog() {
         dialog = Dialog(requireActivity())
         dialog!!.window!!.requestFeature(Window.FEATURE_NO_TITLE)
-        dialog!!.setContentView(binding!!.root)
+        dialog!!.setContentView(binding.root)
         dialog!!.window?.setBackgroundDrawableResource(android.R.color.transparent)
         adapter = BookmarkTypeAdapter(bookmarkTypes, requireContext(), this)
-        binding!!.bookmarkTypesRv.layoutManager = LinearLayoutManager(activity)
-        binding!!.bookmarkTypesRv.adapter = adapter
+        binding.bookmarkTypesRv.layoutManager = LinearLayoutManager(activity)
+        binding.bookmarkTypesRv.adapter = adapter
         if (selectedFilter == 0) {
             adapter!!.hideCheck()
         } else {
-            binding!!.allBookmarkCheckbox.visibility = View.GONE
+            binding.allBookmarkCheckbox.visibility = View.GONE
             adapter!!.setTypeCheck(selectedFilter)
         }
         attachListeners()
     }
 
     private fun attachListeners() {
-        binding!!.allBookmark.setOnClickListener { onSelectAllBookmark() }
-        binding!!.btnShow.setOnClickListener { onShowFilterList() }
-        binding!!.btnBack.setOnClickListener { onBackDialog() }
+        binding.allBookmark.setOnClickListener { onSelectAllBookmark() }
+        binding.btnShow.setOnClickListener { onShowFilterList() }
+        binding.btnBack.setOnClickListener { onBackDialog() }
     }
 
     private fun onSelectAllBookmark() {
-        binding!!.allBookmarkCheckbox.visibility = View.VISIBLE
+        binding.allBookmarkCheckbox.visibility = View.VISIBLE
         adapter!!.hideCheck()
         selectedFilter = ALL_BOOKMARK_FILTER
     }
@@ -105,7 +106,7 @@ class BookmarkEditDialog : DialogFragment(), ItemSelectionListener<Int> {
     }
 
     override fun onSelectItem(bookmarkType: Int) {
-        binding!!.allBookmarkCheckbox.visibility = View.GONE
+        binding.allBookmarkCheckbox.visibility = View.GONE
         selectedFilter = bookmarkType
         bookmarkColorIndex = bookmarkTypes!![selectedFilter - 1].colorIndex
     }

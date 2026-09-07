@@ -26,7 +26,8 @@ class OptionsListDialogFragment : DialogFragment(), OptionsListAdapter.ItemClick
     private var options: List<String>? = null
     private var optionsThumbnailsDrawableIds: IntArray? = null
     private var selectedOptionIndex = 0
-    private var binding: DialogOptionsListBinding? = null
+    private var _binding: DialogOptionsListBinding? = null
+    private val binding get() = _binding!!
     private var itemSelectionListener: ItemSelectionListener? = null
 
     override fun onAttach(context: Context) {
@@ -61,18 +62,18 @@ class OptionsListDialogFragment : DialogFragment(), OptionsListAdapter.ItemClick
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
-        binding = DialogOptionsListBinding.inflate(inflater, container, false)
+        _binding = DialogOptionsListBinding.inflate(inflater, container, false)
         initDialogView()
-        return binding!!.root
+        return binding.root
     }
 
     private fun initDialogView() {
-        binding!!.tvTitle.text = dialogTitle
-        binding!!.rvOptions.setHasFixedSize(true)
-        binding!!.rvOptions.layoutManager = LinearLayoutManager(
+        binding.tvTitle.text = dialogTitle
+        binding.rvOptions.setHasFixedSize(true)
+        binding.rvOptions.layoutManager = LinearLayoutManager(
             context, RecyclerView.VERTICAL, false
         )
-        binding!!.rvOptions.addItemDecoration(
+        binding.rvOptions.addItemDecoration(
             DividerItemDecoration(
                 context, DividerItemDecoration.VERTICAL
             )
@@ -80,7 +81,7 @@ class OptionsListDialogFragment : DialogFragment(), OptionsListAdapter.ItemClick
         val adapter = OptionsListAdapter(
             options!!, optionsThumbnailsDrawableIds, selectedOptionIndex, this
         )
-        binding!!.rvOptions.adapter = adapter
+        binding.rvOptions.adapter = adapter
     }
 
     override fun onResume() {
@@ -90,7 +91,7 @@ class OptionsListDialogFragment : DialogFragment(), OptionsListAdapter.ItemClick
 
     override fun onDestroyView() {
         super.onDestroyView()
-        binding = null
+        _binding = null
     }
 
     override fun onDetach() {

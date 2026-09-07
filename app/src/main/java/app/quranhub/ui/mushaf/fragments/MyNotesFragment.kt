@@ -37,7 +37,8 @@ import kotlinx.coroutines.launch
 
 class MyNotesFragment : Fragment(), NoteCallback, AddNoteListener, ItemSelectionListener<Int?> {
 
-    private var binding: FragmentMyNotesBinding? = null
+    private var _binding: FragmentMyNotesBinding? = null
+    private val binding get() = _binding!!
 
     private var navDrawerListener: ToolbarActionsListener? = null
     private var quranNavigationCallbacks: QuranNavigationCallbacks? = null
@@ -65,13 +66,13 @@ class MyNotesFragment : Fragment(), NoteCallback, AddNoteListener, ItemSelection
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        binding = FragmentMyNotesBinding.inflate(inflater, container, false)
-        return binding!!.root
+        _binding = FragmentMyNotesBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        InsetsUtils.padTopForStatusBar(binding!!.toolbarLayout)
+        InsetsUtils.padTopForStatusBar(binding.toolbarLayout)
         savedInstanceState?.let { getPrevState(it) }
         initViews()
         bindViewModel()
@@ -80,10 +81,10 @@ class MyNotesFragment : Fragment(), NoteCallback, AddNoteListener, ItemSelection
     }
 
     private fun attachListeners() {
-        binding!!.hamburgerIv.setOnClickListener { onNavHamburgerClick() }
-        binding!!.editBtn.setOnClickListener { onNoteEdit() }
-        binding!!.filterBtn.setOnClickListener { onClickFilter() }
-        binding!!.ibFinishEdit.setOnClickListener { onFinishEdit() }
+        binding.hamburgerIv.setOnClickListener { onNavHamburgerClick() }
+        binding.editBtn.setOnClickListener { onNoteEdit() }
+        binding.filterBtn.setOnClickListener { onClickFilter() }
+        binding.ibFinishEdit.setOnClickListener { onFinishEdit() }
     }
 
     private fun getPrevState(savedInstanceState: Bundle) {
@@ -107,14 +108,14 @@ class MyNotesFragment : Fragment(), NoteCallback, AddNoteListener, ItemSelection
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     viewModel.uiState.collect { uiState ->
-                        binding!!.progreesBar.visibility =
+                        binding.progreesBar.visibility =
                             if (uiState.loading) View.VISIBLE else View.GONE
                         val notesChanged = uiState.notes != lastRenderedNotes
                         renderNotes(uiState.notes)
                         lastRenderedNotes = uiState.notes
                         applyListState(uiState.searchQuery, uiState.filterType, notesChanged)
                         applyEditMode(uiState.isEditMode)
-                        binding!!.noNotesTv.visibility =
+                        binding.noNotesTv.visibility =
                             if (uiState.notes.isEmpty()) View.VISIBLE else View.GONE
                         applyToolbarIconsState(uiState.isListEditable)
                     }
@@ -168,35 +169,35 @@ class MyNotesFragment : Fragment(), NoteCallback, AddNoteListener, ItemSelection
             lastAppliedEditMode = isEditMode
             adapter!!.setEditable(isEditMode)
             if (isEditMode) {
-                binding!!.ibFinishEdit.visibility = View.VISIBLE
-                binding!!.editBtn.visibility = View.GONE
-                binding!!.filterBtn.visibility = View.GONE
+                binding.ibFinishEdit.visibility = View.VISIBLE
+                binding.editBtn.visibility = View.GONE
+                binding.filterBtn.visibility = View.GONE
             } else {
-                binding!!.ibFinishEdit.visibility = View.GONE
-                binding!!.editBtn.visibility = View.VISIBLE
-                binding!!.filterBtn.visibility = View.VISIBLE
+                binding.ibFinishEdit.visibility = View.GONE
+                binding.editBtn.visibility = View.VISIBLE
+                binding.filterBtn.visibility = View.VISIBLE
             }
         }
     }
 
     private fun applyToolbarIconsState(isListEditable: Boolean) {
         if (isListEditable) {
-            binding!!.editBtn.setImageResource(R.drawable.edit_gold_ic)
-            binding!!.editBtn.setColorFilter(null)
-            binding!!.filterBtn.setColorFilter(null)
+            binding.editBtn.setImageResource(R.drawable.edit_gold_ic)
+            binding.editBtn.setColorFilter(null)
+            binding.filterBtn.setColorFilter(null)
         } else {
-            binding!!.editBtn.setImageResource(R.drawable.edit_gold_ic)
-            binding!!.editBtn.setColorFilter(
+            binding.editBtn.setImageResource(R.drawable.edit_gold_ic)
+            binding.editBtn.setColorFilter(
                 ContextCompat.getColor(requireContext(), R.color.dark_grey)
             )
-            binding!!.filterBtn.setColorFilter(
+            binding.filterBtn.setColorFilter(
                 ContextCompat.getColor(requireContext(), R.color.dark_grey)
             )
         }
     }
 
     private fun observeSearchInput() {
-        binding!!.etSearch.addTextChangedListener(object : TextWatcher {
+        binding.etSearch.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
                 viewModel.onSearchQueryChanged(s.toString())
@@ -208,8 +209,8 @@ class MyNotesFragment : Fragment(), NoteCallback, AddNoteListener, ItemSelection
 
     private fun initViews() {
         adapter = NotesAdapter(requireContext(), this)
-        binding!!.notesRv.layoutManager = LinearLayoutManager(activity)
-        binding!!.notesRv.adapter = adapter
+        binding.notesRv.layoutManager = LinearLayoutManager(activity)
+        binding.notesRv.adapter = adapter
     }
 
     private fun onNavHamburgerClick() {
@@ -217,7 +218,7 @@ class MyNotesFragment : Fragment(), NoteCallback, AddNoteListener, ItemSelection
     }
 
     override fun onNavigateToAya(ayaId: Int, pageNum: Int) {
-        dismissKeyboard(requireContext(), binding!!.etSearch)
+        dismissKeyboard(requireContext(), binding.etSearch)
         quranNavigationCallbacks!!.gotoQuranPageAya(pageNum, ayaId, false)
     }
 
@@ -284,6 +285,6 @@ class MyNotesFragment : Fragment(), NoteCallback, AddNoteListener, ItemSelection
 
     override fun onDestroyView() {
         super.onDestroyView()
-        binding = null
+        _binding = null
     }
 }

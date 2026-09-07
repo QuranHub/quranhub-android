@@ -25,7 +25,8 @@ import kotlinx.coroutines.launch
 
 class BookmarksFragment : Fragment(), QuranNavigationCallbacks {
 
-    private var binding: FragmentBookmarksBinding? = null
+    private var _binding: FragmentBookmarksBinding? = null
+    private val binding get() = _binding!!
 
     private lateinit var viewModel: BookmarksViewModel
     private var navDrawerListener: ToolbarActionsListener? = null
@@ -56,9 +57,9 @@ class BookmarksFragment : Fragment(), QuranNavigationCallbacks {
     ): View {
 
         // Inflate the layout for this fragment
-        binding = FragmentBookmarksBinding.inflate(inflater, container, false)
+        _binding = FragmentBookmarksBinding.inflate(inflater, container, false)
         viewModel = ViewModelProvider(this)[BookmarksViewModel::class.java]
-        binding!!.etSearch.addTextChangedListener(object : TextWatcher {
+        binding.etSearch.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
                 viewModel.onSearchQueryChanged(s.toString())
@@ -66,12 +67,12 @@ class BookmarksFragment : Fragment(), QuranNavigationCallbacks {
 
             override fun afterTextChanged(s: Editable) {}
         })
-        return binding!!.root
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        InsetsUtils.padTopForStatusBar(binding!!.toolbarLayout)
+        InsetsUtils.padTopForStatusBar(binding.toolbarLayout)
         bookmarksListFragment = BookmarksListFragment.newInstance()
         val transaction = childFragmentManager.beginTransaction()
         transaction.replace(R.id.list_container, bookmarksListFragment!!)
@@ -86,27 +87,27 @@ class BookmarksFragment : Fragment(), QuranNavigationCallbacks {
                 launch {
                     viewModel.uiState.collect { uiState ->
                         if (uiState.isEditMode) {
-                            binding!!.editBtn.visibility = View.INVISIBLE
-                            binding!!.ibFinishEdit.visibility = View.VISIBLE
-                            binding!!.filterBtn.visibility = View.INVISIBLE
+                            binding.editBtn.visibility = View.INVISIBLE
+                            binding.ibFinishEdit.visibility = View.VISIBLE
+                            binding.filterBtn.visibility = View.INVISIBLE
                         } else {
-                            binding!!.editBtn.visibility = View.VISIBLE
-                            binding!!.ibFinishEdit.visibility = View.INVISIBLE
-                            binding!!.filterBtn.visibility = View.VISIBLE
+                            binding.editBtn.visibility = View.VISIBLE
+                            binding.ibFinishEdit.visibility = View.INVISIBLE
+                            binding.filterBtn.visibility = View.VISIBLE
                         }
                         if (uiState.isListEditable) {
-                            binding!!.editBtn.setImageResource(R.drawable.edit_gold_ic)
-                            binding!!.editBtn.setColorFilter(null)
-                            binding!!.filterBtn.setColorFilter(null)
+                            binding.editBtn.setImageResource(R.drawable.edit_gold_ic)
+                            binding.editBtn.setColorFilter(null)
+                            binding.filterBtn.setColorFilter(null)
                         } else {
-                            binding!!.editBtn.setImageResource(R.drawable.edit_gold_ic)
-                            binding!!.editBtn.setColorFilter(
+                            binding.editBtn.setImageResource(R.drawable.edit_gold_ic)
+                            binding.editBtn.setColorFilter(
                                 ContextCompat.getColor(
                                     requireContext(),
                                     R.color.dark_grey
                                 )
                             )
-                            binding!!.filterBtn.setColorFilter(
+                            binding.filterBtn.setColorFilter(
                                 ContextCompat.getColor(
                                     requireContext(),
                                     R.color.dark_grey
@@ -131,10 +132,10 @@ class BookmarksFragment : Fragment(), QuranNavigationCallbacks {
     }
 
     private fun attachListeners() {
-        binding!!.hamburgerIv.setOnClickListener { onNavHamburgerClick() }
-        binding!!.editBtn.setOnClickListener { edit() }
-        binding!!.filterBtn.setOnClickListener { filter() }
-        binding!!.ibFinishEdit.setOnClickListener { finishEdit() }
+        binding.hamburgerIv.setOnClickListener { onNavHamburgerClick() }
+        binding.editBtn.setOnClickListener { edit() }
+        binding.filterBtn.setOnClickListener { filter() }
+        binding.ibFinishEdit.setOnClickListener { finishEdit() }
     }
 
     private fun onNavHamburgerClick() {
@@ -166,13 +167,13 @@ class BookmarksFragment : Fragment(), QuranNavigationCallbacks {
     }
 
     override fun gotoQuranPageAya(pageNumber: Int, ayaId: Int, addToBackStack: Boolean) {
-        dismissKeyboard(requireActivity(), binding!!.etSearch)
+        dismissKeyboard(requireActivity(), binding.etSearch)
         quranNavigationCallbacks!!.gotoQuranPageAya(pageNumber, ayaId, false)
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
-        binding = null
+        _binding = null
     }
 
     companion object {
