@@ -4,7 +4,6 @@ import app.quranhub.R
 import java.io.File
 
 object Constants {
-    const val API_BASE_URL = "https://api.quranhub.app"
     const val STATIC_FILES_BASE_URL = "https://www.quranhub.app"
 
     object Quran {

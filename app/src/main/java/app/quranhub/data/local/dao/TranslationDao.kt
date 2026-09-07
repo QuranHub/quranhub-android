@@ -4,13 +4,9 @@ import androidx.room.Dao
 import androidx.room.Query
 import app.quranhub.data.local.entity.Translation
 import kotlinx.coroutines.flow.Flow
-import io.reactivex.Single
 
 @Dao
 interface TranslationDao {
-
-    @Query("SELECT * FROM translation")
-    fun getAll(): Single<List<Translation>>
 
     @Query("SELECT * FROM translation where `sura`=:suraNumber")
     fun getAyasTafseer(suraNumber: Int): Flow<List<Translation>>

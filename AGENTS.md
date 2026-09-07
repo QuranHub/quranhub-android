@@ -29,7 +29,8 @@ QuranHub Android app: a Quran reader (Hafs & Warsh mushaf, audio recitations, ta
 
 ### Global Invariants
 
-- XML Views only (ViewBinding/DataBinding) — no Jetpack Compose; RxJava2 (not 3) + EventBus, no DI framework.
+- XML Views only (ViewBinding/DataBinding) — no Jetpack Compose; no DI framework.
+- Presentation layer is MVVM: every screen's state lives in a ViewModel exposed as StateFlow, one-time events through Channels; coroutines + Flows are the only async idiom (RxJava, EventBus, and MVP presenters/view-interfaces are fully removed — do not reintroduce them).
 - Asset-backed DBs (`MushafDatabase`, `TranslationDatabase`) keep `@Database(version) = 2`; migrate via the `RoomAsset.databaseBuilder` version argument only.
 - `UserDatabase` schema is exported to committed `app/schemas/` — bump version + export schema on any change.
 - App locale is applied in three places in `QuranhubApplication` — keep all three in sync.
@@ -48,7 +49,7 @@ QuranHub Android app: a Quran reader (Hafs & Warsh mushaf, audio recitations, ta
 ## Architecture notes (not obvious from filenames)
 
 - Classic XML Views only (ViewBinding + DataBinding enabled) — no Jetpack Compose. Kotlin-only sources.
-- No DI framework; wiring is manual. Cross-component communication uses greenrobot EventBus; async uses RxJava2 (not RxJava3) + Retrofit.
+- No DI framework; wiring is manual (ViewModels via `viewModelScope` + factory DSL). Cross-component communication uses explicit, typed flow holders (e.g. `flowholder/AudioPlaybackStateHolder`, `data/service/DownloadFinishedHolder`) — not events or implicit channels. Async uses coroutines + Flows only.
 - `ui/` is feature-organized (`main`, `mushaf`, `settings`, `downloads_manager`, `first_wizard`); `data/` splits into `local` (Room), `remote` (api.quranhub.app REST), `repository`, `service` (FCM, audio downloader).
 - Entry point `QuranhubApplication` is a `MultiDexApplication`. It re-applies the app locale in **three** places (`attachBaseContext`, `onCreate`, `onConfigurationChanged`) via `LocaleUtils.initAppLanguage` — keep all three in sync if touching locale logic.
 - Firebase: `app/google-services.json` is committed. Crashlytics is toggled via the `enableCrashlytics` manifest placeholder (true in release, false in debug), not by build-type-specific code.
