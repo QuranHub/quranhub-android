@@ -75,7 +75,10 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="@dimen/_12sdp"
         android:layout_marginEnd="@dimen/_12sdp"
+        android:max="100"
         android:progress="0"
+        android:progressBackgroundTint="@color/color_primary_light"
+        android:progressTint="@color/color_accent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />

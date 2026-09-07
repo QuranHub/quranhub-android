@@ -25,6 +25,7 @@ class TranslationDownloader(
     private val appContext: Context
 
     private var downloadId = 0
+    private var lastReportedPercent = Int.MIN_VALUE
 
     // IO scope for the download bookkeeping DB writes (structured coroutines
     // replacing the former raw Threads)
@@ -50,7 +51,7 @@ class TranslationDownloader(
             .build()
             .setOnStartOrResumeListener {
                 Log.d(TAG, "setOnStartOrResumeListener: downloadId = $downloadId")
-                callback?.onDownloadStarted()
+                callback?.onDownloadStarted(translationBook)
             }
             .setOnCancelListener {
                 Log.d(TAG, "onCancel: downloadId = $downloadId")
@@ -63,28 +64,24 @@ class TranslationDownloader(
                         )
                     }
                 }
-                callback?.onDownloadCancelled()
+                callback?.onDownloadCancelled(translationBook)
             }
             .setOnProgressListener { progress: Progress ->
-                Log.d(
-                    TAG, "onProgress: downloadId = " + downloadId +
-                            " -> progress = " + progress.currentBytes + "/" + progress.totalBytes
-                )
-
-                // progress on four increments to optimize performance
-                val progressRatio = progress.currentBytes.toDouble() / progress.totalBytes
-                if (progressRatio > 0.9) {
-                    Log.d(TAG, "progress : 100%")
-                    updateProgressPercentage(100)
-                } else if (progressRatio > 0.75 && progressRatio < 0.80) {
-                    Log.d(TAG, "progress : 75%")
-                    updateProgressPercentage(75)
-                } else if (progressRatio > 0.50 && progressRatio < 0.55) {
-                    Log.d(TAG, "progress : 50%")
-                    updateProgressPercentage(50)
-                } else if (progressRatio > 0.25 && progressRatio < 0.30) {
-                    Log.d(TAG, "progress : 25%")
-                    updateProgressPercentage(25)
+                val percent = if (progress.totalBytes <= 0L) {
+                    UNKNOWN_PERCENT
+                } else {
+                    ((progress.currentBytes * 100) / progress.totalBytes)
+                        .toInt()
+                        .coerceIn(0, 100)
+                }
+                if (percent != lastReportedPercent) {
+                    lastReportedPercent = percent
+                    Log.d(
+                        TAG,
+                        "onProgress: downloadId = $downloadId -> $percent% " +
+                            "(${progress.currentBytes}/${progress.totalBytes})"
+                    )
+                    updateProgressPercentage(percent)
                 }
             }
             .start(object : OnDownloadListener {
@@ -96,7 +93,7 @@ class TranslationDownloader(
                             translationBook
                         )
                     }
-                    callback?.onDownloadFinished()
+                    callback?.onDownloadFinished(translationBook)
                 }
 
                 override fun onError(error: Error) {
@@ -108,7 +105,7 @@ class TranslationDownloader(
                             )
                         }
                     }
-                    callback?.onDownloadFailed()
+                    callback?.onDownloadFailed(translationBook)
                 }
             })
     }
@@ -123,21 +120,26 @@ class TranslationDownloader(
     }
 
     private fun updateProgressPercentage(downloadLevelPercentage: Int) {
-        scope.launch {
-            translationBook.downloadLevelPercentage = downloadLevelPercentage
-            UserDatabase.getInstance(appContext).translationBookDao.insert(translationBook)
+        translationBook.downloadLevelPercentage = downloadLevelPercentage
+        callback?.onDownloadProgress(translationBook, downloadLevelPercentage)
+        if (downloadLevelPercentage >= 0 && downloadLevelPercentage % 25 == 0) {
+            scope.launch {
+                UserDatabase.getInstance(appContext).translationBookDao.insert(translationBook)
+            }
         }
     }
 
     interface TranslationDownloadCallback {
-        fun onDownloadStarted()
-        fun onDownloadFinished()
-        fun onDownloadCancelled()
-        fun onDownloadFailed()
+        fun onDownloadStarted(book: TranslationBook)
+        fun onDownloadProgress(book: TranslationBook, percent: Int)
+        fun onDownloadFinished(book: TranslationBook)
+        fun onDownloadCancelled(book: TranslationBook)
+        fun onDownloadFailed(book: TranslationBook)
     }
 
     companion object {
         private val TAG = TranslationDownloader::class.java.simpleName
+        const val UNKNOWN_PERCENT = -1
         fun cancelAll() {
             PRDownloader.cancelAll()
         }

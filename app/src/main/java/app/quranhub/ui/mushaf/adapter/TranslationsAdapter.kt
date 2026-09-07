@@ -1,11 +1,11 @@
 package app.quranhub.ui.mushaf.adapter
 
-import android.os.Build
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Filter
 import android.widget.Filterable
+import android.widget.ProgressBar
 import androidx.recyclerview.widget.RecyclerView
 import app.quranhub.R
 import app.quranhub.data.local.entity.TranslationBook
@@ -57,27 +57,35 @@ class TranslationsAdapter(
             holder.binding.btnAction.visibility = View.INVISIBLE
             holder.binding.progressDownload.visibility = View.INVISIBLE
             holder.binding.progressDownloadLevel.visibility = View.INVISIBLE
+            holder.binding.progressDownloadLevel.isIndeterminate = false
         } else if (t.downloadStatus == NetworkUtil.STATUS_DOWNLOADING) {
             holder.binding.btnAction.visibility = View.VISIBLE
             holder.binding.btnAction.setImageResource(R.drawable.ic_close)
             holder.binding.progressDownload.visibility = View.VISIBLE
             holder.binding.progressDownloadLevel.visibility = View.VISIBLE
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                holder.binding.progressDownloadLevel.setProgress(t.downloadLevelPercentage, true)
-            } else {
-                holder.binding.progressDownloadLevel.progress = t.downloadLevelPercentage
-            }
+            bindDownloadLevel(holder.binding.progressDownloadLevel, t.downloadLevelPercentage)
         } else {
             // not downloaded
             holder.binding.btnAction.visibility = View.VISIBLE
             holder.binding.btnAction.setImageResource(R.drawable.ic_download)
             holder.binding.progressDownload.visibility = View.INVISIBLE
             holder.binding.progressDownloadLevel.visibility = View.INVISIBLE
+            holder.binding.progressDownloadLevel.isIndeterminate = false
         }
     }
 
     override fun getItemCount(): Int {
         return if (filteredTranslations != null) filteredTranslations!!.size else 0
+    }
+
+    private fun bindDownloadLevel(bar: ProgressBar, percent: Int) {
+        if (percent < 0) {
+            bar.isIndeterminate = true
+        } else {
+            bar.isIndeterminate = false
+            bar.max = 100
+            bar.progress = percent
+        }
     }
 
     fun setTranslations(translations: MutableList<DisplayableTranslation>?) {
