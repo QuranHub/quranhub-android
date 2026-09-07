@@ -17,6 +17,7 @@ import app.quranhub.R
 import app.quranhub.databinding.FragmentMushafBottomBarBinding
 import app.quranhub.ui.mushaf.viewmodel.MushafViewModel
 import app.quranhub.util.InsetsUtils
+import app.quranhub.util.QuranPageZoom
 import kotlinx.coroutines.launch
 
 class MushafBottomBarFragment : Fragment() {
@@ -76,8 +77,8 @@ class MushafBottomBarFragment : Fragment() {
     }
 
     private fun setupZoomButtons() {
-        binding!!.ibZoomOut.isEnabled = quranPageZoomScaleFactor > 1f
-        binding!!.ibZoomIn.isEnabled = quranPageZoomScaleFactor < 1.5f
+        binding!!.ibZoomOut.isEnabled = QuranPageZoom.canZoomOut(quranPageZoomScaleFactor)
+        binding!!.ibZoomIn.isEnabled = QuranPageZoom.canZoomIn(quranPageZoomScaleFactor)
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -92,13 +93,13 @@ class MushafBottomBarFragment : Fragment() {
     }
 
     private fun zoomIn() {
-        quranPageZoomScaleFactor += ZOOM_SCALE_INCREMENT
+        quranPageZoomScaleFactor = QuranPageZoom.zoomIn(quranPageZoomScaleFactor)
         setupZoomButtons()
         footerCallbacks!!.updateQuranPageZoomScale(quranPageZoomScaleFactor)
     }
 
     private fun zoomOut() {
-        quranPageZoomScaleFactor -= ZOOM_SCALE_INCREMENT
+        quranPageZoomScaleFactor = QuranPageZoom.zoomOut(quranPageZoomScaleFactor)
         setupZoomButtons()
         footerCallbacks!!.updateQuranPageZoomScale(quranPageZoomScaleFactor)
     }
@@ -153,7 +154,5 @@ class MushafBottomBarFragment : Fragment() {
 
     companion object {
         private val TAG = MushafBottomBarFragment::class.java.simpleName
-
-        private const val ZOOM_SCALE_INCREMENT = 0.05f
     }
 }

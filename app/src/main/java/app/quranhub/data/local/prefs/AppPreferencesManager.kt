@@ -3,6 +3,7 @@ package app.quranhub.data.local.prefs
 import android.content.Context
 import app.quranhub.data.Constants
 import app.quranhub.util.LocaleUtils.appLanguage
+import app.quranhub.util.QuranPageZoom
 import app.quranhub.util.SharedPrefsUtils.clearPreference
 import app.quranhub.util.SharedPrefsUtils.getBoolean
 import app.quranhub.util.SharedPrefsUtils.getFloat
@@ -40,13 +41,12 @@ object AppPreferencesManager {
 
     @JvmStatic
     fun getQuranPageZoomScaleSetting(context: Context): Float {
-        return getFloat(context, PREF_QURAN_PAGE_SCALE, 1f)
+        return QuranPageZoom.normalize(getFloat(context, PREF_QURAN_PAGE_SCALE, QuranPageZoom.MIN_SCALE))
     }
 
     @JvmStatic
     fun persistQuranPageZoomScaleSetting(context: Context, scale: Float) {
-        if (scale < 1f) return
-        saveFloat(context, PREF_QURAN_PAGE_SCALE, scale)
+        saveFloat(context, PREF_QURAN_PAGE_SCALE, QuranPageZoom.normalize(scale))
     }
 
     @JvmStatic
