@@ -9,6 +9,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
@@ -41,7 +42,7 @@ class MyNotesFragment : Fragment(), NoteCallback, AddNoteListener, ItemSelection
     private var navDrawerListener: ToolbarActionsListener? = null
     private var quranNavigationCallbacks: QuranNavigationCallbacks? = null
     private var adapter: NotesAdapter? = null
-    private var viewModel: NotesViewModel? = null
+    private lateinit var viewModel: NotesViewModel
     private var openDialog = false
     private var selectedAyaNote: DisplayedNote? = null
     private var lastAppliedSearchQuery: String? = null
@@ -105,7 +106,7 @@ class MyNotesFragment : Fragment(), NoteCallback, AddNoteListener, ItemSelection
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
-                    viewModel!!.uiState.collect { uiState ->
+                    viewModel.uiState.collect { uiState ->
                         binding!!.progreesBar.visibility =
                             if (uiState.loading) View.VISIBLE else View.GONE
                         val notesChanged = uiState.notes != lastRenderedNotes
@@ -115,11 +116,17 @@ class MyNotesFragment : Fragment(), NoteCallback, AddNoteListener, ItemSelection
                         applyEditMode(uiState.isEditMode)
                         binding!!.noNotesTv.visibility =
                             if (uiState.notes.isEmpty()) View.VISIBLE else View.GONE
+                        applyToolbarIconsState(uiState.isListEditable)
                     }
                 }
                 launch {
-                    viewModel!!.notesEvents.collect { event ->
+                    viewModel.notesEvents.collect { event ->
                         when (event) {
+                            is NotesViewModel.NotesEvent.ListNotEditable ->
+                                Toast.makeText(
+                                    activity, getString(R.string.no_notes), Toast.LENGTH_SHORT
+                                ).show()
+
                             is NotesViewModel.NotesEvent.ShowError ->
                                 Toast.makeText(
                                     activity, event.message, Toast.LENGTH_LONG
@@ -172,11 +179,27 @@ class MyNotesFragment : Fragment(), NoteCallback, AddNoteListener, ItemSelection
         }
     }
 
+    private fun applyToolbarIconsState(isListEditable: Boolean) {
+        if (isListEditable) {
+            binding!!.editBtn.setImageResource(R.drawable.edit_gold_ic)
+            binding!!.editBtn.setColorFilter(null)
+            binding!!.filterBtn.setColorFilter(null)
+        } else {
+            binding!!.editBtn.setImageResource(R.drawable.edit_gold_ic)
+            binding!!.editBtn.setColorFilter(
+                ContextCompat.getColor(requireContext(), R.color.dark_grey)
+            )
+            binding!!.filterBtn.setColorFilter(
+                ContextCompat.getColor(requireContext(), R.color.dark_grey)
+            )
+        }
+    }
+
     private fun observeSearchInput() {
         binding!!.etSearch.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
-                viewModel!!.onSearchQueryChanged(s.toString())
+                viewModel.onSearchQueryChanged(s.toString())
             }
 
             override fun afterTextChanged(s: Editable) {}
@@ -223,13 +246,13 @@ class MyNotesFragment : Fragment(), NoteCallback, AddNoteListener, ItemSelection
     }
 
     override fun onDeleteNote(ayaId: Int) {
-        viewModel!!.deleteNote(ayaId)
+        viewModel.deleteNote(ayaId)
     }
 
     override fun onAddNote(note: Note?, isEditable: Boolean) {
         requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         Toast.makeText(activity, getString(R.string.note_edited), Toast.LENGTH_LONG).show()
-        viewModel!!.updateNote(note!!)
+        viewModel.updateNote(note!!)
     }
 
     override fun onDismissDialog() {
@@ -237,21 +260,25 @@ class MyNotesFragment : Fragment(), NoteCallback, AddNoteListener, ItemSelection
     }
 
     private fun onNoteEdit() {
-        viewModel!!.onNoteEditClicked()
+        viewModel.onNoteEditClicked()
     }
 
     private fun onClickFilter() {
-        val filterDialog = NotesFilterDialog.getInstance(viewModel!!.uiState.value.filterType)
-        filterDialog.show(childFragmentManager, "NotesFilterDialog")
+        if (viewModel.uiState.value.isListEditable) {
+            val filterDialog = NotesFilterDialog.getInstance(viewModel.uiState.value.filterType)
+            filterDialog.show(childFragmentManager, "NotesFilterDialog")
+        } else {
+            viewModel.onFilterClicked()
+        }
     }
 
     private fun onFinishEdit() {
-        viewModel!!.onFinishEditClicked()
+        viewModel.onFinishEditClicked()
     }
 
     override fun onSelectItem(noteFilterType: Int?) {
         noteFilterType?.let {
-            viewModel!!.onFilterTypeSelected(it)
+            viewModel.onFilterTypeSelected(it)
         }
     }
 

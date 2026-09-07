@@ -32,7 +32,7 @@ import kotlinx.coroutines.launch
  */
 class BookmarksListFragment : Fragment(), BookmarkActionListener, BookmarkFilterListener {
 
-    private var bookMarksViewModel: BookmarksViewModel? = null
+    private lateinit var bookMarksViewModel: BookmarksViewModel
     private var quranNavigationCallbacks: QuranNavigationCallbacks? = null
     private var editedBookmarkId = -1
     private var binding: FragmentBookmarksListBinding? = null
@@ -75,7 +75,7 @@ class BookmarksListFragment : Fragment(), BookmarkActionListener, BookmarkFilter
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
-                    bookMarksViewModel!!.uiState.collect { uiState ->
+                    bookMarksViewModel.uiState.collect { uiState ->
                         binding!!.loadingIndicator.visibility =
                             if (uiState.loading) View.VISIBLE else View.GONE
                         val bookmarksChanged = uiState.bookmarks != lastRenderedBookmarks
@@ -143,21 +143,21 @@ class BookmarksListFragment : Fragment(), BookmarkActionListener, BookmarkFilter
     }
 
     fun showFilterDialog() {
-        val bookmarkTypes: List<BookmarkType> = bookMarksViewModel!!.uiState.value.bookmarkTypes
+        val bookmarkTypes: List<BookmarkType> = bookMarksViewModel.uiState.value.bookmarkTypes
         if (bookmarkTypes.isNotEmpty()) {
             val dialog = getInstance(
-                bookmarkTypes, bookMarksViewModel!!.uiState.value.filterType, false
+                bookmarkTypes, bookMarksViewModel.uiState.value.filterType, false
             )
             dialog.show(childFragmentManager, "BookmarkEditDialog")
         }
     }
 
     override fun deleteBookmark(displayableBookmark: DisplayableBookmark) {
-        bookMarksViewModel!!.deleteBookmark(displayableBookmark.bookmarkId)
+        bookMarksViewModel.deleteBookmark(displayableBookmark.bookmarkId)
     }
 
     override fun updateBookmarkType(bookmarkId: Int) {
-        val bookmarkTypes: List<BookmarkType> = bookMarksViewModel!!.uiState.value.bookmarkTypes
+        val bookmarkTypes: List<BookmarkType> = bookMarksViewModel.uiState.value.bookmarkTypes
         if (bookmarkTypes.isNotEmpty()) {
             editedBookmarkId = bookmarkId
             val dialog = getInstance(bookmarkTypes, bookmarkId, true)
@@ -167,9 +167,9 @@ class BookmarksListFragment : Fragment(), BookmarkActionListener, BookmarkFilter
 
     override fun onBookmarkFilter(bookmarkType: Int, colorIndex: Int) {
         if (editedBookmarkId == -1) {
-            bookMarksViewModel!!.onFilterTypeSelected(bookmarkType)
+            bookMarksViewModel.onFilterTypeSelected(bookmarkType)
         } else {
-            bookMarksViewModel!!.changeBookmarkType(editedBookmarkId, bookmarkType)
+            bookMarksViewModel.changeBookmarkType(editedBookmarkId, bookmarkType)
             editedBookmarkId = -1
         }
     }

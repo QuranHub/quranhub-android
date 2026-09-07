@@ -8,7 +8,6 @@ import androidx.room.Query
 import app.quranhub.data.local.entity.AyaBookmark
 import app.quranhub.data.local.entity.BookmarkType
 import app.quranhub.ui.mushaf.model.BookmarkModel
-import io.reactivex.Single
 
 @Dao
 interface BookmarkDao {
@@ -20,9 +19,6 @@ interface BookmarkDao {
 
     @Query("select * from AyaBookmark")
     suspend fun getAllBookmarks(): List<AyaBookmark>
-
-    @Query("select * from BookmarkType")
-    fun getBookmarksType(): Single<List<BookmarkType>>
 
     @Query("select * from AyaBookmark where bookmarkTypeId=:id")
     fun getTypeBookmarks(id: Int): LiveData<List<AyaBookmark?>?>?

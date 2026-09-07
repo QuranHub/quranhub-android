@@ -6,13 +6,9 @@ import app.quranhub.data.local.entity.Sura
 import app.quranhub.ui.mushaf.model.QuranPageInfo
 import app.quranhub.ui.mushaf.model.SuraIndexModel
 import app.quranhub.ui.mushaf.model.SuraVersesNumber
-import io.reactivex.Single
 
 @Dao
 interface SuraDao {
-    @Query("SELECT * FROM Sura")
-    fun getAll(): Single<List<Sura>>
-
     @Query("SELECT * FROM Sura WHERE id=:suraId")
     fun findById(suraId: Int): Sura?
 

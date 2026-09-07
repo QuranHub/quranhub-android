@@ -7,16 +7,12 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import app.quranhub.data.local.entity.AyaRecorder
 import app.quranhub.data.local.entity.QuranAudio
-import io.reactivex.Single
 
 @Dao
 interface QuranAudioDao {
     /* Just a test */ //TODO remove this
     @Query("SELECT * FROM QURANAUDIO;")
     fun getAll(): List<QuranAudio?>?
-
-    @Query("SELECT file_path FROM QURANAUDIO where aya_id=:id")
-    fun getAllAyaAudioPathTest(id: Int): Single<String>
 
     @Query("SELECT * FROM QuranAudio where id IN (:quranAudioIds) ORDER BY aya_id")
     fun getAllByIds(quranAudioIds: IntArray?): List<QuranAudio?>?

@@ -8,9 +8,9 @@ import app.quranhub.data.local.prefs.AppPreferencesManager
 import app.quranhub.ui.mushaf.audio_manager.AyaAudioService
 import app.quranhub.util.SharedPrefsUtils.getBoolean
 import app.quranhub.util.SharedPrefsUtils.getInteger
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -21,28 +21,29 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         data object Mushaf : LaunchDestination
     }
 
-    private val _launchDestination = MutableStateFlow<LaunchDestination?>(null)
-    val launchDestination: StateFlow<LaunchDestination?> = _launchDestination.asStateFlow()
+    private val _launchEvents = Channel<LaunchDestination>(Channel.BUFFERED)
+    val launchEvents: Flow<LaunchDestination> = _launchEvents.receiveAsFlow()
 
     fun computeLaunchDestination(fromNotification: Boolean) {
-        if (_launchDestination.value != null) return
         viewModelScope.launch {
             val context = getApplication<Application>()
-            _launchDestination.value = when {
-                fromNotification || getBoolean(
-                    context, AyaAudioService.SERVICE_RUNNING, false
-                ) -> LaunchDestination.Notification(
-                    getInteger(context, AyaAudioService.AYA_ID_KEY, 1)
-                )
-
-                AppPreferencesManager.getLastReadPageSetting(context) -> LaunchDestination.LastReadPage(
-                    Constants.Quran.NUM_OF_PAGES - getInteger(
-                        context, "last_open_page", Constants.Quran.NUM_OF_PAGES - 1
+            _launchEvents.send(
+                when {
+                    fromNotification || getBoolean(
+                        context, AyaAudioService.SERVICE_RUNNING, false
+                    ) -> LaunchDestination.Notification(
+                        getInteger(context, AyaAudioService.AYA_ID_KEY, 1)
                     )
-                )
 
-                else -> LaunchDestination.Mushaf
-            }
+                    AppPreferencesManager.getLastReadPageSetting(context) -> LaunchDestination.LastReadPage(
+                        Constants.Quran.NUM_OF_PAGES - getInteger(
+                            context, "last_open_page", Constants.Quran.NUM_OF_PAGES - 1
+                        )
+                    )
+
+                    else -> LaunchDestination.Mushaf
+                }
+            )
         }
     }
 }

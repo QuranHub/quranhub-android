@@ -10,6 +10,7 @@ import app.quranhub.data.repository.TranslationsRepository
 import app.quranhub.ui.mushaf.interactor.TranslationsInteractor
 import app.quranhub.ui.mushaf.interactor.TranslationsInteractorImp
 import app.quranhub.ui.mushaf.model.DisplayableTranslation
+import app.quranhub.util.NetworkUtil
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -49,10 +50,27 @@ class TranslationsViewModel(
     private val downloaders = mutableMapOf<String, TranslationDownloader>()
 
     private val callback = object : TranslationDownloader.TranslationDownloadCallback {
-        override fun onDownloadStarted() {}
-        override fun onDownloadFinished() {}
-        override fun onDownloadCancelled() {}
-        override fun onDownloadFailed() {
+        override fun onDownloadStarted(book: TranslationBook) {
+            updateBook(book.id, NetworkUtil.STATUS_DOWNLOADING, book.downloadLevelPercentage)
+        }
+
+        override fun onDownloadProgress(book: TranslationBook, percent: Int) {
+            updateBook(book.id, NetworkUtil.STATUS_DOWNLOADING, percent)
+        }
+
+        override fun onDownloadFinished(book: TranslationBook) {
+            downloaders.remove(book.id)
+            updateBook(book.id, NetworkUtil.STATUS_DOWNLOADED, 100)
+        }
+
+        override fun onDownloadCancelled(book: TranslationBook) {
+            downloaders.remove(book.id)
+            updateBook(book.id, NetworkUtil.STATUS_NOT_DOWNLOADED, 0)
+        }
+
+        override fun onDownloadFailed(book: TranslationBook) {
+            downloaders.remove(book.id)
+            updateBook(book.id, NetworkUtil.STATUS_NOT_DOWNLOADED, 0)
             notifyDownloadFailed()
         }
     }
@@ -84,18 +102,7 @@ class TranslationsViewModel(
     private fun mergeListing() {
         viewModelScope.launch {
             combine(remoteBooks, localBooks) { remote, local ->
-                val displayableTranslations: MutableList<DisplayableTranslation> = ArrayList()
-                for (book in local) {
-                    displayableTranslations.add(DisplayableTranslation(book))
-                }
-                for (book in remote) {
-                    val d = DisplayableTranslation(book)
-                    if (!displayableTranslations.contains(d)) {
-                        // only add if it's not there
-                        displayableTranslations.add(d)
-                    }
-                }
-                displayableTranslations
+                mergeBooks(remote, local)
             }.collect { merged ->
                 _uiState.update { it.copy(translations = merged) }
             }
@@ -122,12 +129,54 @@ class TranslationsViewModel(
         Log.d(TAG, "onDownloadTranslationClick: translationBook = $translationBook")
         val downloader = TranslationDownloader(translationBook, appContext, callback)
         downloaders[translationBook.id] = downloader
+        updateBook(translationBook.id, NetworkUtil.STATUS_DOWNLOADING, 0)
         downloader.download()
     }
 
     fun cancelDownload(translationBook: TranslationBook) {
         Log.d(TAG, "onCancelDownloadTranslationClick: translationBook = $translationBook")
         downloaders.remove(translationBook.id)?.cancel()
+        updateBook(translationBook.id, NetworkUtil.STATUS_NOT_DOWNLOADED, 0)
+    }
+
+    private fun mergeBooks(
+        remote: List<TranslationBook>,
+        local: List<TranslationBook>
+    ): List<DisplayableTranslation> {
+        val displayableTranslations: MutableList<DisplayableTranslation> = ArrayList()
+        for (book in local) {
+            displayableTranslations.add(DisplayableTranslation(overlayInFlightProgress(book)))
+        }
+        for (book in remote) {
+            if (displayableTranslations.none { it.id == book.id }) {
+                displayableTranslations.add(DisplayableTranslation(overlayInFlightProgress(book)))
+            }
+        }
+        return displayableTranslations
+    }
+
+    private fun overlayInFlightProgress(book: TranslationBook): TranslationBook {
+        val inProgress = downloaders[book.id] ?: return book
+        return book.copy(
+            downloadStatus = NetworkUtil.STATUS_DOWNLOADING,
+            downloadLevelPercentage = inProgress.translationBook.downloadLevelPercentage
+        )
+    }
+
+    private fun updateBook(id: String, status: Int, percentage: Int) {
+        _uiState.update { state ->
+            state.copy(
+                translations = state.translations.map { item ->
+                    if (item.id != id) item
+                    else DisplayableTranslation(
+                        item.translationBook.copy(
+                            downloadStatus = status,
+                            downloadLevelPercentage = percentage
+                        )
+                    )
+                }
+            )
+        }
     }
 
     override fun onCleared() {

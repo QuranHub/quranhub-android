@@ -74,12 +74,13 @@ dependencies {
     implementation(libs.fragment.ktx)
     implementation(libs.multidex)
     implementation(libs.easypermissions)
-    implementation(libs.eventbus)
     implementation(libs.androidx.annotation)
     implementation(libs.kotlin.parcelize.runtime)
     implementation(libs.kotlinx.coroutines.android)
 
     // UI-related
+    implementation(libs.glide)
+    ksp(libs.glide.ksp)
     implementation(libs.material)
     implementation(libs.constraintlayout)
     implementation(libs.materialdrawer)
@@ -96,29 +97,19 @@ dependencies {
     implementation(libs.fancyshowcaseview)
     implementation(libs.circular.progress.button)
 
-    // Networking
-    implementation(libs.retrofit)
-    implementation(libs.retrofit.converter.gson)
-    implementation(libs.retrofit.adapter.rxjava2)
-    implementation(libs.glide)
-    ksp(libs.glide.ksp)
+    // Downloads
     implementation(project(":lib:prdownloader-service"))
 
     // Room
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
-    implementation(libs.room.rxjava2)
 
     // Lifecycle, ViewModel & LiveData
     implementation(libs.lifecycle.viewmodel.ktx)
     implementation(libs.lifecycle.livedata.ktx)
     implementation(libs.lifecycle.runtime.ktx)
     implementation(libs.lifecycle.common.java8)
-
-    // ReactiveX
-    implementation(libs.rxjava2.rxandroid)
-    implementation(libs.rxjava2)
 
     // Firebase
     implementation(platform(libs.firebase.bom))

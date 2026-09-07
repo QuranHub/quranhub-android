@@ -39,8 +39,6 @@ import app.quranhub.util.SharedPrefsUtils.getInteger
 import app.quranhub.util.addCrashlyticsCustomKeys
 import com.mikepenz.materialdrawer.Drawer
 import com.mikepenz.materialdrawer.Drawer.OnDrawerListener
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class MainActivity : BaseActivity(), ToolbarActionsListener, Mus7afDrawerItemClickListener,
@@ -91,7 +89,7 @@ class MainActivity : BaseActivity(), ToolbarActionsListener, Mus7afDrawerItemCli
     private fun observeLaunchDestination() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.launchDestination.filterNotNull().first().let { destination ->
+                viewModel.launchEvents.collect { destination ->
                     when (destination) {
                         is MainViewModel.LaunchDestination.Notification ->
                             showMushafFragment(MushafFragment.newNotificationInstance(destination.ayaId))

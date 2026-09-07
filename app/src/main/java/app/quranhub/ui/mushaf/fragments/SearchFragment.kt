@@ -42,7 +42,7 @@ class SearchFragment : Fragment(), ItemSelectionListener<SearchModel>,
     private var inputSearch: String? = ""
     private var navDrawerListener: ToolbarActionsListener? = null
     private var searchAdapter: SearchAdapter? = null
-    private var searchViewModel: SearchViewModel? = null
+    private lateinit var searchViewModel: SearchViewModel
     private var selectedSura = 0
     private var selectedJuz = 0
     private var selectedHezb = 0
@@ -164,7 +164,7 @@ class SearchFragment : Fragment(), ItemSelectionListener<SearchModel>,
         if (inputSearch!!.trim { it <= ' ' }.isEmpty()) {
             clearResult()
         } else if (selectedJuz != 0 && selectedHezb != 0 && selectedQuarter != 0) {
-            searchViewModel!!.searchWithSuraAndJuzAndHizbQuarter(
+            searchViewModel.searchWithSuraAndJuzAndHizbQuarter(
                 inputSearch!!,
                 selectedSura,
                 selectedJuz,
@@ -172,20 +172,20 @@ class SearchFragment : Fragment(), ItemSelectionListener<SearchModel>,
                 selectedQuarter
             )
         } else if (selectedJuz != 0 && selectedHezb != 0) {
-            searchViewModel!!.searchWithSuraAndJuzAndHizb(
+            searchViewModel.searchWithSuraAndJuzAndHizb(
                 inputSearch!!,
                 selectedSura,
                 selectedJuz,
                 selectedHezb
             )
         } else if (selectedSura != 0 && selectedJuz != 0) {
-            searchViewModel!!.searchWithSuraAndJuz(inputSearch!!, selectedSura, selectedJuz)
+            searchViewModel.searchWithSuraAndJuz(inputSearch!!, selectedSura, selectedJuz)
         } else if (selectedSura != 0) {
-            searchViewModel!!.searchWithSura(inputSearch!!, selectedSura)
+            searchViewModel.searchWithSura(inputSearch!!, selectedSura)
         } else if (selectedJuz != 0) {
-            searchViewModel!!.searchWithJuz(inputSearch!!, selectedJuz)
+            searchViewModel.searchWithJuz(inputSearch!!, selectedJuz)
         } else {
-            searchViewModel!!.simpleSearch(inputSearch!!)
+            searchViewModel.simpleSearch(inputSearch!!)
         }
     }
 
@@ -200,7 +200,7 @@ class SearchFragment : Fragment(), ItemSelectionListener<SearchModel>,
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
-                    searchViewModel!!.uiState.collect { state ->
+                    searchViewModel.uiState.collect { state ->
                         binding!!.progreesBar.visibility =
                             if (state.loading) View.VISIBLE else View.GONE
                         val results = state.results ?: return@collect
@@ -213,7 +213,7 @@ class SearchFragment : Fragment(), ItemSelectionListener<SearchModel>,
                     }
                 }
                 launch {
-                    searchViewModel!!.suras.collect { results ->
+                    searchViewModel.suras.collect { results ->
                         if (results != null) {
                             juzSuraNumbers = results
                             buildJuzSuraOptions()
@@ -221,7 +221,7 @@ class SearchFragment : Fragment(), ItemSelectionListener<SearchModel>,
                     }
                 }
                 launch {
-                    searchViewModel!!.events.collect { event ->
+                    searchViewModel.events.collect { event ->
                         when (event) {
                             is SearchViewModel.SearchEvent.ShowError -> {
                                 binding!!.progreesBar.visibility = View.GONE
@@ -376,7 +376,7 @@ class SearchFragment : Fragment(), ItemSelectionListener<SearchModel>,
                 binding!!.filterContainer.rob3Tv.text = getString(R.string.rub3)
                 binding!!.filterContainer.hezbTv.text = getString(R.string.hizb)
             } else {
-                searchViewModel!!.getChapterSuras(optionIndex)
+                searchViewModel.getChapterSuras(optionIndex)
             }
             if (optionIndex != selectedJuz) {
                 selectedJuz = optionIndex

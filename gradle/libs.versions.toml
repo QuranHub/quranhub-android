@@ -19,7 +19,6 @@ cardview = "1.0.0"
 circularProgressButton = "1.4"
 constraintlayout = "2.2.2"
 easypermissions = "3.0.0"
-eventbus = "3.3.1"
 expandablerecyclerview = "v1.4"
 expandabletextview = "1.0.5"
 fancyshowcaseview = "1.4.0"
@@ -34,10 +33,7 @@ multidex = "2.0.1"
 prdownloader = "1.0.2"
 recyclerview = "1.4.0"
 recyclerviewFastscroll = "2.0.1"
-retrofit = "3.0.0"
 room = "2.8.4"
-rxandroid = "2.1.1"
-rxjava2 = "2.2.21"
 sdpAndroid = "1.1.1"
 sspAndroid = "1.1.1"
 junit = "4.13.2"
@@ -61,12 +57,10 @@ multidex = { module = "androidx.multidex:multidex", version.ref = "multidex" }
 recyclerview = { module = "androidx.recyclerview:recyclerview", version.ref = "recyclerview" }
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
-room-rxjava2 = { module = "androidx.room:room-rxjava2", version.ref = "room" }
 room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
 viewpager = { module = "androidx.viewpager:viewpager", version.ref = "viewpager" }
 circular-progress-button = { module = "com.github.dmytrodanylyk:circular-progress-button", version.ref = "circularProgressButton" }
 easypermissions = { module = "pub.devrel:easypermissions", version.ref = "easypermissions" }
-eventbus = { module = "org.greenrobot:eventbus", version.ref = "eventbus" }
 expandablerecyclerview = { module = "com.github.thoughtbot.expandable-recycler-view:expandablerecyclerview", version.ref = "expandablerecyclerview" }
 expandabletextview = { module = "at.blogc:expandabletextview", version.ref = "expandabletextview" }
 fancyshowcaseview = { module = "com.github.faruktoptas:FancyShowCaseView", version.ref = "fancyshowcaseview" }
@@ -83,11 +77,6 @@ material = { module = "com.google.android.material:material", version.ref = "mat
 materialdrawer = { module = "com.github.mikepenz:MaterialDrawer", version.ref = "materialdrawer" }
 prdownloader = { module = "com.github.amitshekhariitbhu:PRDownloader", version.ref = "prdownloader" }
 recyclerview-fastscroll = { module = "com.simplecityapps:recyclerview-fastscroll", version.ref = "recyclerviewFastscroll" }
-retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
-retrofit-converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofit" }
-retrofit-adapter-rxjava2 = { module = "com.squareup.retrofit2:adapter-rxjava2", version.ref = "retrofit" }
-rxjava2-rxandroid = { module = "io.reactivex.rxjava2:rxandroid", version.ref = "rxandroid" }
-rxjava2 = { module = "io.reactivex.rxjava2:rxjava", version.ref = "rxjava2" }
 sdp-android = { module = "com.intuit.sdp:sdp-android", version.ref = "sdpAndroid" }
 ssp-android = { module = "com.intuit.ssp:ssp-android", version.ref = "sspAndroid" }
 spectrum = { module = "com.thebluealliance:spectrum", version.ref = "spectrum" }

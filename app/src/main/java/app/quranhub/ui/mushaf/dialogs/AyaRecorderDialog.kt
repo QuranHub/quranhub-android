@@ -18,7 +18,7 @@ class AyaRecorderDialog : DialogFragment() {
     private var dialog: Dialog? = null
     private var listener: StopRecordingListener? = null
     private var ayaId = 0
-    private var voiceRecorderViewModel: VoiceRecorderViewModel? = null
+    private lateinit var voiceRecorderViewModel: VoiceRecorderViewModel
     private var binding: DialogAyaRecorderBinding? = null
 
     override fun onAttach(context: Context) {
@@ -56,8 +56,8 @@ class AyaRecorderDialog : DialogFragment() {
             VoiceRecorderViewModel::class.java
         )
         if (startRecord) {
-            voiceRecorderViewModel!!.setAyaRecorderPath(ayaId, requireContext())
-            voiceRecorderViewModel!!.startRecord()
+            voiceRecorderViewModel.setAyaRecorderPath(ayaId, requireContext())
+            voiceRecorderViewModel.startRecord()
         }
     }
 
@@ -88,9 +88,9 @@ class AyaRecorderDialog : DialogFragment() {
     }
 
     private fun onStopRecording() {
-        voiceRecorderViewModel!!.releaseRecorder()
+        voiceRecorderViewModel.releaseRecorder()
         binding!!.recorderChronometer.stop()
-        listener!!.onStopRecording(voiceRecorderViewModel!!.outputRecorderPath)
+        listener!!.onStopRecording(voiceRecorderViewModel.outputRecorderPath)
         dismiss()
     }
 
@@ -98,7 +98,7 @@ class AyaRecorderDialog : DialogFragment() {
         super.onDestroyView()
         binding!!.recorderChronometer.stop()
         if (!requireActivity().isChangingConfigurations) {
-            voiceRecorderViewModel!!.releaseRecorder()
+            voiceRecorderViewModel.releaseRecorder()
         }
         binding = null
     }

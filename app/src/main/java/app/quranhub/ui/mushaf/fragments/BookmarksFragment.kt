@@ -27,7 +27,7 @@ class BookmarksFragment : Fragment(), QuranNavigationCallbacks {
 
     private var binding: FragmentBookmarksBinding? = null
 
-    private var viewModel: BookmarksViewModel? = null
+    private lateinit var viewModel: BookmarksViewModel
     private var navDrawerListener: ToolbarActionsListener? = null
     private var quranNavigationCallbacks: QuranNavigationCallbacks? = null
     private var bookmarksListFragment: BookmarksListFragment? = null
@@ -61,7 +61,7 @@ class BookmarksFragment : Fragment(), QuranNavigationCallbacks {
         binding!!.etSearch.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
-                viewModel!!.onSearchQueryChanged(s.toString())
+                viewModel.onSearchQueryChanged(s.toString())
             }
 
             override fun afterTextChanged(s: Editable) {}
@@ -84,7 +84,7 @@ class BookmarksFragment : Fragment(), QuranNavigationCallbacks {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
-                    viewModel!!.uiState.collect { uiState ->
+                    viewModel.uiState.collect { uiState ->
                         if (uiState.isEditMode) {
                             binding!!.editBtn.visibility = View.INVISIBLE
                             binding!!.ibFinishEdit.visibility = View.VISIBLE
@@ -96,8 +96,17 @@ class BookmarksFragment : Fragment(), QuranNavigationCallbacks {
                         }
                         if (uiState.isListEditable) {
                             binding!!.editBtn.setImageResource(R.drawable.edit_gold_ic)
+                            binding!!.editBtn.setColorFilter(null)
+                            binding!!.filterBtn.setColorFilter(null)
                         } else {
+                            binding!!.editBtn.setImageResource(R.drawable.edit_gold_ic)
                             binding!!.editBtn.setColorFilter(
+                                ContextCompat.getColor(
+                                    requireContext(),
+                                    R.color.dark_grey
+                                )
+                            )
+                            binding!!.filterBtn.setColorFilter(
                                 ContextCompat.getColor(
                                     requireContext(),
                                     R.color.dark_grey
@@ -107,7 +116,7 @@ class BookmarksFragment : Fragment(), QuranNavigationCallbacks {
                     }
                 }
                 launch {
-                    viewModel!!.bookmarksEvents.collect { event ->
+                    viewModel.bookmarksEvents.collect { event ->
                         when (event) {
                             is BookmarksViewModel.BookmarksEvent.ListNotEditable ->
                                 showMessage(getString(R.string.msg_no_bookmarks))
@@ -133,15 +142,19 @@ class BookmarksFragment : Fragment(), QuranNavigationCallbacks {
     }
 
     private fun edit() {
-        viewModel!!.onEditClicked()
+        viewModel.onEditClicked()
     }
 
     private fun filter() {
-        bookmarksListFragment!!.showFilterDialog()
+        if (viewModel.uiState.value.isListEditable) {
+            bookmarksListFragment!!.showFilterDialog()
+        } else {
+            viewModel.onFilterClicked()
+        }
     }
 
     private fun finishEdit() {
-        viewModel!!.onFinishEditClicked()
+        viewModel.onFinishEditClicked()
     }
 
     private fun showMessage(message: String) {

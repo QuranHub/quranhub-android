@@ -69,8 +69,17 @@ class DisplayableTranslation(translationBook: TranslationBook) {
 
     override fun equals(other: Any?): Boolean {
         return if (other is DisplayableTranslation) {
-            id == other.id
+            id == other.id &&
+                downloadStatus == other.downloadStatus &&
+                downloadLevelPercentage == other.downloadLevelPercentage
         } else false
+    }
+
+    override fun hashCode(): Int {
+        var result = id.hashCode()
+        result = 31 * result + downloadStatus
+        result = 31 * result + downloadLevelPercentage
+        return result
     }
 
     override fun toString(): String {
