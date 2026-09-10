@@ -26,6 +26,7 @@ spectrum = "0.7.1"
 viewpager = "1.1.0"
 firebaseBom = "34.18.0"
 glide = "5.0.9"
+desugarJdkLibs = "2.1.5"
 lifecycle = "2.11.0"
 material = "1.14.0"
 materialdrawer = "v6.1.3"
@@ -73,6 +74,7 @@ firebase-messaging = { module = "com.google.firebase:firebase-messaging" }
 firebase-perf = { module = "com.google.firebase:firebase-perf" }
 glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
 glide-ksp = { module = "com.github.bumptech.glide:ksp", version.ref = "glide" }
+desugar-jdk-libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugarJdkLibs" }
 material = { module = "com.google.android.material:material", version.ref = "material" }
 materialdrawer = { module = "com.github.mikepenz:MaterialDrawer", version.ref = "materialdrawer" }
 prdownloader = { module = "com.github.amitshekhariitbhu:PRDownloader", version.ref = "prdownloader" }
