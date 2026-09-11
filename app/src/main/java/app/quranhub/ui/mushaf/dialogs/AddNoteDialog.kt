@@ -10,6 +10,7 @@ import android.os.Bundle
 import android.os.Environment
 import android.os.SystemClock
 import android.text.TextUtils
+import android.util.Log
 import android.view.View
 import android.view.Window
 import android.widget.RadioButton
@@ -280,7 +281,7 @@ class AddNoteDialog : DialogFragment(), MediaPlayerCallback {
         } catch (e: RuntimeException) {
             // setAudioSource throws when the mic is in use or unavailable
             // (see Crashlytics: AddNoteDialog.startRecord setAudioSource failed).
-            e.printStackTrace()
+            Log.e(TAG, "Failed to configure audio recorder", e)
             audioRecorder?.release()
             audioRecorder = null
             activity?.let {
@@ -292,11 +293,11 @@ class AddNoteDialog : DialogFragment(), MediaPlayerCallback {
             audioRecorder!!.prepare()
             audioRecorder!!.start()
         } catch (e: IOException) {
-            e.printStackTrace()
+            Log.e(TAG, "Failed to start recording", e)
         } catch (e: RuntimeException) {
-            e.printStackTrace()
+            Log.e(TAG, "Failed to start recording", e)
         } catch (e: IllegalStateException) {
-            e.printStackTrace()
+            Log.e(TAG, "Failed to start recording", e)
         }
     }
 
@@ -371,6 +372,7 @@ class AddNoteDialog : DialogFragment(), MediaPlayerCallback {
     }
 
     companion object {
+        private val TAG = AddNoteDialog::class.java.simpleName
 
         fun getInstance(ayaId: Int): AddNoteDialog {
             val bundle = Bundle()

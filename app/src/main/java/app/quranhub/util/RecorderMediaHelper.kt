@@ -2,6 +2,7 @@ package app.quranhub.util
 
 import android.media.MediaPlayer
 import android.os.Handler
+import android.util.Log
 import java.io.IOException
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
@@ -42,7 +43,7 @@ class RecorderMediaHelper {
             mediaPlayer!!.setDataSource(path)
             mediaPlayer!!.prepare()
         } catch (e: IOException) {
-            e.printStackTrace()
+            Log.e(TAG, "Failed to set audio path", e)
         }
         initProgressCallback()
     }
@@ -78,7 +79,7 @@ class RecorderMediaHelper {
             try {
                 mediaPlayer!!.release()
             } catch (e: RuntimeException) {
-                e.printStackTrace()
+                Log.e(TAG, "Failed to release media player", e)
             }
             mediaPlayer = null
         }
@@ -150,7 +151,7 @@ class RecorderMediaHelper {
                 try {
                     milliSecondsToTimer(player.currentPosition)
                 } catch (e: IllegalStateException) {
-                    e.printStackTrace()
+                    Log.e(TAG, "Failed to read player position", e)
                 }
             }
         }
@@ -185,6 +186,7 @@ class RecorderMediaHelper {
     }
 
     companion object {
+        private val TAG = RecorderMediaHelper::class.java.simpleName
         const val PLAYBACK_POSITION_REFRESH_INTERVAL_MS = 150
         const val TIMER_INTERVAL_MS = 1
     }
