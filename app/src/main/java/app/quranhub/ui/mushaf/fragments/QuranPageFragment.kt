@@ -540,14 +540,19 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener,
 
     // draw shadow when user make prev or next action on aya
     fun drawActionShadow(isClickPrev: Boolean) {
-        if (pageAyasList == null) return
+        val ayas = pageAyasList ?: return
+        // Audio state events can arrive before this page's ayas finish
+        // loading (or with a stale index) — bail out instead of crashing.
+        if (ayas.isEmpty()) return
         if (isClickPrev) {
-            previousAya = if (currentAyaIndex - 1 > 0) pageAyasList!![currentAyaIndex - 2] else null
-            currentAya = pageAyasList!![currentAyaIndex - 1]
+            if (currentAyaIndex !in 1..ayas.size) return
+            previousAya = if (currentAyaIndex - 1 > 0) ayas[currentAyaIndex - 2] else null
+            currentAya = ayas[currentAyaIndex - 1]
             currentAyaIndex--
         } else {
-            previousAya = pageAyasList!![currentAyaIndex]
-            currentAya = pageAyasList!![currentAyaIndex + 1]
+            if (currentAyaIndex >= ayas.size - 1) return
+            previousAya = ayas[currentAyaIndex]
+            currentAya = ayas[currentAyaIndex + 1]
             currentAyaIndex++
         }
         drawShadow()
