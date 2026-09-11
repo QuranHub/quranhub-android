@@ -271,15 +271,31 @@ class AddNoteDialog : DialogFragment(), MediaPlayerCallback {
     }
 
     private fun startRecord() {
-        audioRecorder = MediaRecorder()
-        audioRecorder!!.setAudioSource(MediaRecorder.AudioSource.MIC)
-        audioRecorder!!.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
-        audioRecorder!!.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT)
-        audioRecorder!!.setOutputFile(outputRecorderPath)
+        try {
+            audioRecorder = MediaRecorder()
+            audioRecorder!!.setAudioSource(MediaRecorder.AudioSource.MIC)
+            audioRecorder!!.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
+            audioRecorder!!.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT)
+            audioRecorder!!.setOutputFile(outputRecorderPath)
+        } catch (e: RuntimeException) {
+            // setAudioSource throws when the mic is in use or unavailable
+            // (see Crashlytics: AddNoteDialog.startRecord setAudioSource failed).
+            e.printStackTrace()
+            audioRecorder?.release()
+            audioRecorder = null
+            activity?.let {
+                Toast.makeText(it, getString(R.string.accept_perm), Toast.LENGTH_LONG).show()
+            }
+            return
+        }
         try {
             audioRecorder!!.prepare()
             audioRecorder!!.start()
         } catch (e: IOException) {
+            e.printStackTrace()
+        } catch (e: RuntimeException) {
+            e.printStackTrace()
+        } catch (e: IllegalStateException) {
             e.printStackTrace()
         }
     }

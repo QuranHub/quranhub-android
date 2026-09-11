@@ -103,6 +103,7 @@
             android:layoutDirection="ltr"
             android:paddingTop="@dimen/_6sdp"
             android:paddingBottom="@dimen/_6sdp"
+            android:saveEnabled="false"
             android:scrollIndicators="end"
             android:scrollbarStyle="insideInset"
             android:scrollbars="vertical"

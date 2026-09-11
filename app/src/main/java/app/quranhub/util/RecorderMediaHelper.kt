@@ -75,10 +75,21 @@ class RecorderMediaHelper {
 
     fun release() {
         if (mediaPlayer != null) {
-            mediaPlayer!!.release()
+            try {
+                mediaPlayer!!.release()
+            } catch (e: RuntimeException) {
+                e.printStackTrace()
+            }
             mediaPlayer = null
         }
+        // Stop both updaters: the progress executor otherwise keeps posting
+        // onPositionChanged to a destroyed dialog (see Crashlytics:
+        // AyaRecorderPlayerDialog.onUpdatedTime NPE).
+        progressExecutor?.shutdownNow()
+        progressExecutor = null
+        seekbarPositionUpdateTask = null
         stopAudioUpdatedTime()
+        mediaPlayerCallback = null
     }
 
     fun play() {
@@ -134,7 +145,14 @@ class RecorderMediaHelper {
     fun startUpdatingAudioTime() {
         if (audioUpdatedTimeTask == null) {
             audioUpdatedTimeTask = Handler()
-            audioTimeRunnable = Runnable { milliSecondsToTimer(mediaPlayer!!.currentPosition) }
+            audioTimeRunnable = Runnable {
+                val player = mediaPlayer ?: return@Runnable
+                try {
+                    milliSecondsToTimer(player.currentPosition)
+                } catch (e: IllegalStateException) {
+                    e.printStackTrace()
+                }
+            }
         }
         audioUpdatedTimeTask!!.postDelayed(audioTimeRunnable!!, 1000)
     }

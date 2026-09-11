@@ -7,6 +7,7 @@ import android.os.SystemClock
 import android.view.Gravity
 import android.view.View
 import android.view.Window
+import android.widget.Toast
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.ViewModelProvider
 import app.quranhub.R
@@ -58,7 +59,17 @@ class AyaRecorderDialog : DialogFragment() {
         )
         if (startRecord) {
             voiceRecorderViewModel.setAyaRecorderPath(ayaId, requireContext())
-            voiceRecorderViewModel.startRecord()
+            if (!voiceRecorderViewModel.isRecorderAvailable ||
+                !voiceRecorderViewModel.startRecord()
+            ) {
+                // Mic in use / unavailable: don't crash, close gracefully.
+                Toast.makeText(
+                    requireContext(),
+                    getString(R.string.accept_perm),
+                    Toast.LENGTH_LONG
+                ).show()
+                dismissAllowingStateLoss()
+            }
         }
     }
 
