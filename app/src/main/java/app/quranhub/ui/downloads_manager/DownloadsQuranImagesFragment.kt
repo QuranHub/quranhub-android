@@ -165,7 +165,7 @@ class DownloadsQuranImagesFragment : Fragment() {
     private fun onImageLoaded(pageNum: Int, isSuccessful: Boolean = true) {
         Log.d("TAG", "onImageLoaded: $pageNum , success: $isSuccessful")
 
-        if (_binding == null) return
+        if (_binding == null || !isAdded) return
 
         totalPagesDownloaded += 1
 
@@ -185,16 +185,22 @@ class DownloadsQuranImagesFragment : Fragment() {
             binding.groupDownloadInfo.isVisible = false
             binding.tvDownloadProgress.text = ""
             binding.root.keepScreenOn = false
-            Toast.makeText(requireContext(), R.string.download_complete, Toast.LENGTH_SHORT).show()
+            context?.let {
+                Toast.makeText(it, R.string.download_complete, Toast.LENGTH_SHORT).show()
+            }
             totalPagesDownloaded = 0
 
+            // The delayed reset can fire after onDestroyView (Glide callbacks
+            // outlive the view) — re-check binding (see Crashlytics:
+            // DownloadsQuranImagesFragment.getBinding NPE).
             handler.postDelayed({
-                binding.btnDownload.progress = 0
+                _binding?.btnDownload?.progress = 0
             }, 1500)
         }
     }
 
     override fun onDestroyView() {
+        handler.removeCallbacksAndMessages(null)
         super.onDestroyView()
         _binding = null
     }

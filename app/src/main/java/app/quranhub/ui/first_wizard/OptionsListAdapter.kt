@@ -146,7 +146,13 @@ class OptionsListAdapter : RecyclerView.Adapter<OptionsListAdapter.ViewHolder>, 
         }
 
         override fun onClick(v: View) {
-            val originalIndex = filteredOriginalIndices[adapterPosition]
+            // adapterPosition is NO_POSITION (-1) when the holder was removed or the
+            // list was filtered between layout and click (see Crashlytics:
+            // OptionsListAdapter.ViewHolder.onClick ArrayIndexOutOfBounds).
+            val pos = bindingAdapterPosition
+            if (pos == RecyclerView.NO_POSITION) return
+            if (pos < 0 || pos >= filteredOriginalIndices.size) return
+            val originalIndex = filteredOriginalIndices[pos]
             setSelectedOptionIndex(originalIndex)
             itemClickListener.onItemClick(originalIndex)
         }

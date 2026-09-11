@@ -2,6 +2,7 @@ package app.quranhub.util
 
 import android.media.MediaPlayer
 import android.os.Handler
+import android.util.Log
 import java.io.IOException
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
@@ -42,7 +43,7 @@ class RecorderMediaHelper {
             mediaPlayer!!.setDataSource(path)
             mediaPlayer!!.prepare()
         } catch (e: IOException) {
-            e.printStackTrace()
+            Log.e(TAG, "Failed to set audio path", e)
         }
         initProgressCallback()
     }
@@ -75,10 +76,21 @@ class RecorderMediaHelper {
 
     fun release() {
         if (mediaPlayer != null) {
-            mediaPlayer!!.release()
+            try {
+                mediaPlayer!!.release()
+            } catch (e: RuntimeException) {
+                Log.e(TAG, "Failed to release media player", e)
+            }
             mediaPlayer = null
         }
+        // Stop both updaters: the progress executor otherwise keeps posting
+        // onPositionChanged to a destroyed dialog (see Crashlytics:
+        // AyaRecorderPlayerDialog.onUpdatedTime NPE).
+        progressExecutor?.shutdownNow()
+        progressExecutor = null
+        seekbarPositionUpdateTask = null
         stopAudioUpdatedTime()
+        mediaPlayerCallback = null
     }
 
     fun play() {
@@ -134,7 +146,14 @@ class RecorderMediaHelper {
     fun startUpdatingAudioTime() {
         if (audioUpdatedTimeTask == null) {
             audioUpdatedTimeTask = Handler()
-            audioTimeRunnable = Runnable { milliSecondsToTimer(mediaPlayer!!.currentPosition) }
+            audioTimeRunnable = Runnable {
+                val player = mediaPlayer ?: return@Runnable
+                try {
+                    milliSecondsToTimer(player.currentPosition)
+                } catch (e: IllegalStateException) {
+                    Log.e(TAG, "Failed to read player position", e)
+                }
+            }
         }
         audioUpdatedTimeTask!!.postDelayed(audioTimeRunnable!!, 1000)
     }
@@ -167,6 +186,7 @@ class RecorderMediaHelper {
     }
 
     companion object {
+        private val TAG = RecorderMediaHelper::class.java.simpleName
         const val PLAYBACK_POSITION_REFRESH_INTERVAL_MS = 150
         const val TIMER_INTERVAL_MS = 1
     }

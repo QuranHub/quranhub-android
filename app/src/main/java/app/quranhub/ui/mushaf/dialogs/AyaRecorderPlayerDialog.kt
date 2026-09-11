@@ -156,10 +156,14 @@ class AyaRecorderPlayerDialog : DialogFragment(), MediaPlayerCallback {
     }
 
     override fun onGetMaxDuration(duration: Int) {
+        if (_binding == null) return
         binding.recorderProgress.max = duration
     }
 
     override fun onPositionChanged(position: Int) {
+        // Callbacks arrive on a background Handler and can outlive onDestroyView
+        // (see Crashlytics: AyaRecorderPlayerDialog.onUpdatedTime NPE).
+        if (_binding == null) return
         if (!userIsSeeking) {
             if (Build.VERSION.SDK_INT >= 24) {
                 binding.recorderProgress.setProgress(position, true)
@@ -170,10 +174,12 @@ class AyaRecorderPlayerDialog : DialogFragment(), MediaPlayerCallback {
     }
 
     override fun onUpdatedTime(time: String?) {
+        if (_binding == null) return
         binding.recorderTimeTv.text = time
     }
 
     override fun onStateChanged(state: PlaybackState) {
+        if (_binding == null) return
         if (state == PlaybackState.COMPLETED) {
             binding.recorderProgress.progress = 0
             isPlaying = false
@@ -183,10 +189,13 @@ class AyaRecorderPlayerDialog : DialogFragment(), MediaPlayerCallback {
     }
 
     override fun onDestroyView() {
-        super.onDestroyView()
+        // Detach callbacks first so no Handler post touches the cleared binding.
+        recorderMediaHelper?.setMediaPlayerCallback(null)
         if (!requireActivity().isChangingConfigurations && recorderMediaHelper != null) {
             recorderMediaHelper!!.release()
         }
+        recorderMediaHelper = null
+        super.onDestroyView()
         _binding = null
     }
 

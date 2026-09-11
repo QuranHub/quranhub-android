@@ -297,9 +297,16 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener,
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putParcelable("current_aya", currentAya)
-        outState.putParcelable("prev_aya", previousAya)
-        outState.putParcelable("selected_note", viewModel.uiState.value.selectedAyaNote)
+        // Strip the large tafseer payload before parceling: full Aya objects saved
+        // across ViewPager pages add up and trigger TransactionTooLargeException
+        // (see Crashlytics: BinderProxy.transactNative). Tafseer is reloaded on
+        // demand via viewModel.getAyaTafseer().
+        outState.putParcelable("current_aya", currentAya?.copy(tafseer = ""))
+        outState.putParcelable("prev_aya", previousAya?.copy(tafseer = ""))
+        outState.putParcelable(
+            "selected_note",
+            viewModel.uiState.value.selectedAyaNote
+        )
         outState.putBoolean("open_dialog", noteDialogOpen)
         outState.putInt("CURRENT_AYA_INDEX", currentAyaIndex)
         outState.putInt("num_of_ayas", numOfAyaInPage)
@@ -765,14 +772,20 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener,
     // get aya position of start repeat interval in current page
     private val firstAyaNumberInPage: Int
         get() {
-            if (pageAyasList!![0].sura != mushafFragment!!.fromSuraDownloaded) {
-                for (i in pageAyasList!!.indices) {
-                    if (pageAyasList!![i].sura == mushafFragment!!.fromSuraDownloaded && pageAyasList!![i].suraAya == mushafFragment!!.firstAyaInRepeatGroup) {
+            val ayas = pageAyasList
+            val fragment = mushafFragment
+            if (ayas.isNullOrEmpty() || fragment == null) return 0
+            if (ayas[0].sura != fragment.fromSuraDownloaded) {
+                for (i in ayas.indices) {
+                    if (ayas[i].sura == fragment.fromSuraDownloaded && ayas[i].suraAya == fragment.firstAyaInRepeatGroup) {
                         return i
                     }
                 }
             }
-            return mushafFragment!!.firstAyaInRepeatGroup - pageAyasList!![0].suraAya
+            // The repeat offset can fall outside this page (stale repeat group after
+            // page change) — clamp instead of crashing (see Crashlytics:
+            // checkPlayMiddleAyaAudio IndexOutOfBounds).
+            return (fragment.firstAyaInRepeatGroup - ayas[0].suraAya).coerceIn(ayas.indices)
         }
 
     // draw shadow of current aya played in notification audio when launch app from notification
@@ -806,26 +819,32 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener,
     }
 
     private fun checkPlayFirstAyaAudio() {
-        if (isPageShown && pageAyasList != null && playFirstAyaAudio) {
+        val ayas = pageAyasList
+        if (isPageShown && !ayas.isNullOrEmpty() && playFirstAyaAudio) {
             currentAyaIndex = 0
-            currentAya = pageAyasList!![currentAyaIndex]
+            currentAya = ayas[currentAyaIndex]
             previousAya = null
             drawShadow()
-            mushafFragment!!.checkAyaRecorderState(currentAya!!.id)
+            mushafFragment?.checkAyaRecorderState(currentAya!!.id)
             playFirstAyaAudio = false
-            mushafFragment!!.playAudioService()
+            mushafFragment?.playAudioService()
+        } else if (ayas.isNullOrEmpty()) {
+            playFirstAyaAudio = false
         }
     }
 
     private fun checkPlayMiddleAyaAudio() {
-        if (playMiddleAyaAudio && isPageShown && pageAyasList != null) {
-            currentAyaIndex = firstAyaNumberInPage
-            currentAya = pageAyasList!![currentAyaIndex]
-            previousAya = if (currentAyaIndex > 0) pageAyasList!![currentAyaIndex - 1] else null
+        val ayas = pageAyasList
+        if (playMiddleAyaAudio && isPageShown && !ayas.isNullOrEmpty()) {
+            currentAyaIndex = firstAyaNumberInPage.coerceIn(ayas.indices)
+            currentAya = ayas[currentAyaIndex]
+            previousAya = if (currentAyaIndex > 0) ayas[currentAyaIndex - 1] else null
             drawShadow()
-            mushafFragment!!.checkAyaRecorderState(currentAya!!.id)
+            mushafFragment?.checkAyaRecorderState(currentAya!!.id)
             playMiddleAyaAudio = false
-            mushafFragment!!.playAudioService()
+            mushafFragment?.playAudioService()
+        } else if (ayas.isNullOrEmpty()) {
+            playMiddleAyaAudio = false
         }
     }
 
