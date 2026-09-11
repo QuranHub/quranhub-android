@@ -720,9 +720,15 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener,
     }
 
     fun onAyaAudioNotFound() {
+        // Audio state events can arrive after this page was detached/recycled
+        // (ViewPager POSITION_NONE recreates fragments, stale cached refs) —
+        // bail out instead of crashing on requireContext().
+        if (!isSafeFragment(this)) return
+        if (childFragmentManager.isStateSaved) return
         mushafFragment?.togglePauseState(false)
         isAyaAudioDownloaded = false
-        val reciterId = AppPreferencesManager.getReciterSheikhSetting(requireContext())
+        val ctx = context ?: return
+        val reciterId = AppPreferencesManager.getReciterSheikhSetting(ctx)
         if (reciterId != null) {
             openDownloadAmountDialog(reciterId)
         } else {

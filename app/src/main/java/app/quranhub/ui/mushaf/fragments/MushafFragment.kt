@@ -429,6 +429,7 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+        quranPageFragment = null
         if (AppPreferencesManager.getScreenReadingBacklightSetting(requireContext())) {
             // re-enable the screen timeout
             keepScreenOn(requireActivity(), false)
@@ -493,12 +494,23 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
     }
 
     private fun setCurrentQuranPageFragment() {
-        if (quranPageFragment == null) {
-            quranPageFragment = binding.quranViewpager.adapter?.instantiateItem(
-                binding.quranViewpager,
-                binding.quranViewpager.currentItem
-            ) as? QuranPageFragment
+        val cached = quranPageFragment
+        if (cached != null && cached.isAdded && !cached.isDetached) return
+        // Cached page is stale (detached/recycled after notifyDataSetChanged with
+        // POSITION_NONE, or left over from a destroyed view) — re-resolve it.
+        // Audio state events arriving in between must not act on a detached page.
+        val binding = _binding ?: run {
+            quranPageFragment = null
+            return
         }
+        val adapter = binding.quranViewpager.adapter ?: run {
+            quranPageFragment = null
+            return
+        }
+        quranPageFragment = adapter.instantiateItem(
+            binding.quranViewpager,
+            binding.quranViewpager.currentItem
+        ) as? QuranPageFragment
     }
 
     private fun setPageDir() {
@@ -1075,7 +1087,16 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
                     checkAyaRecorderState(quranPageFragment!!.currentAyaId)
                 }
             }
-            AudioPlaybackState.NOT_DOWNLOADED -> quranPageFragment!!.onAyaAudioNotFound()
+            AudioPlaybackState.NOT_DOWNLOADED -> {
+                // setCurrentQuranPageFragment above already drops stale refs;
+                // double-guard here — onAyaAudioNotFound needs an attached
+                // page (requireContext/dialogs), audio events can win the race
+                // with paging/recycling.
+                val pageFragment = quranPageFragment
+                if (pageFragment != null && pageFragment.isAdded && !pageFragment.isDetached) {
+                    pageFragment.onAyaAudioNotFound()
+                }
+            }
             AudioPlaybackState.GROUP_REPEAT_COMPLETED -> swipToFirstAyaInRepeatGroup()
         }
     }
