@@ -318,6 +318,9 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
 
     private fun checkAudioDialogState() {
         if (isAudioDialogOpen) {
+            // View may be gone on config-restore path; posting to a null
+            // binding is what crashed (Crashlytics 23256484d76e6392bb6e25aecd751bc6).
+            if (_binding == null || !isAdded) return
             showAudioPopupOnNextLayout()
             if (isAudioPlay) {
                 ayaAudioPopup!!.setPlayState()
@@ -327,9 +330,14 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
     }
 
     // Show the audio popup on the next layout pass; skip when the fragment
-    // view is already torn down (a posted runnable can outlive onDestroyView)
+    // view is already torn down (a posted runnable can outlive onDestroyView).
+    // Both the post() call and the runnable must be null-safe: Crashlytics
+    // issue 23256484d76e6392bb6e25aecd751bc6 shows getBinding() NPEs from
+    // openAyaAudioDialog/checkAudioDialogState lambdas firing via Handler
+    // after onDestroyView nulled the binding.
     private fun showAudioPopupOnNextLayout() {
-        binding.quranViewpager.post {
+        _binding?.quranViewpager?.post {
+            if (!isAdded) return@post
             _binding?.let { ayaAudioPopup?.showPopup(it.quranViewpager) }
         }
     }
@@ -427,6 +435,11 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
     }
 
     override fun onDestroyView() {
+        // Drop pending seekbar hide callbacks first; the runnable itself is
+        // _binding-safe, but there is no reason to let it outlive the view.
+        seekbarPageRunnable?.let { seekbarPageHandler?.removeCallbacks(it) }
+        seekbarPageHandler = null
+        seekbarPageRunnable = null
         super.onDestroyView()
         _binding = null
         quranPageFragment = null
@@ -614,9 +627,12 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
     }
 
     private fun onCloseTranslationDiaog() {
-        if (sheetBehavior!!.peekHeight > 0) {
-            sheetBehavior!!.peekHeight = 0
-            sheetBehavior!!.state = BottomSheetBehavior.STATE_COLLAPSED
+        // sheetBehavior wraps a destroyed view after onDestroyView; no-op then.
+        if (_binding == null) return
+        val behavior = sheetBehavior ?: return
+        if (behavior.peekHeight > 0) {
+            behavior.peekHeight = 0
+            behavior.state = BottomSheetBehavior.STATE_COLLAPSED
             isBottomSheetVisible = false
         }
     }
@@ -733,8 +749,13 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
 
     // open audio dailog actions for selected aya
     fun openAyaAudioDialog() {
+        // Can be invoked from QuranPageFragment.onListenClick or notification
+        // paths after onDestroyView; dereferencing binding then NPEs
+        // (Crashlytics 23256484d76e6392bb6e25aecd751bc6).
+        val currentBinding = _binding ?: return
+        if (!isAdded) return
         onCloseTranslationDiaog()
-        binding.barsGroup.visibility = View.GONE
+        currentBinding.barsGroup.visibility = View.GONE
         if (!isAudioDialogOpen) {
             showAudioPopupOnNextLayout()
             isAudioDialogOpen = true
@@ -895,14 +916,16 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
 
     override fun onStopRecording(filePath: String?) {
         viewModel.saveRecorderPath(ayaId, filePath!!)
-        ayaAudioPopup!!.showPopup(binding.quranViewpager)
+        // Recorder dialog callback can land after onDestroyView; skip the
+        // popup show when the view is gone but keep the state updates.
+        _binding?.quranViewpager?.let { ayaAudioPopup?.showPopup(it) }
         ayaAudioPopup!!.setRecordState(true)
         ayaHasRecorder = true
         isAudioDialogOpen = true
     }
 
     override fun onClickDeleteRecorder() {
-        ayaAudioPopup!!.showPopup(binding.quranViewpager)
+        _binding?.quranViewpager?.let { ayaAudioPopup?.showPopup(it) }
         isAudioDialogOpen = true
         ayaHasRecorder = false
         ayaAudioPopup!!.setRecordState(false)
@@ -910,10 +933,11 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
     }
 
     private fun autoSwipPage(page: Int) {
+        val currentBinding = _binding ?: return
         isOriented = false
         isAudioPlay = false
         ayaAudioPopup!!.setPauseState()
-        binding.quranViewpager.setCurrentItem(page, true)
+        currentBinding.quranViewpager.setCurrentItem(page, true)
     }
 
     // start audio of selected aya after it downloaded its sura audios
@@ -1048,7 +1072,8 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
     private fun onGetCurrentAyaFromNotification(aya: Aya) {
         initAyaFromNotification = true
         notificationCurrentAya = aya
-        binding.quranViewpager.currentItem = Constants.Quran.NUM_OF_PAGES - aya.page
+        // ViewModel event can be delivered during teardown; skip page jump then.
+        _binding?.quranViewpager?.currentItem = Constants.Quran.NUM_OF_PAGES - aya.page
     }
 
     // Playback-state subscriber: reflect audio states from the foreground
