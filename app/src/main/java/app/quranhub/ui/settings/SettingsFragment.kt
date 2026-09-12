@@ -52,6 +52,7 @@ class SettingsFragment : Fragment(), OptionsListDialogFragment.ItemSelectionList
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        observeDialogResults()
         setSettingsViewsListeners()
         observeViewModel()
     }
@@ -92,16 +93,38 @@ class SettingsFragment : Fragment(), OptionsListDialogFragment.ItemSelectionList
         b.settingQuranReader.currentValue = state.reciterName
     }
 
+    private fun observeDialogResults() {
+        val listener =
+            { _: String, bundle: Bundle ->
+                onItemSelected(
+                    bundle.getInt(OptionsListDialogFragment.RESULT_REQUEST_CODE),
+                    bundle.getInt(OptionsListDialogFragment.RESULT_ITEM_INDEX)
+                )
+            }
+        childFragmentManager.setFragmentResultListener(
+            REQUEST_APP_LANG, viewLifecycleOwner, listener
+        )
+        childFragmentManager.setFragmentResultListener(
+            REQUEST_TRANS_LANG, viewLifecycleOwner, listener
+        )
+        childFragmentManager.setFragmentResultListener(
+            REQUEST_RECITATION, viewLifecycleOwner, listener
+        )
+    }
+
     private fun setSettingsViewsListeners() {
         binding.settingAppLang.setOnClickListener {
             val appLangDialog = OptionsListDialogFragment.getInstance(
                 getString(R.string.app_lang_setting_dialog_title),
                 Constants.Language.NAMES_STR_IDS,
                 Constants.Language.FLAGS_DRAWABLE_IDS,
-                viewModel.uiState.value.appLangIndex, this, RC_APP_LANG_SETTING
+                viewModel.uiState.value.appLangIndex,
+                requireContext(),
+                REQUEST_APP_LANG,
+                RC_APP_LANG_SETTING
             )
             appLangDialog.show(
-                requireActivity().supportFragmentManager, "AppLangDialog"
+                childFragmentManager, "AppLangDialog"
             )
         }
         binding.settingTranslationLang.setOnClickListener {
@@ -109,10 +132,13 @@ class SettingsFragment : Fragment(), OptionsListDialogFragment.ItemSelectionList
                 getString(R.string.translation_lang_setting_dialog_title),
                 Constants.Language.NAMES_STR_IDS,
                 Constants.Language.FLAGS_DRAWABLE_IDS,
-                viewModel.uiState.value.translationLangIndex, this, RC_TRANS_LANG_SETTING
+                viewModel.uiState.value.translationLangIndex,
+                requireContext(),
+                REQUEST_TRANS_LANG,
+                RC_TRANS_LANG_SETTING
             )
             translationLangDialog.show(
-                requireActivity().supportFragmentManager, "TransLangDialog"
+                childFragmentManager, "TransLangDialog"
             )
         }
         binding.settingScreenReadingBacklight.setOnCheckedChangeListener(object :
@@ -132,10 +158,11 @@ class SettingsFragment : Fragment(), OptionsListDialogFragment.ItemSelectionList
                 resources.getString(R.string.recitation_setting_dialog_title),
                 Constants.Recitation.NAMES_STR_IDS,
                 viewModel.uiState.value.recitationIndex,
-                this,
+                requireContext(),
+                REQUEST_RECITATION,
                 RC_RECITATION_SETTING
             )
-            recitationDialog.show(requireActivity().supportFragmentManager, "RecitationDialog")
+            recitationDialog.show(childFragmentManager, "RecitationDialog")
         }
         binding.settingQuranReader.setOnClickListener {
             val recitationId = viewModel.uiState.value.recitationIndex
@@ -189,5 +216,8 @@ class SettingsFragment : Fragment(), OptionsListDialogFragment.ItemSelectionList
         private const val RC_APP_LANG_SETTING = 1
         private const val RC_TRANS_LANG_SETTING = 2
         private const val RC_RECITATION_SETTING = 3
+        private const val REQUEST_APP_LANG = "SettingsFragment:app_lang"
+        private const val REQUEST_TRANS_LANG = "SettingsFragment:trans_lang"
+        private const val REQUEST_RECITATION = "SettingsFragment:recitation"
     }
 }

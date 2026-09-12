@@ -72,6 +72,7 @@ class TafseerFragment : Fragment(), OptionDialog.ItemClickListener, TranslationS
         savedInstanceState?.let { getPrevState(it) }
         initRecycler()
         bindViewModel()
+        observeDialogResult()
         attachListeners()
     }
 
@@ -81,6 +82,17 @@ class TafseerFragment : Fragment(), OptionDialog.ItemClickListener, TranslationS
         binding.filterBookBtn.setOnClickListener { onOpenBooksFilter() }
         binding.filterLangBtn.setOnClickListener { onOpenLangFilter() }
         binding.hamburgerIv.setOnClickListener { onNavHamburgerClick() }
+    }
+
+    private fun observeDialogResult() {
+        childFragmentManager.setFragmentResultListener(
+            REQUEST_TRANS_LANG, viewLifecycleOwner
+        ) { _, bundle ->
+            onItemSelected(
+                bundle.getInt(OptionsListDialogFragment.RESULT_REQUEST_CODE),
+                bundle.getInt(OptionsListDialogFragment.RESULT_ITEM_INDEX)
+            )
+        }
     }
 
     private fun getPrevState(savedInstanceState: Bundle) {
@@ -211,10 +223,11 @@ class TafseerFragment : Fragment(), OptionDialog.ItemClickListener, TranslationS
             getString(R.string.translation_lang_setting_dialog_title),
             Constants.Language.NAMES_STR_IDS,
             currentTranslationLanguageIndex,
-            this,
+            requireContext(),
+            REQUEST_TRANS_LANG,
             RC_TRANS_LANG_SETTING
         )
-        translationLangDialog.show(parentFragmentManager, "trans_lang_dialog")
+        translationLangDialog.show(childFragmentManager, "trans_lang_dialog")
     }
 
     private fun onNavHamburgerClick() {
@@ -248,6 +261,7 @@ class TafseerFragment : Fragment(), OptionDialog.ItemClickListener, TranslationS
     companion object {
 
         private const val RC_TRANS_LANG_SETTING = 2
+        private const val REQUEST_TRANS_LANG = "TafseerFragment:trans_lang"
         private const val ARG_SURA_NAME = "ARG_SURA_NAME"
         private const val ARG_SURA_NUMBER = "ARG_PAGE_NUMBER"
         private const val ARG_BOOK_DB_NAME = "ARG_BOOK_DB_NAME"
