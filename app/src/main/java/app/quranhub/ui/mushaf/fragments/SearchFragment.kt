@@ -83,6 +83,7 @@ class SearchFragment : Fragment(), ItemSelectionListener<SearchModel>,
         initRecycler()
         initViewModel()
         setViewsFromBackStack()
+        observeDialogResults()
         attachListeners()
     }
 
@@ -95,6 +96,25 @@ class SearchFragment : Fragment(), ItemSelectionListener<SearchModel>,
         binding.filterContainer.hezbContainer.setOnClickListener { onClickHezbFilter() }
         binding.filterContainer.rob3Container.setOnClickListener { onClickQuarterFilter() }
         binding.moreIv.setOnClickListener { onGetMoreFilterOptions() }
+    }
+
+    private fun observeDialogResults() {
+        childFragmentManager.setFragmentResultListener(
+            REQUEST_HEZB_FILTER, viewLifecycleOwner
+        ) { _, bundle ->
+            onItemSelected(
+                bundle.getInt(OptionsListDialogFragment.RESULT_REQUEST_CODE),
+                bundle.getInt(OptionsListDialogFragment.RESULT_ITEM_INDEX)
+            )
+        }
+        childFragmentManager.setFragmentResultListener(
+            REQUEST_QUARTER_FILTER, viewLifecycleOwner
+        ) { _, bundle ->
+            onItemSelected(
+                bundle.getInt(OptionsListDialogFragment.RESULT_REQUEST_CODE),
+                bundle.getInt(OptionsListDialogFragment.RESULT_ITEM_INDEX)
+            )
+        }
     }
 
     private fun setViewsFromBackStack() {
@@ -329,10 +349,10 @@ class SearchFragment : Fragment(), ItemSelectionListener<SearchModel>,
             getString(R.string.hizb),
             hezbOptions!!,
             selectedHezb,
-            this,
+            REQUEST_HEZB_FILTER,
             HEZB_FILTER_CODE
         )
-        fragment.show(requireActivity().supportFragmentManager, "HizbFilterDialog")
+        fragment.show(childFragmentManager, "HizbFilterDialog")
     }
 
     private fun onClickQuarterFilter() {
@@ -350,10 +370,10 @@ class SearchFragment : Fragment(), ItemSelectionListener<SearchModel>,
             getString(R.string.rub3),
             quarterOptions!!,
             selectedQuarter,
-            this,
+            REQUEST_QUARTER_FILTER,
             QUARTER_FILTER_CODE
         )
-        fragment.show(requireActivity().supportFragmentManager, "QuarterFilterDialog")
+        fragment.show(childFragmentManager, "QuarterFilterDialog")
     }
 
     override fun onSelectItem(item: SearchModel) {
@@ -420,5 +440,7 @@ class SearchFragment : Fragment(), ItemSelectionListener<SearchModel>,
         const val JUZ_FILTER_CODE = 2
         const val HEZB_FILTER_CODE = 3
         const val QUARTER_FILTER_CODE = 4
+        private const val REQUEST_HEZB_FILTER = "SearchFragment:hezb_filter"
+        private const val REQUEST_QUARTER_FILTER = "SearchFragment:quarter_filter"
     }
 }

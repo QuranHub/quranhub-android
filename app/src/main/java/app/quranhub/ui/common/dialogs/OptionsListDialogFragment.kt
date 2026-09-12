@@ -10,7 +10,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.Window
 import androidx.fragment.app.DialogFragment
-import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -19,6 +18,24 @@ import app.quranhub.util.DialogUtils.adjustDialogSize
 
 /**
  * Display options as a list (single selection)
+ *
+ * Results are delivered via the Fragment Result API ([androidx.fragment.app.FragmentManager.setFragmentResult])
+ * using the [requestKey] supplied to [getInstance]. Register a listener on the same
+ * FragmentManager the dialog is shown with:
+ *
+ * ```
+ * childFragmentManager.setFragmentResultListener(REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
+ *     onItemSelected(
+ *         bundle.getInt(OptionsListDialogFragment.RESULT_REQUEST_CODE),
+ *         bundle.getInt(OptionsListDialogFragment.RESULT_ITEM_INDEX)
+ *     )
+ * }
+ * ```
+ *
+ * The legacy setTargetFragment mechanism is intentionally not used: it throws
+ * IllegalStateException ("declared target fragment ... does not belong to this
+ * FragmentManager") when the dialog outlives its target (replace/navigation,
+ * process-death restore). See Crashlytics f7817e39e76b1c0284cfbeee6eb4548a.
  */
 class OptionsListDialogFragment : DialogFragment(), OptionsListAdapter.ItemClickListener {
 
@@ -26,21 +43,10 @@ class OptionsListDialogFragment : DialogFragment(), OptionsListAdapter.ItemClick
     private var options: List<String>? = null
     private var optionsThumbnailsDrawableIds: IntArray? = null
     private var selectedOptionIndex = 0
+    private var requestKey: String? = null
+    private var requestCode = 0
     private var _binding: DialogOptionsListBinding? = null
     private val binding get() = _binding!!
-    private var itemSelectionListener: ItemSelectionListener? = null
-
-    override fun onAttach(context: Context) {
-        super.onAttach(context)
-        itemSelectionListener = try {
-            targetFragment as ItemSelectionListener?
-        } catch (e: ClassCastException) {
-            throw ClassCastException(
-                targetFragment!!.javaClass.simpleName
-                        + " must implement OptionsListDialogFragment#ItemSelectionListener"
-            )
-        }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,6 +55,8 @@ class OptionsListDialogFragment : DialogFragment(), OptionsListAdapter.ItemClick
             options = it.getStringArrayList(ARG_DIALOG_OPTIONS)
             optionsThumbnailsDrawableIds = it.getIntArray(ARG_DIALOG_OPTIONS_THUMBNAILS)
             selectedOptionIndex = it.getInt(ARG_SELECTED_OPTION_INDEX)
+            requestKey = it.getString(ARG_REQUEST_KEY)
+            requestCode = it.getInt(ARG_REQUEST_CODE)
         }
     }
 
@@ -94,13 +102,16 @@ class OptionsListDialogFragment : DialogFragment(), OptionsListAdapter.ItemClick
         _binding = null
     }
 
-    override fun onDetach() {
-        super.onDetach()
-        itemSelectionListener = null
-    }
-
     override fun onItemClick(clickedItemIndex: Int) {
-        itemSelectionListener!!.onItemSelected(targetRequestCode, clickedItemIndex)
+        requestKey?.let { key ->
+            parentFragmentManager.setFragmentResult(
+                key,
+                Bundle().apply {
+                    putInt(RESULT_REQUEST_CODE, requestCode)
+                    putInt(RESULT_ITEM_INDEX, clickedItemIndex)
+                }
+            )
+        }
         dismiss()
     }
 
@@ -109,25 +120,35 @@ class OptionsListDialogFragment : DialogFragment(), OptionsListAdapter.ItemClick
     }
 
     companion object {
-        private val TAG = OptionsListDialogFragment::class.java.simpleName
+        const val RESULT_REQUEST_CODE = "RESULT_REQUEST_CODE"
+        const val RESULT_ITEM_INDEX = "RESULT_ITEM_INDEX"
 
         private const val ARG_DIALOG_TITLE = "ARG_DIALOG_TITLE"
         private const val ARG_DIALOG_OPTIONS = "ARG_DIALOG_OPTIONS"
         private const val ARG_DIALOG_OPTIONS_THUMBNAILS = "ARG_DIALOG_OPTIONS_THUMBNAILS"
         private const val ARG_SELECTED_OPTION_INDEX = "ARG_SELECTED_OPTION_INDEX"
+        private const val ARG_REQUEST_KEY = "ARG_REQUEST_KEY"
+        private const val ARG_REQUEST_CODE = "ARG_REQUEST_CODE"
 
         @JvmStatic
         fun getInstance(
-            dialogTitle: String, options: List<String?>, targetFragment: Fragment, requestCode: Int
+            dialogTitle: String,
+            options: List<String?>,
+            requestKey: String,
+            requestCode: Int
         ): OptionsListDialogFragment {
-            return getInstance(dialogTitle, options, -1, targetFragment, requestCode)
+            return getInstance(dialogTitle, options, -1, requestKey, requestCode)
         }
 
         @JvmStatic
         fun getInstance(
-            dialogTitle: String, optionsResIds: IntArray, targetFragment: Fragment, requestCode: Int
+            dialogTitle: String,
+            optionsResIds: IntArray,
+            context: Context,
+            requestKey: String,
+            requestCode: Int
         ): OptionsListDialogFragment {
-            return getInstance(dialogTitle, optionsResIds, -1, targetFragment, requestCode)
+            return getInstance(dialogTitle, optionsResIds, -1, context, requestKey, requestCode)
         }
 
         @JvmStatic
@@ -135,18 +156,19 @@ class OptionsListDialogFragment : DialogFragment(), OptionsListAdapter.ItemClick
             dialogTitle: String,
             optionsResIds: IntArray,
             selectedOptionIndex: Int,
-            targetFragment: Fragment,
+            context: Context,
+            requestKey: String,
             requestCode: Int
         ): OptionsListDialogFragment {
             val options: MutableList<String?> = ArrayList()
             for (stringResId in optionsResIds) {
-                options.add(targetFragment.getString(stringResId))
+                options.add(context.getString(stringResId))
             }
             return getInstance(
                 dialogTitle,
                 options,
                 selectedOptionIndex,
-                targetFragment,
+                requestKey,
                 requestCode
             )
         }
@@ -156,7 +178,7 @@ class OptionsListDialogFragment : DialogFragment(), OptionsListAdapter.ItemClick
             dialogTitle: String,
             options: List<String?>,
             selectedOptionIndex: Int,
-            targetFragment: Fragment,
+            requestKey: String,
             requestCode: Int
         ): OptionsListDialogFragment {
             val fragment = OptionsListDialogFragment()
@@ -164,8 +186,9 @@ class OptionsListDialogFragment : DialogFragment(), OptionsListAdapter.ItemClick
             args.putString(ARG_DIALOG_TITLE, dialogTitle)
             args.putStringArrayList(ARG_DIALOG_OPTIONS, ArrayList(options))
             args.putInt(ARG_SELECTED_OPTION_INDEX, selectedOptionIndex)
+            args.putString(ARG_REQUEST_KEY, requestKey)
+            args.putInt(ARG_REQUEST_CODE, requestCode)
             fragment.arguments = args
-            fragment.setTargetFragment(targetFragment, requestCode)
             return fragment
         }
 
@@ -175,12 +198,13 @@ class OptionsListDialogFragment : DialogFragment(), OptionsListAdapter.ItemClick
             optionsResIds: IntArray,
             optionsThumbnailsDrawableIds: IntArray?,
             selectedOptionIndex: Int,
-            targetFragment: Fragment,
+            context: Context,
+            requestKey: String,
             requestCode: Int
         ): OptionsListDialogFragment {
             val options: MutableList<String> = ArrayList()
             for (stringResId in optionsResIds) {
-                options.add(targetFragment.getString(stringResId))
+                options.add(context.getString(stringResId))
             }
             val fragment = OptionsListDialogFragment()
             val args = Bundle()
@@ -188,8 +212,9 @@ class OptionsListDialogFragment : DialogFragment(), OptionsListAdapter.ItemClick
             args.putStringArrayList(ARG_DIALOG_OPTIONS, ArrayList(options))
             args.putIntArray(ARG_DIALOG_OPTIONS_THUMBNAILS, optionsThumbnailsDrawableIds)
             args.putInt(ARG_SELECTED_OPTION_INDEX, selectedOptionIndex)
+            args.putString(ARG_REQUEST_KEY, requestKey)
+            args.putInt(ARG_REQUEST_CODE, requestCode)
             fragment.arguments = args
-            fragment.setTargetFragment(targetFragment, requestCode)
             return fragment
         }
     }

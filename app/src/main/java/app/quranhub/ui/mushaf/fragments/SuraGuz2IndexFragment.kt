@@ -63,6 +63,7 @@ class SuraGuz2IndexFragment : Fragment(),
         super.onViewCreated(view, savedInstanceState)
         InsetsUtils.padTopForStatusBar(binding.toolbarLayout)
         restoreSavedInstanceState(savedInstanceState)
+        observeDialogResult()
         addIndexFragment(selectedTab)
         attachListeners()
     }
@@ -72,6 +73,17 @@ class SuraGuz2IndexFragment : Fragment(),
         observeOnInputSearch()
         binding.hamburgerIv.setOnClickListener { onNavHamburgerClick() }
         binding.filterBtn.setOnClickListener { onFilterButtonClick() }
+    }
+
+    private fun observeDialogResult() {
+        childFragmentManager.setFragmentResultListener(
+            REQUEST_GUZ2_FILTER, viewLifecycleOwner
+        ) { _, bundle ->
+            onItemSelected(
+                bundle.getInt(OptionsListDialogFragment.RESULT_REQUEST_CODE),
+                bundle.getInt(OptionsListDialogFragment.RESULT_ITEM_INDEX)
+            )
+        }
     }
 
     override fun onDestroyView() {
@@ -165,9 +177,9 @@ class SuraGuz2IndexFragment : Fragment(),
             guz2Options.addAll(Arrays.asList(*resources.getStringArray(R.array.agza2_name)))
             val guz2Dialog = getInstance(
                 getString(R.string.title_options_dialog_filter_guz2_index),
-                guz2Options, selectedGUZ2Filter, this, RC_GUZ2_FILTER
+                guz2Options, selectedGUZ2Filter, REQUEST_GUZ2_FILTER, RC_GUZ2_FILTER
             )
-            guz2Dialog.show(parentFragmentManager, "guz2Dialog")
+            guz2Dialog.show(childFragmentManager, "guz2Dialog")
         }
     }
 
@@ -189,6 +201,7 @@ class SuraGuz2IndexFragment : Fragment(),
         const val SURA_INDEX_TAB = 0
         const val GUZ2_INDEX_TAB = 1
         private const val RC_GUZ2_FILTER = 0
+        private const val REQUEST_GUZ2_FILTER = "SuraGuz2IndexFragment:guz2_filter"
 
         fun newInstance(selectedTab: Int): SuraGuz2IndexFragment {
             val fragment = SuraGuz2IndexFragment()
