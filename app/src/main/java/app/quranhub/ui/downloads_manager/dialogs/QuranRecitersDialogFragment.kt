@@ -23,7 +23,7 @@ import androidx.recyclerview.widget.RecyclerView
 import app.quranhub.R
 import app.quranhub.data.model.ReciterModel
 import app.quranhub.databinding.DialogQuranRecitersBinding
-import app.quranhub.ui.common.dialogs.OptionsListAdapter
+import app.quranhub.ui.first_wizard.OptionsListAdapter
 import app.quranhub.ui.downloads_manager.dialogs.QuranRecitersDialogFragment.ReciterSelectionListener
 import app.quranhub.ui.downloads_manager.viewmodel.ReciterPickerViewModel
 import app.quranhub.util.DialogUtils.adjustDialogSize
@@ -153,7 +153,7 @@ class QuranRecitersDialogFragment : DialogFragment(), OptionsListAdapter.ItemCli
                     context, DividerItemDecoration.VERTICAL
                 )
             )
-            adapter = OptionsListAdapter(state.reciterNames, state.selectedReciterIndex, this)
+            adapter = OptionsListAdapter(state.reciterNames, null, state.selectedReciterIndex, this)
             binding.rvReciters.adapter = adapter
         } else {
             adapter?.setSelectedOptionIndex(state.selectedReciterIndex)

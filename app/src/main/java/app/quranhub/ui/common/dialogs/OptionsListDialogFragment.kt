@@ -13,6 +13,7 @@ import androidx.fragment.app.DialogFragment
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import app.quranhub.ui.first_wizard.OptionsListAdapter
 import app.quranhub.databinding.DialogOptionsListBinding
 import app.quranhub.util.DialogUtils.adjustDialogSize
 
