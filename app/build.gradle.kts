@@ -16,8 +16,8 @@ android {
         applicationId = "app.quranhub"
         minSdk = libs.versions.minSdkVersion.get().toInt()
         targetSdk = libs.versions.targetSdkVersion.get().toInt()
-        versionCode = 17
-        versionName = "1.8.0"
+        versionCode = 18
+        versionName = "1.8.1"
 
         multiDexEnabled = true
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
