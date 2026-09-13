@@ -10,10 +10,6 @@ import app.quranhub.data.local.entity.QuranAudio
 
 @Dao
 interface QuranAudioDao {
-    /* Just a test */ //TODO remove this
-    @Query("SELECT * FROM QURANAUDIO;")
-    fun getAll(): List<QuranAudio?>?
-
     @Query("SELECT * FROM QuranAudio where id IN (:quranAudioIds) ORDER BY aya_id")
     fun getAllByIds(quranAudioIds: IntArray?): List<QuranAudio?>?
 
