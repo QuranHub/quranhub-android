@@ -47,19 +47,19 @@
         </provider>
 
         <service
-            android:name=".data.service.QuranAudioDownloaderService"
+            android:name=".core.data.service.QuranAudioDownloaderService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
 
         <service
-            android:name=".ui.mushaf.audio_manager.AyaAudioService"
+            android:name=".feature.mushaf.audio_manager.AyaAudioService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
 
         <service
-            android:name=".data.service.FcmService"
+            android:name=".core.data.service.FcmService"
             android:exported="false">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
@@ -67,7 +67,7 @@
         </service>
 
         <activity
-            android:name=".ui.main.MainActivity"
+            android:name=".feature.main.MainActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:launchMode="singleTop"
@@ -81,21 +81,21 @@
         </activity>
 
         <activity
-            android:name=".ui.first_wizard.FirstTimeWizardActivity"
+            android:name=".feature.onboarding.FirstTimeWizardActivity"
             android:label="@string/title_activity_first_time_wizard"
             android:theme="@style/AppTheme.NoActionBar"
             android:windowSoftInputMode="adjustResize" />
 
         <activity
-            android:name=".ui.settings.SettingsActivity"
+            android:name=".feature.settings.SettingsActivity"
             android:label="@string/title_activity_settings"
-            android:parentActivityName=".ui.main.MainActivity"
+            android:parentActivityName=".feature.main.MainActivity"
             android:theme="@style/AppTheme.NoActionBar" />
 
         <activity
-            android:name=".ui.downloads_manager.DownloadsManagerActivity"
+            android:name=".feature.downloads.DownloadsManagerActivity"
             android:label="@string/title_activity_downloads_manager"
-            android:parentActivityName=".ui.main.MainActivity"
+            android:parentActivityName=".feature.main.MainActivity"
             android:theme="@style/AppTheme.NoActionBar" />
     </application>
 

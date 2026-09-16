@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ui.settings.SettingsFragment"
+    tools:context=".feature.settings.SettingsFragment"
     tools:showIn="@layout/activity_settings">
 
     <LinearLayout
@@ -13,7 +13,7 @@
         android:orientation="vertical"
         android:paddingTop="4dp">
 
-        <app.quranhub.ui.settings.custom.MushafSettingsCategory
+        <app.quranhub.feature.settings.custom.MushafSettingsCategory
             android:id="@+id/category_language"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -22,14 +22,14 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
 
-            <app.quranhub.ui.settings.custom.MushafSetting
+            <app.quranhub.feature.settings.custom.MushafSetting
                 android:id="@+id/setting_app_lang"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:currentValue="English"
                 app:settingName="@string/setting_app_lang" />
 
-            <app.quranhub.ui.settings.custom.MushafSetting
+            <app.quranhub.feature.settings.custom.MushafSetting
                 android:id="@+id/setting_translation_lang"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -37,9 +37,9 @@
                 app:settingName="@string/setting_quran_translation_lang" />
 
 
-        </app.quranhub.ui.settings.custom.MushafSettingsCategory>
+        </app.quranhub.feature.settings.custom.MushafSettingsCategory>
 
-        <app.quranhub.ui.settings.custom.MushafSettingsCategory
+        <app.quranhub.feature.settings.custom.MushafSettingsCategory
             android:id="@+id/category_recitation"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -48,30 +48,30 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
 
-            <app.quranhub.ui.settings.custom.MushafSettingSwitch
+            <app.quranhub.feature.settings.custom.MushafSettingSwitch
                 android:id="@+id/setting_screen_reading_backlight"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:switchChecked="true"
                 app:switchSettingName="@string/setting_screen_reading_backlight" />
 
-            <app.quranhub.ui.settings.custom.MushafSettingSwitch
+            <app.quranhub.feature.settings.custom.MushafSettingSwitch
                 android:id="@+id/setting_last_read_page"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:switchChecked="false"
                 app:switchSettingName="@string/setting_last_read_page" />
 
-            <app.quranhub.ui.settings.custom.MushafSetting
+            <app.quranhub.feature.settings.custom.MushafSetting
                 android:id="@+id/setting_recitation"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:currentValue="@string/hafs_recitation"
                 app:settingName="@string/setting_quran_recitation" />
 
-        </app.quranhub.ui.settings.custom.MushafSettingsCategory>
+        </app.quranhub.feature.settings.custom.MushafSettingsCategory>
 
-        <app.quranhub.ui.settings.custom.MushafSettingsCategory
+        <app.quranhub.feature.settings.custom.MushafSettingsCategory
             android:id="@+id/category_sound"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -80,23 +80,23 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
 
-            <app.quranhub.ui.settings.custom.MushafSetting
+            <app.quranhub.feature.settings.custom.MushafSetting
                 android:id="@+id/setting_quran_reader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:settingName="@string/setting_quran_reader"
                 tools:currentValue="Mashary Alafasy " />
 
-            <app.quranhub.ui.settings.custom.MushafSetting
+            <app.quranhub.feature.settings.custom.MushafSetting
                 android:id="@+id/setting_audio_download_manager"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:visibility="gone"
                 app:settingName="@string/setting_audio_download_manager" />
 
-        </app.quranhub.ui.settings.custom.MushafSettingsCategory>
+        </app.quranhub.feature.settings.custom.MushafSettingsCategory>
 
-        <app.quranhub.ui.settings.custom.MushafSettingsCategory
+        <app.quranhub.feature.settings.custom.MushafSettingsCategory
             android:id="@+id/category_about"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -105,19 +105,19 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
 
-            <app.quranhub.ui.settings.custom.MushafSetting
+            <app.quranhub.feature.settings.custom.MushafSetting
                 android:id="@+id/setting_about_app_version"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:settingName="@string/setting_about_app_version" />
 
-            <app.quranhub.ui.settings.custom.MushafSetting
+            <app.quranhub.feature.settings.custom.MushafSetting
                 android:id="@+id/setting_share_app"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:settingName="@string/setting_share_app" />
 
-        </app.quranhub.ui.settings.custom.MushafSettingsCategory>
+        </app.quranhub.feature.settings.custom.MushafSettingsCategory>
 
     </LinearLayout>
 

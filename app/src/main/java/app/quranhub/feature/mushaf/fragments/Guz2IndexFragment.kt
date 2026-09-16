@@ -1,0 +1,139 @@
+package app.quranhub.feature.mushaf.fragments
+
+import android.content.Context
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.DividerItemDecoration
+import androidx.recyclerview.widget.LinearLayoutManager
+import app.quranhub.databinding.FragmentGuz2IndexBinding
+import app.quranhub.feature.mushaf.adapter.Guz2IndexAdapter
+import app.quranhub.feature.mushaf.adapter.Guz2IndexAdapter.IndexItemClickListener
+import app.quranhub.feature.mushaf.listener.QuranNavigationCallbacks
+import app.quranhub.core.data.model.HizbQuarterDataModel
+import app.quranhub.feature.mushaf.viewmodel.Guz2IndexViewModel
+import app.quranhub.feature.mushaf.viewmodel.Guz2IndexViewModel.IndexItemClickEvent
+import kotlinx.coroutines.launch
+
+/**
+ * Fragment that displays a list containing Juz' index with its Hizb & Hizb Quarters.
+ */
+class Guz2IndexFragment : Fragment(), IndexItemClickListener {
+
+    private var _binding: FragmentGuz2IndexBinding? = null
+    private val binding get() = _binding!!
+
+    private var quranNavigationCallbacks: QuranNavigationCallbacks? = null
+    private lateinit var guz2IndexViewModel: Guz2IndexViewModel
+    private var adapter: Guz2IndexAdapter? = null
+    private var filterGuz2 = Guz2IndexAdapter.FILTER_GUZ2_ALL
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        quranNavigationCallbacks = if (context is QuranNavigationCallbacks) {
+            context
+        } else {
+            error(
+                "The containing Activity must implement QuranNavigationCallbacks interface"
+            )
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        if (arguments != null) {
+            filterGuz2 = requireArguments().getInt(ARG_FILTER_GUZ2)
+        }
+    }
+
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        _binding = FragmentGuz2IndexBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        if (savedInstanceState != null) {
+            filterGuz2 =
+                savedInstanceState.getInt(STATE_FILTER_GUZ2, Guz2IndexAdapter.FILTER_GUZ2_ALL)
+        }
+        initGuz2IndexRecyclerView()
+        guz2IndexViewModel = ViewModelProvider(this)[Guz2IndexViewModel::class.java]
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    guz2IndexViewModel.uiState.collect { uiState ->
+                        binding.guz2IndexProgressBar.visibility =
+                            if (uiState.loading) View.VISIBLE else View.GONE
+                        adapter!!.setHizbQuarterDataModels(uiState.items.toMutableList())
+                    }
+                }
+                launch {
+                    guz2IndexViewModel.indexItemClickEvents.collect { indexItemClickEvent: IndexItemClickEvent ->
+                        quranNavigationCallbacks!!.gotoQuranPage(indexItemClickEvent.page)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun initGuz2IndexRecyclerView() {
+        binding.rvGuz2Index.setHasFixedSize(true)
+        val layoutManager = LinearLayoutManager(context)
+        binding.rvGuz2Index.layoutManager = layoutManager
+        val dividerItemDecoration = DividerItemDecoration(
+            requireContext(),
+            layoutManager.orientation
+        )
+        binding.rvGuz2Index.addItemDecoration(dividerItemDecoration)
+        adapter = Guz2IndexAdapter(null, filterGuz2, this)
+        binding.rvGuz2Index.adapter = adapter
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt(STATE_FILTER_GUZ2, filterGuz2)
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
+
+    override fun onIndexItemClick(model: HizbQuarterDataModel?, clickedItemIndex: Int) {
+        guz2IndexViewModel.notifyIndexItemClick(clickedItemIndex)
+    }
+
+    fun filterForGuz2(guz2: Int) {
+        filterGuz2 = guz2
+        adapter!!.filter.filter(guz2.toString())
+    }
+
+    override fun onDetach() {
+        super.onDetach()
+        quranNavigationCallbacks = null
+    }
+
+    companion object {
+        private const val ARG_FILTER_GUZ2 = "ARG_FILTER_GUZ2"
+        private const val STATE_FILTER_GUZ2 = "STATE_FILTER_GUZ2"
+
+        @JvmStatic
+        fun newInstance(filterGuz2: Int): Guz2IndexFragment {
+            val fragment = Guz2IndexFragment()
+            val args = Bundle()
+            args.putInt(ARG_FILTER_GUZ2, filterGuz2)
+            fragment.arguments = args
+            return fragment
+        }
+    }
+}

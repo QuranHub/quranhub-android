@@ -4,27 +4,44 @@ QuranHub Android app: a Quran reader (Hafs & Warsh mushaf, audio recitations, ta
 
 > **Note:** This file is symlinked to `CLAUDE.md` so that Claude Code picks it up. Whenever this file is edited, keep `CLAUDE.md` in sync — i.e. always symlink `CLAUDE.md` → `AGENTS.md` (see `.github` workflow for symlink enforcement or the commit hook). When renaming or moving, update the symlink: `ln -sf AGENTS.md CLAUDE.md`.
 >
-> **Any `AGENTS.md` in this repo must also have a `CLAUDE.md` symlink alongside it** (e.g. `app/src/main/java/app/quranhub/ui/mushaf/AGENTS.md` → `CLAUDE.md`) so Claude Code picks up nested intent-layer docs too.
+> **Any `AGENTS.md` in this repo must also have a `CLAUDE.md` symlink alongside it** (e.g. `app/src/main/java/app/quranhub/feature/mushaf/AGENTS.md` → `CLAUDE.md`) so Claude Code picks up nested intent-layer docs too.
 
 ## Git workflow
 
 **Never commit directly to `master`.** `master` is branch-protected. Always create a new branch off `master` (e.g. `<area>/<short-description>`), commit changes there, push it, and open a PR targeting `master` (PRs must pass the required `build` status check before merge).
 
+## Package layout (packaging by feature)
+
+Single source tree under `app/src/main/java/app/quranhub/`:
+
+- `feature/` — one package per feature, depending on `core/` only (never on each other, except Activity-navigation edges listed below):
+  - `feature/mushaf` — Quran page reader (see its `AGENTS.md`).
+  - `feature/downloads` — tafsir/translation/audio download lists + manager activity.
+  - `feature/settings` — app settings. Note: `view_mushaf_*` layouts belong here, not to mushaf.
+  - `feature/onboarding` — first-run wizard.
+  - `feature/main` — app shell/host: `MainActivity` navigation hub + drawer. It is the only package allowed to reference other features (it hosts their fragments and routes navigation).
+- `core/` — shared code, must never import from `feature/`:
+  - `core/data` — Room DBs/DAOs/entities, prefs, repositories, downloaders, audio-download + messaging services, shared Quran metadata models.
+  - `core/common` — app-wide utils, `base/` activities/services, typed flow holders (`flowholder/`: audio playback state, download-finished).
+  - `core/ui` — shared dialogs (incl. reciter/audio-amount pickers + their ViewModels), shared list adapter, toolbar/search contracts, drawer helper.
+- Navigation between features uses explicit Activity `Intent`s and the `feature/main` host (fragment swaps); there is no navigation graph. `res/` stays flat (Android constraint).
+
 ## Intent Layer
 
 **Before modifying code in a subdirectory, read its AGENTS.md first** to understand local patterns and invariants.
 
-- **Mushaf UI**: `app/src/main/java/app/quranhub/ui/mushaf/AGENTS.md` — Quran page reader, navigation indexes, search, tafsir, bookmarks/notes, per-aya audio. Largest and most complex UI area (~99k tokens).
+- **Mushaf UI**: `app/src/main/java/app/quranhub/feature/mushaf/AGENTS.md` — Quran page reader, navigation indexes, search, tafsir, bookmarks/notes, per-aya audio. Largest and most complex UI area (~99k tokens).
+- **Other features** (`feature/downloads`, `feature/settings`, `feature/onboarding`, `feature/main`) each carry a stub `AGENTS.md` (owner + boundaries); `core/` is documented in the Package layout section above, not per-package.
 
 ### Measurements
 
 | Directory | Tokens | Needs node? |
 |-----------|--------|-------------|
-| `ui/` (total) | ~136k | covered by `ui/mushaf` child node |
-| `ui/mushaf` | ~99k | YES (child node above) |
-| `ui/downloads_manager` | ~17.6k | NO |
-| `data/` (local+remote+repository) | ~19k | NO — see Room gotchas below |
-| `ui/settings`, `ui/main`, `ui/first_wizard`, `ui/base`, `ui/common` | <6k each | NO |
+| `feature/` (total) | ~136k | covered by `feature/mushaf` child node |
+| `feature/mushaf` | ~99k | YES (child node above) |
+| `feature/downloads` | ~17.6k | NO |
+| `core/data` (local+remote+repository) | ~19k | NO — see Room gotchas below |
+| `feature/settings`, `feature/main`, `feature/onboarding`, `core/common`, `core/ui` | <6k each | NO |
 | `:lib:prdownloader-service` | ~5.7k | NO |
 
 ### Global Invariants
@@ -49,8 +66,8 @@ QuranHub Android app: a Quran reader (Hafs & Warsh mushaf, audio recitations, ta
 ## Architecture notes (not obvious from filenames)
 
 - Classic XML Views only (ViewBinding + DataBinding enabled) — no Jetpack Compose. Kotlin-only sources.
-- No DI framework; wiring is manual (ViewModels via `viewModelScope` + factory DSL). Cross-component communication uses explicit, typed flow holders (e.g. `flowholder/AudioPlaybackStateHolder`, `data/service/DownloadFinishedHolder`) — not events or implicit channels. Async uses coroutines + Flows only.
-- `ui/` is feature-organized (`main`, `mushaf`, `settings`, `downloads_manager`, `first_wizard`); `data/` splits into `local` (Room), `remote` (api.quranhub.app REST), `repository`, `service` (FCM, audio downloader).
+- No DI framework; wiring is manual (ViewModels via `viewModelScope` + factory DSL). Cross-component communication uses explicit, typed flow holders (e.g. `core/common/flowholder/AudioPlaybackStateHolder`, `core/common/flowholder/DownloadFinishedHolder`) — not events or implicit channels. Async uses coroutines + Flows only.
+- `feature/` is feature-organized (`main` shell, `mushaf`, `settings`, `downloads`, `onboarding`); `core/data` splits into `local` (Room), `remote` (api.quranhub.app REST), `repository`, `service` (FCM, audio downloader).
 - Entry point `QuranhubApplication` is a `MultiDexApplication`. It re-applies the app locale in **three** places (`attachBaseContext`, `onCreate`, `onConfigurationChanged`) via `LocaleUtils.initAppLanguage` — keep all three in sync if touching locale logic.
 - Firebase: `app/google-services.json` is committed. Crashlytics is toggled via the `enableCrashlytics` manifest placeholder (true in release, false in debug), not by build-type-specific code.
 

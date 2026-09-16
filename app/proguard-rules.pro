@@ -17,8 +17,7 @@
 # Gson deserializes these by reflection. Fields without @SerializedName must
 # keep their names, and Firestore's toObjects() resolves Kotlin data-class
 # getters/setters reflectively - so keep members of all POJOs.
--keep class app.quranhub.data.model.** { *; }
--keep class app.quranhub.data.remote.model.** { *; }
+-keep class app.quranhub.core.data.model.** { *; }
 
 # MaterialDrawer v6.1.3 does not ship consumer ProGuard rules.
 # (EventBus, Retrofit, Gson, RxJava2, Room, Glide and Firebase all bundle

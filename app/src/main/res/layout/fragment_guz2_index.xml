@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ui.mushaf.fragments.Guz2IndexFragment">
+    tools:context=".feature.mushaf.fragments.Guz2IndexFragment">
 
     <com.simplecityapps.recyclerview_fastscroll.views.FastScrollRecyclerView
         android:id="@+id/rv_guz2_index"
