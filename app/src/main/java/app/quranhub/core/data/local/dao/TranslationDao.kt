@@ -1,0 +1,19 @@
+package app.quranhub.core.data.local.dao
+
+import androidx.room.Dao
+import androidx.room.Query
+import app.quranhub.core.data.local.entity.Translation
+import kotlinx.coroutines.flow.Flow
+
+@Dao
+interface TranslationDao {
+
+    @Query("SELECT * FROM translation where `sura`=:suraNumber")
+    fun getAyasTafseer(suraNumber: Int): Flow<List<Translation>>
+
+    @Query("SELECT text FROM translation WHERE `index`=:index")
+    suspend fun findByIndex(index: Int): String?
+
+    @Query("SELECT * FROM translation WHERE sura=:sura AND aya=:aya LIMIT 1")
+    fun findForAya(sura: Int, aya: Int): Translation?
+}

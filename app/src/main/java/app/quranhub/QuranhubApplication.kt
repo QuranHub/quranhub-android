@@ -3,7 +3,7 @@ package app.quranhub
 import android.content.Context
 import android.content.res.Configuration
 import androidx.multidex.MultiDexApplication
-import app.quranhub.util.LocaleUtils
+import app.quranhub.core.common.util.LocaleUtils
 import com.downloader.PRDownloader
 import com.google.firebase.Firebase
 import com.google.firebase.appcheck.appCheck

@@ -32,7 +32,7 @@
             android:scaleX="1"
             android:scaleY="1"
             android:scrollbarAlwaysDrawVerticalTrack="true"
-            tools:context=".ui.mushaf.fragments.QuranPageFragment">
+            tools:context=".feature.mushaf.fragments.QuranPageFragment">
 
             <ImageView
                 android:id="@+id/page_iv"

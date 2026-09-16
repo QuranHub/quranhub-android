@@ -7,7 +7,7 @@
 
         <variable
             name="suraIndex"
-            type="app.quranhub.ui.mushaf.model.SuraIndexModelMapper" />
+            type="app.quranhub.feature.mushaf.model.SuraIndexModelMapper" />
     </data>
 
     <androidx.constraintlayout.widget.ConstraintLayout xmlns:tools="http://schemas.android.com/tools"

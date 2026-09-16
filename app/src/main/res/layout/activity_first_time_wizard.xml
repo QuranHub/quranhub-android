@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:descendantFocusability="beforeDescendants"
     android:focusableInTouchMode="true"
-    tools:context=".ui.first_wizard.FirstTimeWizardActivity">
+    tools:context=".feature.onboarding.FirstTimeWizardActivity">
 
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/app_bar"
