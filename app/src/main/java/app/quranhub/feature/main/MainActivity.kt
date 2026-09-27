@@ -37,8 +37,8 @@ import app.quranhub.core.ui.util.DrawerUtils.initDrawer
 import app.quranhub.core.data.util.SharedPrefsUtils.getBoolean
 import app.quranhub.core.data.util.SharedPrefsUtils.getInteger
 import app.quranhub.core.common.util.addCrashlyticsCustomKeys
-import com.mikepenz.materialdrawer.Drawer
-import com.mikepenz.materialdrawer.Drawer.OnDrawerListener
+import androidx.drawerlayout.widget.DrawerLayout
+import com.mikepenz.materialdrawer.widget.MaterialDrawerSliderView
 import kotlinx.coroutines.launch
 
 class MainActivity : BaseActivity(), ToolbarActionsListener, Mus7afDrawerItemClickListener,
@@ -52,9 +52,9 @@ class MainActivity : BaseActivity(), ToolbarActionsListener, Mus7afDrawerItemCli
         }
     }
 
-    private var drawer: Drawer? = null
+    private lateinit var drawerLayout: DrawerLayout
+    private lateinit var slider: MaterialDrawerSliderView
     private var currentFragment: String? = null
-    private var onDrawerListener: OnDrawerListener? = null
     private var isDismissAllow = true
 
     private lateinit var notificationPermissionDelegate: NotificationPermissionDelegate
@@ -74,8 +74,10 @@ class MainActivity : BaseActivity(), ToolbarActionsListener, Mus7afDrawerItemCli
             finish()
         }
         setContentView(R.layout.activity_main)
+        drawerLayout = findViewById(R.id.drawer_layout)
+        slider = findViewById(R.id.slider)
         observeOnDrawerOpen()
-        drawer = initDrawer(this, savedInstanceState, onDrawerListener!!)
+        initDrawer(this, slider, savedInstanceState)
         if (savedInstanceState == null) {
             viewModel.computeLaunchDestination(
                 intent.extras?.getBoolean(AyaAudioService.FROM_NOTIFICATION) == true
@@ -113,7 +115,7 @@ class MainActivity : BaseActivity(), ToolbarActionsListener, Mus7afDrawerItemCli
     }
 
     private fun observeOnDrawerOpen() {
-        onDrawerListener = object : OnDrawerListener {
+        drawerLayout.addDrawerListener(object : DrawerLayout.SimpleDrawerListener() {
             override fun onDrawerOpened(drawerView: View) {
                 isDismissAllow = true
             }
@@ -125,7 +127,7 @@ class MainActivity : BaseActivity(), ToolbarActionsListener, Mus7afDrawerItemCli
             override fun onDrawerSlide(drawerView: View, slideOffset: Float) {
                 dismissAudioPopup()
             }
-        }
+        })
     }
 
     private fun dismissAudioPopup() {
@@ -140,7 +142,7 @@ class MainActivity : BaseActivity(), ToolbarActionsListener, Mus7afDrawerItemCli
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        drawer?.saveInstanceState(outState)
+        slider.saveInstanceState(outState)
         outState.putString("fragment", currentFragment)
     }
 
@@ -178,7 +180,7 @@ class MainActivity : BaseActivity(), ToolbarActionsListener, Mus7afDrawerItemCli
 
     override fun onNavDrawerClick() {
         dismissAudioPopup()
-        drawer!!.openDrawer()
+        drawerLayout.openDrawer(slider)
     }
 
     override fun onSuraClick() {
@@ -197,13 +199,14 @@ class MainActivity : BaseActivity(), ToolbarActionsListener, Mus7afDrawerItemCli
     }
 
     override fun selectNavDrawerItem(itemIdentifier: Long, fireOnClick: Boolean) {
-        if (drawer!!.currentSelection == itemIdentifier) return
-        drawer!!.setSelection(itemIdentifier, fireOnClick)
+        val selected = slider.selectExtension.selectedItems.firstOrNull()?.identifier
+        if (selected == itemIdentifier) return
+        slider.setSelection(itemIdentifier, fireOnClick)
     }
 
     override fun onBackPressed() {
-        if (drawer!!.isDrawerOpen) {
-            drawer!!.closeDrawer()
+        if (drawerLayout.isDrawerOpen(slider)) {
+            drawerLayout.closeDrawer(slider)
         } else if (currentFragment == "pdf_viewer") {
             super.onBackPressed()
             currentFragment = "translation"
@@ -224,7 +227,7 @@ class MainActivity : BaseActivity(), ToolbarActionsListener, Mus7afDrawerItemCli
 
     override fun openIndex(indexTab: Int) {
         checkPrevFragment()
-        drawer!!.closeDrawer()
+        drawerLayout.closeDrawer(slider)
         val suraGuz2IndexFragment = SuraGuz2IndexFragment.newInstance(indexTab)
         val transaction = supportFragmentManager.beginTransaction()
         transaction.replace(R.id.container, suraGuz2IndexFragment, "index")
@@ -252,7 +255,7 @@ class MainActivity : BaseActivity(), ToolbarActionsListener, Mus7afDrawerItemCli
 
     override fun openBookmarks() {
         checkPrevFragment()
-        drawer!!.closeDrawer()
+        drawerLayout.closeDrawer(slider)
         val bookmarksFragment = BookmarksFragment.newInstance()
         val transaction = supportFragmentManager.beginTransaction()
         transaction.replace(R.id.container, bookmarksFragment)
@@ -288,7 +291,7 @@ class MainActivity : BaseActivity(), ToolbarActionsListener, Mus7afDrawerItemCli
     }
 
     override fun openMushaf() {
-        drawer!!.closeDrawer()
+        drawerLayout.closeDrawer(slider)
         if (currentFragment != "mushaf") {
             checkPrevFragment()
             backToMushaf()
