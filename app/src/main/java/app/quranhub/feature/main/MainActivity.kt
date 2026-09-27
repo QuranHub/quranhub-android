@@ -2,9 +2,13 @@ package app.quranhub.feature.main
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.view.View
+import androidx.activity.SystemBarStyle
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -12,12 +16,18 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import app.quranhub.R
+import app.quranhub.core.common.base.BaseActivity
+import app.quranhub.core.common.util.addCrashlyticsCustomKeys
 import app.quranhub.core.data.Constants
 import app.quranhub.core.data.local.prefs.AppPreferencesManager
-import app.quranhub.core.common.base.BaseActivity
+import app.quranhub.core.data.model.TopicCategory
+import app.quranhub.core.data.util.SharedPrefsUtils.getBoolean
+import app.quranhub.core.data.util.SharedPrefsUtils.getInteger
 import app.quranhub.core.ui.interfaces.ToolbarActionsListener
+import app.quranhub.core.ui.util.DrawerUtils
+import app.quranhub.core.ui.util.DrawerUtils.Mus7afDrawerItemClickListener
+import app.quranhub.core.ui.util.DrawerUtils.initDrawer
 import app.quranhub.feature.downloads.DownloadsManagerActivity
-import app.quranhub.feature.onboarding.FirstTimeWizardActivity
 import app.quranhub.feature.mushaf.audio_manager.AyaAudioService
 import app.quranhub.feature.mushaf.fragments.BookmarksFragment
 import app.quranhub.feature.mushaf.fragments.MushafFragment
@@ -29,21 +39,16 @@ import app.quranhub.feature.mushaf.fragments.TafseerFragment
 import app.quranhub.feature.mushaf.fragments.TopicAyasFragment
 import app.quranhub.feature.mushaf.fragments.TranslationsLibraryFragment
 import app.quranhub.feature.mushaf.listener.QuranNavigationCallbacks
-import app.quranhub.core.data.model.TopicCategory
+import app.quranhub.feature.onboarding.FirstTimeWizardActivity
 import app.quranhub.feature.settings.SettingsActivity
-import app.quranhub.core.ui.util.DrawerUtils
-import app.quranhub.core.ui.util.DrawerUtils.Mus7afDrawerItemClickListener
-import app.quranhub.core.ui.util.DrawerUtils.initDrawer
-import app.quranhub.core.data.util.SharedPrefsUtils.getBoolean
-import app.quranhub.core.data.util.SharedPrefsUtils.getInteger
-import app.quranhub.core.common.util.addCrashlyticsCustomKeys
-import com.mikepenz.materialdrawer.Drawer
-import com.mikepenz.materialdrawer.Drawer.OnDrawerListener
+import com.mikepenz.materialdrawer.widget.MaterialDrawerSliderView
 import kotlinx.coroutines.launch
 
-class MainActivity : BaseActivity(), ToolbarActionsListener, Mus7afDrawerItemClickListener,
+class MainActivity :
+    BaseActivity(),
+    ToolbarActionsListener,
+    Mus7afDrawerItemClickListener,
     QuranNavigationCallbacks {
-
     private val viewModel: MainViewModel by viewModels {
         viewModelFactory {
             initializer {
@@ -52,9 +57,13 @@ class MainActivity : BaseActivity(), ToolbarActionsListener, Mus7afDrawerItemCli
         }
     }
 
-    private var drawer: Drawer? = null
+    private lateinit var drawerLayout: DrawerLayout
+    private lateinit var slider: MaterialDrawerSliderView
     private var currentFragment: String? = null
-    private var onDrawerListener: OnDrawerListener? = null
+        set(value) {
+            field = value
+            applyStatusBarIcons(value)
+        }
     private var isDismissAllow = true
 
     private lateinit var notificationPermissionDelegate: NotificationPermissionDelegate
@@ -74,11 +83,13 @@ class MainActivity : BaseActivity(), ToolbarActionsListener, Mus7afDrawerItemCli
             finish()
         }
         setContentView(R.layout.activity_main)
+        drawerLayout = findViewById(R.id.drawer_layout)
+        slider = findViewById(R.id.slider)
         observeOnDrawerOpen()
-        drawer = initDrawer(this, savedInstanceState, onDrawerListener!!)
+        initDrawer(this, slider, savedInstanceState)
         if (savedInstanceState == null) {
             viewModel.computeLaunchDestination(
-                intent.extras?.getBoolean(AyaAudioService.FROM_NOTIFICATION) == true
+                intent.extras?.getBoolean(AyaAudioService.FROM_NOTIFICATION) == true,
             )
             observeLaunchDestination()
         } else {
@@ -86,19 +97,35 @@ class MainActivity : BaseActivity(), ToolbarActionsListener, Mus7afDrawerItemCli
         }
     }
 
+    private fun applyStatusBarIcons(fragment: String?) {
+        val whiteTopBar = fragment == null || fragment == "mushaf"
+        enableEdgeToEdge(
+            statusBarStyle =
+                if (whiteTopBar) {
+                    SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
+                } else {
+                    SystemBarStyle.dark(Color.TRANSPARENT)
+                },
+            navigationBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),
+        )
+    }
+
     private fun observeLaunchDestination() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.launchEvents.collect { destination ->
                     when (destination) {
-                        is MainViewModel.LaunchDestination.Notification ->
+                        is MainViewModel.LaunchDestination.Notification -> {
                             showMushafFragment(MushafFragment.newNotificationInstance(destination.ayaId))
+                        }
 
-                        is MainViewModel.LaunchDestination.LastReadPage ->
+                        is MainViewModel.LaunchDestination.LastReadPage -> {
                             showMushafFragment(MushafFragment.newInstance(destination.pageNumber))
+                        }
 
-                        MainViewModel.LaunchDestination.Mushaf ->
+                        MainViewModel.LaunchDestination.Mushaf -> {
                             showMushafFragment(MushafFragment())
+                        }
                     }
                 }
             }
@@ -113,19 +140,24 @@ class MainActivity : BaseActivity(), ToolbarActionsListener, Mus7afDrawerItemCli
     }
 
     private fun observeOnDrawerOpen() {
-        onDrawerListener = object : OnDrawerListener {
-            override fun onDrawerOpened(drawerView: View) {
-                isDismissAllow = true
-            }
+        drawerLayout.addDrawerListener(
+            object : DrawerLayout.SimpleDrawerListener() {
+                override fun onDrawerOpened(drawerView: View) {
+                    isDismissAllow = true
+                }
 
-            override fun onDrawerClosed(drawerView: View) {
-                isDismissAllow = true
-            }
+                override fun onDrawerClosed(drawerView: View) {
+                    isDismissAllow = true
+                }
 
-            override fun onDrawerSlide(drawerView: View, slideOffset: Float) {
-                dismissAudioPopup()
-            }
-        }
+                override fun onDrawerSlide(
+                    drawerView: View,
+                    slideOffset: Float,
+                ) {
+                    dismissAudioPopup()
+                }
+            },
+        )
     }
 
     private fun dismissAudioPopup() {
@@ -140,7 +172,7 @@ class MainActivity : BaseActivity(), ToolbarActionsListener, Mus7afDrawerItemCli
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        drawer?.saveInstanceState(outState)
+        slider.saveInstanceState(outState)
         outState.putString("fragment", currentFragment)
     }
 
@@ -165,20 +197,21 @@ class MainActivity : BaseActivity(), ToolbarActionsListener, Mus7afDrawerItemCli
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
 
-        if (getIntent().extras != null && getIntent().extras!!.getBoolean(AyaAudioService.FROM_NOTIFICATION)
-            || getBoolean(this, AyaAudioService.SERVICE_RUNNING, false)
+        if (getIntent().extras != null && getIntent().extras!!.getBoolean(AyaAudioService.FROM_NOTIFICATION) ||
+            getBoolean(this, AyaAudioService.SERVICE_RUNNING, false)
         ) {
             val ayaId = getInteger(this, AyaAudioService.AYA_ID_KEY, 1)
             val mushafFragment = MushafFragment.newNotificationInstance(ayaId)
             val transaction = supportFragmentManager.beginTransaction()
             transaction.replace(R.id.container, mushafFragment, "Mushaf")
             transaction.commit()
+            currentFragment = "mushaf"
         }
     }
 
     override fun onNavDrawerClick() {
         dismissAudioPopup()
-        drawer!!.openDrawer()
+        drawerLayout.openDrawer(slider)
     }
 
     override fun onSuraClick() {
@@ -196,14 +229,19 @@ class MainActivity : BaseActivity(), ToolbarActionsListener, Mus7afDrawerItemCli
         selectNavDrawerItem(DrawerUtils.IDENTIFIER_BOOKMARKS.toLong(), false)
     }
 
-    override fun selectNavDrawerItem(itemIdentifier: Long, fireOnClick: Boolean) {
-        if (drawer!!.currentSelection == itemIdentifier) return
-        drawer!!.setSelection(itemIdentifier, fireOnClick)
+    override fun selectNavDrawerItem(
+        itemIdentifier: Long,
+        fireOnClick: Boolean,
+    ) {
+        val selected = slider.selectExtension.selectedItems.map { it.identifier }
+        if (selected.size == 1 && selected[0] == itemIdentifier) return
+        slider.selectExtension.deselect()
+        slider.setSelection(itemIdentifier, fireOnClick)
     }
 
     override fun onBackPressed() {
-        if (drawer!!.isDrawerOpen) {
-            drawer!!.closeDrawer()
+        if (drawerLayout.isDrawerOpen(slider)) {
+            drawerLayout.closeDrawer(slider)
         } else if (currentFragment == "pdf_viewer") {
             super.onBackPressed()
             currentFragment = "translation"
@@ -215,16 +253,20 @@ class MainActivity : BaseActivity(), ToolbarActionsListener, Mus7afDrawerItemCli
     }
 
     private fun backToMushaf() {
-        val lastOpenedPage = Constants.Quran.NUM_OF_PAGES - getInteger(
-            this, "last_open_page", Constants.Quran.NUM_OF_PAGES - 1
-        )
+        val lastOpenedPage =
+            Constants.Quran.NUM_OF_PAGES -
+                getInteger(
+                    this,
+                    "last_open_page",
+                    Constants.Quran.NUM_OF_PAGES - 1,
+                )
         currentFragment = "mushaf"
         gotoQuranPage(lastOpenedPage)
     }
 
     override fun openIndex(indexTab: Int) {
         checkPrevFragment()
-        drawer!!.closeDrawer()
+        drawerLayout.closeDrawer(slider)
         val suraGuz2IndexFragment = SuraGuz2IndexFragment.newInstance(indexTab)
         val transaction = supportFragmentManager.beginTransaction()
         transaction.replace(R.id.container, suraGuz2IndexFragment, "index")
@@ -234,6 +276,7 @@ class MainActivity : BaseActivity(), ToolbarActionsListener, Mus7afDrawerItemCli
 
     override fun openTopics() {
         checkPrevFragment()
+        drawerLayout.closeDrawer(slider)
         val quranTopicsFragment = QuranTopicsFragment()
         val transaction = supportFragmentManager.beginTransaction()
         transaction.replace(R.id.container, quranTopicsFragment)
@@ -243,6 +286,7 @@ class MainActivity : BaseActivity(), ToolbarActionsListener, Mus7afDrawerItemCli
 
     override fun openLibrary() {
         checkPrevFragment()
+        drawerLayout.closeDrawer(slider)
         val fragment = TranslationsLibraryFragment()
         val transaction = supportFragmentManager.beginTransaction()
         transaction.replace(R.id.container, fragment)
@@ -252,7 +296,7 @@ class MainActivity : BaseActivity(), ToolbarActionsListener, Mus7afDrawerItemCli
 
     override fun openBookmarks() {
         checkPrevFragment()
-        drawer!!.closeDrawer()
+        drawerLayout.closeDrawer(slider)
         val bookmarksFragment = BookmarksFragment.newInstance()
         val transaction = supportFragmentManager.beginTransaction()
         transaction.replace(R.id.container, bookmarksFragment)
@@ -270,6 +314,7 @@ class MainActivity : BaseActivity(), ToolbarActionsListener, Mus7afDrawerItemCli
 
     override fun openMyNotes() {
         checkPrevFragment()
+        drawerLayout.closeDrawer(slider)
         val fragment = MyNotesFragment()
         val transaction = supportFragmentManager.beginTransaction()
         transaction.replace(R.id.container, fragment)
@@ -279,16 +324,18 @@ class MainActivity : BaseActivity(), ToolbarActionsListener, Mus7afDrawerItemCli
 
     override fun openSettings() {
         checkPrevFragment()
+        drawerLayout.closeDrawer(slider)
         startActivity(Intent(this, SettingsActivity::class.java))
     }
 
     override fun openDownloadsManager() {
         checkPrevFragment()
+        drawerLayout.closeDrawer(slider)
         startActivity(Intent(this, DownloadsManagerActivity::class.java))
     }
 
     override fun openMushaf() {
-        drawer!!.closeDrawer()
+        drawerLayout.closeDrawer(slider)
         if (currentFragment != "mushaf") {
             checkPrevFragment()
             backToMushaf()
@@ -300,7 +347,7 @@ class MainActivity : BaseActivity(), ToolbarActionsListener, Mus7afDrawerItemCli
         suraNumber: Int,
         bookDbName: String?,
         bookName: String?,
-        ayaNumber: Int
+        ayaNumber: Int,
     ) {
         checkPrevFragment()
         currentFragment = "tafseer"
@@ -331,9 +378,16 @@ class MainActivity : BaseActivity(), ToolbarActionsListener, Mus7afDrawerItemCli
         transaction.commit()
     }
 
-    fun openTafseerScreen(bookDbName: String?, bookName: String?) {
+    fun openTafseerScreen(
+        bookDbName: String?,
+        bookName: String?,
+    ) {
         openTafseerScreen(
-            resources.getStringArray(R.array.sura_name)[0], 1, bookDbName, bookName, 1
+            resources.getStringArray(R.array.sura_name)[0],
+            1,
+            bookDbName,
+            bookName,
+            1,
         )
     }
 
@@ -346,7 +400,11 @@ class MainActivity : BaseActivity(), ToolbarActionsListener, Mus7afDrawerItemCli
         selectNavDrawerItem(DrawerUtils.IDENTIFIER_MUSHAF.toLong(), false)
     }
 
-    override fun gotoQuranPageAya(pageNumber: Int, ayaId: Int, addToStack: Boolean) {
+    override fun gotoQuranPageAya(
+        pageNumber: Int,
+        ayaId: Int,
+        addToStack: Boolean,
+    ) {
         val mushafFragment = MushafFragment.newInstance(pageNumber, ayaId)
         val transaction = supportFragmentManager.beginTransaction()
         transaction.replace(R.id.container, mushafFragment, "Mushaf")

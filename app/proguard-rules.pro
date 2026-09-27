@@ -10,20 +10,13 @@
 -keepattributes SourceFile,LineNumberTable
 -renamesourcefileattribute SourceFile
 
-# Needed for reflection over generics (Gson TypeToken, Retrofit call adapters,
-# FastAdapter/MaterialDrawer TypeUtils).
+# Needed for reflection over generics (Gson TypeToken, Retrofit call adapters).
 -keepattributes Signature,InnerClasses,EnclosingMethod
 
 # Gson deserializes these by reflection. Fields without @SerializedName must
 # keep their names, and Firestore's toObjects() resolves Kotlin data-class
 # getters/setters reflectively - so keep members of all POJOs.
 -keep class app.quranhub.core.data.model.** { *; }
-
-# MaterialDrawer v6.1.3 does not ship consumer ProGuard rules.
-# (EventBus, Retrofit, Gson, RxJava2, Room, Glide and Firebase all bundle
-# their own consumer rules - no manual rules required for those.)
--keep class com.mikepenz.materialdrawer.** { *; }
--keep class com.mikepenz.fastadapter.** { *; }
 
 # circular-progress-button: field accessed reflectively by the library
 -keepclassmembers class com.dd.StrokeGradientDrawable {

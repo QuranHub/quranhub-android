@@ -1,12 +1,10 @@
 <resources>
 
-    <!-- Material 1.14 does not ship a Material3 DarkActionBar theme. -->
     <style name="Theme.Material3.Light.DarkActionBar" parent="Theme.Material3.Light">
         <item name="actionBarTheme">@style/ThemeOverlay.Material3.Dark.ActionBar</item>
         <item name="actionBarWidgetTheme">@null</item>
     </style>
 
-    <!-- Always light. Do not switch this parent to DayNight. -->
     <style name="AppTheme" parent="Theme.Material3.Light.DarkActionBar">
         <item name="colorPrimary">@color/color_primary</item>
         <item name="colorOnPrimary">@color/white_color</item>
@@ -26,10 +24,19 @@
         <item name="android:fontFamily">@font/main_font</item>
         <item name="fontFamily">@font/main_font</item>
 
-        <!-- Material3 would restyle these; keep the pre-migration widgets. -->
         <item name="android:buttonStyle">@style/Widget.AppCompat.Button</item>
         <item name="borderlessButtonStyle">@style/Widget.AppCompat.Button.Borderless</item>
         <item name="tabStyle">@style/Widget.MaterialComponents.TabLayout</item>
+
+        <item name="materialDrawerStyle">@style/Widget.QuranHub.MaterialDrawer</item>
+        <item name="materialDrawerHeaderStyle">@style/Widget.MaterialDrawerHeaderStyle</item>
+    </style>
+
+    <style name="Widget.QuranHub.MaterialDrawer" parent="Widget.MaterialDrawerStyle">
+        <item name="materialDrawerBackground">@color/white_color</item>
+        <item name="materialDrawerSelectedBackgroundColor">#1F2196F3</item>
+        <item name="materialDrawerPrimaryText">@color/drawer_text_color</item>
+        <item name="materialDrawerPrimaryIcon">@color/drawer_text_color</item>
     </style>
 
     <style name="AppTheme.NoActionBar">
@@ -46,7 +53,10 @@
         <item name="android:windowTranslucentStatus">true</item>
     </style>
 
-    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.Material3.Dark.ActionBar">
+        <item name="colorSurface">@color/color_primary</item>
+        <item name="colorOnSurface">@color/white_color</item>
+    </style>
 
     <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 
