@@ -2,8 +2,11 @@ package app.quranhub.feature.main
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.view.View
+import androidx.activity.SystemBarStyle
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.FragmentManager
@@ -57,6 +60,10 @@ class MainActivity :
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var slider: MaterialDrawerSliderView
     private var currentFragment: String? = null
+        set(value) {
+            field = value
+            applyStatusBarIcons(value)
+        }
     private var isDismissAllow = true
 
     private lateinit var notificationPermissionDelegate: NotificationPermissionDelegate
@@ -81,6 +88,7 @@ class MainActivity :
         observeOnDrawerOpen()
         initDrawer(this, slider, savedInstanceState)
         if (savedInstanceState == null) {
+            applyStatusBarIcons("mushaf")
             viewModel.computeLaunchDestination(
                 intent.extras?.getBoolean(AyaAudioService.FROM_NOTIFICATION) == true,
             )
@@ -88,6 +96,19 @@ class MainActivity :
         } else {
             setCurrentFragmentData(savedInstanceState.getString("fragment"))
         }
+    }
+
+    private fun applyStatusBarIcons(fragment: String?) {
+        val whiteTopBar = fragment == null || fragment == "mushaf"
+        enableEdgeToEdge(
+            statusBarStyle =
+                if (whiteTopBar) {
+                    SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
+                } else {
+                    SystemBarStyle.dark(Color.TRANSPARENT)
+                },
+            navigationBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),
+        )
     }
 
     private fun observeLaunchDestination() {
@@ -235,11 +256,11 @@ class MainActivity :
     private fun backToMushaf() {
         val lastOpenedPage =
             Constants.Quran.NUM_OF_PAGES -
-                    getInteger(
-                        this,
-                        "last_open_page",
-                        Constants.Quran.NUM_OF_PAGES - 1,
-                    )
+                getInteger(
+                    this,
+                    "last_open_page",
+                    Constants.Quran.NUM_OF_PAGES - 1,
+                )
         currentFragment = "mushaf"
         gotoQuranPage(lastOpenedPage)
     }
