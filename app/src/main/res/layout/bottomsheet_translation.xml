@@ -35,10 +35,12 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <Button
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/tv_book_name"
             android:layout_width="wrap_content"
             android:layout_height="@dimen/_25sdp"
+            android:minHeight="0dp"
+            android:minWidth="0dp"
             android:layout_marginStart="@dimen/_12sdp"
             android:layout_marginTop="@dimen/_4sdp"
             android:layout_marginBottom="@dimen/_4sdp"
@@ -55,10 +57,12 @@
             app:layout_constraintStart_toEndOf="@+id/tafser_tv"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <Button
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/more_btn"
             android:layout_width="wrap_content"
             android:layout_height="@dimen/_25sdp"
+            android:minHeight="0dp"
+            android:minWidth="0dp"
             android:layout_marginTop="@dimen/_6sdp"
             android:layout_marginEnd="@dimen/_16sdp"
             android:layout_marginBottom="@dimen/_6sdp"
