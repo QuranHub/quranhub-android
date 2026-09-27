@@ -1,5 +1,11 @@
 <resources>
 
+    <!-- Material 1.14 does not ship a Material3 DarkActionBar theme. -->
+    <style name="Theme.Material3.Light.DarkActionBar" parent="Theme.Material3.Light">
+        <item name="actionBarTheme">@style/ThemeOverlay.Material3.Dark.ActionBar</item>
+        <item name="actionBarWidgetTheme">@null</item>
+    </style>
+
     <!-- Always light. Do not switch this parent to DayNight. -->
     <style name="AppTheme" parent="Theme.Material3.Light.DarkActionBar">
         <item name="colorPrimary">@color/color_primary</item>
