@@ -199,8 +199,10 @@ class MainActivity : BaseActivity(), ToolbarActionsListener, Mus7afDrawerItemCli
     }
 
     override fun selectNavDrawerItem(itemIdentifier: Long, fireOnClick: Boolean) {
-        val selected = slider.selectExtension.selectedItems.firstOrNull()?.identifier
-        if (selected == itemIdentifier) return
+        // v9 setSelection() selects without clearing the previous item.
+        val selected = slider.selectExtension.selectedItems.map { it.identifier }
+        if (selected.size == 1 && selected[0] == itemIdentifier) return
+        slider.selectExtension.deselect()
         slider.setSelection(itemIdentifier, fireOnClick)
     }
 
