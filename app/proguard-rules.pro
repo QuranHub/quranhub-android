@@ -18,8 +18,8 @@
 # getters/setters reflectively - so keep members of all POJOs.
 -keep class app.quranhub.core.data.model.** { *; }
 
-# EventBus, Retrofit, Gson, RxJava2, Room, Glide, Firebase, and MaterialDrawer
-# 9.x bundle their own consumer rules.
+# EventBus, Retrofit, Gson, RxJava2, Room, Glide, and Firebase ship consumer rules.
+# MaterialDrawer 9.0.2 does not; FastAdapter 5.7.0 does. No blanket keeps (#282).
 
 # circular-progress-button: field accessed reflectively by the library
 -keepclassmembers class com.dd.StrokeGradientDrawable {

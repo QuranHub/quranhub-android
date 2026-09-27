@@ -205,6 +205,7 @@ class MainActivity :
             val transaction = supportFragmentManager.beginTransaction()
             transaction.replace(R.id.container, mushafFragment, "Mushaf")
             transaction.commit()
+            currentFragment = "mushaf"
         }
     }
 
@@ -276,6 +277,7 @@ class MainActivity :
 
     override fun openTopics() {
         checkPrevFragment()
+        drawerLayout.closeDrawer(slider)
         val quranTopicsFragment = QuranTopicsFragment()
         val transaction = supportFragmentManager.beginTransaction()
         transaction.replace(R.id.container, quranTopicsFragment)
@@ -285,6 +287,7 @@ class MainActivity :
 
     override fun openLibrary() {
         checkPrevFragment()
+        drawerLayout.closeDrawer(slider)
         val fragment = TranslationsLibraryFragment()
         val transaction = supportFragmentManager.beginTransaction()
         transaction.replace(R.id.container, fragment)
@@ -312,6 +315,7 @@ class MainActivity :
 
     override fun openMyNotes() {
         checkPrevFragment()
+        drawerLayout.closeDrawer(slider)
         val fragment = MyNotesFragment()
         val transaction = supportFragmentManager.beginTransaction()
         transaction.replace(R.id.container, fragment)
@@ -321,11 +325,13 @@ class MainActivity :
 
     override fun openSettings() {
         checkPrevFragment()
+        drawerLayout.closeDrawer(slider)
         startActivity(Intent(this, SettingsActivity::class.java))
     }
 
     override fun openDownloadsManager() {
         checkPrevFragment()
+        drawerLayout.closeDrawer(slider)
         startActivity(Intent(this, DownloadsManagerActivity::class.java))
     }
 
