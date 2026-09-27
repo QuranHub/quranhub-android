@@ -12,10 +12,16 @@
         android:layout_height="wrap_content"
         android:background="?colorPrimary"
         android:elevation="8dp"
-        android:paddingTop="@dimen/dimen_16"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guideline_top"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintGuide_begin="@dimen/dimen_16" />
 
         <ImageButton
             android:id="@+id/hamburger_iv"
@@ -25,7 +31,7 @@
             android:background="?selectableItemBackgroundBorderless"
             android:src="@drawable/ic_menu_white_24dp"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="@id/guideline_top" />
 
         <TextView
             android:id="@+id/lang_tv"
