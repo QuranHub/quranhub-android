@@ -88,7 +88,6 @@ class MainActivity :
         observeOnDrawerOpen()
         initDrawer(this, slider, savedInstanceState)
         if (savedInstanceState == null) {
-            applyStatusBarIcons("mushaf")
             viewModel.computeLaunchDestination(
                 intent.extras?.getBoolean(AyaAudioService.FROM_NOTIFICATION) == true,
             )
