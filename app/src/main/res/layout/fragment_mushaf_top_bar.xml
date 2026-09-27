@@ -2,11 +2,16 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/ll_root"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@color/white_color"
     android:orientation="vertical">
+
+    <LinearLayout
+        android:id="@+id/ll_root"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/white_color"
+        android:orientation="vertical">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
@@ -76,7 +81,9 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- Drop shadow -->
+    </LinearLayout>
+
+    <!-- Drop shadow sits outside the white bar so it composites over the page. -->
     <View
         android:layout_width="match_parent"
         android:layout_height="@dimen/dropshadow_height"
