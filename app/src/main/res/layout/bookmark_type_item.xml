@@ -45,7 +45,7 @@
         android:layout_width="0dp"
         android:layout_height="2.7dp"
         android:layout_marginTop="@dimen/_8sdp"
-        android:background="@drawable/material_drawer_shadow_bottom"
+        android:background="@drawable/bookmark_type_list_shadow"
         android:visibility="invisible"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/type_iv" />
