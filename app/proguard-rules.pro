@@ -18,10 +18,6 @@
 # getters/setters reflectively - so keep members of all POJOs.
 -keep class app.quranhub.core.data.model.** { *; }
 
-# EventBus, Retrofit, Gson, RxJava2, Room, Glide, and Firebase ship consumer rules.
-# MaterialDrawer 9.0.2 does not. It also no longer reflects on its own types
-# (the v6 TypeUtils path is gone), so R8 keeps what the app calls. No extra keeps.
-
 # circular-progress-button: field accessed reflectively by the library
 -keepclassmembers class com.dd.StrokeGradientDrawable {
     public void setStrokeColor(int);

@@ -233,7 +233,6 @@ class MainActivity :
         itemIdentifier: Long,
         fireOnClick: Boolean,
     ) {
-        // v9 setSelection() selects without clearing the previous item.
         val selected = slider.selectExtension.selectedItems.map { it.identifier }
         if (selected.size == 1 && selected[0] == itemIdentifier) return
         slider.selectExtension.deselect()

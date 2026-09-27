@@ -81,8 +81,6 @@ object DrawerUtils {
                 .from(activity)
                 .inflate(R.layout.nav_drawer_header, slider, false)
         InsetsUtils.padTopForStatusBar(header)
-        // Library inset listener uses WindowInsetsCompat and can crash on some API 34
-        // devices (see InsetsUtils). Replace it with the safe nav-bar pad.
         InsetsUtils.padBottomForNavigationBar(slider)
 
         slider.hasStableIds = true

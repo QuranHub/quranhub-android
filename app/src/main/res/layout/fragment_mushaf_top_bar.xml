@@ -83,7 +83,6 @@
 
     </LinearLayout>
 
-    <!-- Drop shadow sits outside the white bar so it composites over the page. -->
     <View
         android:layout_width="match_parent"
         android:layout_height="@dimen/dropshadow_height"
