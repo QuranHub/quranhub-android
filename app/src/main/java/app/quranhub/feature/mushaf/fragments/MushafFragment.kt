@@ -942,16 +942,18 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
 
     // start audio of selected aya after it downloaded its sura audios
     private fun onDownloadAudioFinished() {
+        // Dialog-open is restored; selectedAyaAudio is not.
+        val aya = selectedAyaAudio ?: return
         if (!isAudioDialogOpen) return
-        firstAyaInRepeatGroup = selectedAyaAudio!!.suraAya
-        fromSuraDownloaded = selectedAyaAudio!!.sura
+        firstAyaInRepeatGroup = aya.suraAya
+        fromSuraDownloaded = aya.sura
         Log.d("ww9", "onDownloadAudioFinished: $firstAyaInRepeatGroup , $fromSuraDownloaded")
-        if (selectedAyaAudio != null && quranPageIndex != Constants.Quran.NUM_OF_PAGES - selectedAyaAudio!!.page) {
+        if (quranPageIndex != Constants.Quran.NUM_OF_PAGES - aya.page) {
             initAudioInRepeatGroup = true
-            autoSwipPage(Constants.Quran.NUM_OF_PAGES - selectedAyaAudio!!.page)
+            autoSwipPage(Constants.Quran.NUM_OF_PAGES - aya.page)
         } else {
             setCurrentQuranPageFragment()
-            quranPageFragment!!.playMiddleAyaAudio()
+            quranPageFragment?.playMiddleAyaAudio()
         }
     }
 
