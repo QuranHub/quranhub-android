@@ -874,7 +874,7 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener,
 
     companion object {
         private val TAG = QuranPageFragment::class.java.simpleName
-        private const val ARG_QURAN_PAGE_NUM = "ARG_QURAN_PAGE_NUM"
+        const val ARG_QURAN_PAGE_NUM = "ARG_QURAN_PAGE_NUM"
         private const val ARG_QURAN_IMAGE_URL = "ARG_QURAN_IMAGE_URL"
         private const val ARG_INIT_SELECTED_AYA_ID = "ARG_INIT_SELECTED_AYA_ID"
         private const val ARG_NIGHT_MODE = "ARG_NIGHT_MODE"

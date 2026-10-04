@@ -12,10 +12,13 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import app.quranhub.R
 import app.quranhub.core.data.Constants
 import app.quranhub.databinding.DialogAyaPropertiesBinding
 import app.quranhub.core.data.model.BookmarkModel
+import app.quranhub.feature.mushaf.fragments.QuranPageFragment
 import app.quranhub.feature.mushaf.viewmodel.QuranPageViewModel
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -29,9 +32,23 @@ class AyaActionsDialog : DialogFragment() {
     private var _binding: DialogAyaPropertiesBinding? = null
     private val binding get() = _binding!!
 
-    // Shares the host page's ViewModel (UI shell over one ViewModel per feature)
+    // Shares the host page's ViewModel (UI shell over one ViewModel per feature).
+    // The initializer guards store misses (e.g. process restore); the default factory
+    // can't construct QuranPageViewModel(application, pageNumber).
     private val viewModel: QuranPageViewModel by lazy {
-        ViewModelProvider(requireParentFragment())[QuranPageViewModel::class.java]
+        ViewModelProvider(
+            requireParentFragment(),
+            viewModelFactory {
+                initializer {
+                    QuranPageViewModel(
+                        requireActivity().application,
+                        requireParentFragment().arguments?.getInt(
+                            QuranPageFragment.ARG_QURAN_PAGE_NUM
+                        ) ?: 0
+                    )
+                }
+            }
+        )[QuranPageViewModel::class.java]
     }
 
     override fun onAttach(context: Context) {

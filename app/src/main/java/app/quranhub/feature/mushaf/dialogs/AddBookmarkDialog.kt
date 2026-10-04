@@ -8,11 +8,14 @@ import android.view.Window
 import android.widget.Toast
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.recyclerview.widget.LinearLayoutManager
 import app.quranhub.R
 import app.quranhub.core.data.local.entity.BookmarkType
 import app.quranhub.databinding.DialogAddBookmarkBinding
 import app.quranhub.feature.mushaf.adapter.BookmarkTypeAdapter
+import app.quranhub.feature.mushaf.fragments.QuranPageFragment
 import app.quranhub.feature.mushaf.listener.ItemSelectionListener
 import app.quranhub.feature.mushaf.viewmodel.QuranPageViewModel
 import app.quranhub.core.common.util.DialogUtils.wrapDialogHeight
@@ -28,9 +31,23 @@ class AddBookmarkDialog : DialogFragment(), ItemSelectionListener<Int> {
     private var adapter: BookmarkTypeAdapter? = null
     private var colorIndex = 0
 
-    // Shares the host page's ViewModel (UI shell over one ViewModel per feature)
+    // Shares the host page's ViewModel (UI shell over one ViewModel per feature).
+    // The initializer guards store misses (e.g. process restore); the default factory
+    // can't construct QuranPageViewModel(application, pageNumber).
     private val viewModel: QuranPageViewModel by lazy {
-        ViewModelProvider(requireParentFragment())[QuranPageViewModel::class.java]
+        ViewModelProvider(
+            requireParentFragment(),
+            viewModelFactory {
+                initializer {
+                    QuranPageViewModel(
+                        requireActivity().application,
+                        requireParentFragment().arguments?.getInt(
+                            QuranPageFragment.ARG_QURAN_PAGE_NUM
+                        ) ?: 0
+                    )
+                }
+            }
+        )[QuranPageViewModel::class.java]
     }
 
     override fun onResume() {
