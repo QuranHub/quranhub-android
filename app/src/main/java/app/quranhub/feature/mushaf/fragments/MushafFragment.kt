@@ -1091,7 +1091,7 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
             AudioPlaybackState.PLAY_NEXT -> {
                 if (quranPageFragment!!.currentAyaIndex != quranPageFragment!!.numOfAyaInPage - 1) {
                     quranPageFragment!!.drawActionShadow(false)
-                    checkAyaRecorderState(quranPageFragment!!.currentAyaId)
+                    quranPageFragment!!.currentAya?.let { checkAyaRecorderState(it.id) }
                 } else {
                     swipToNextQuranPage()
                 }
@@ -1099,7 +1099,7 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
             AudioPlaybackState.PLAY_PREV -> {
                 if (quranPageFragment!!.currentAyaIndex != 0) {
                     quranPageFragment!!.drawActionShadow(true)
-                    checkAyaRecorderState(quranPageFragment!!.currentAyaId)
+                    quranPageFragment!!.currentAya?.let { checkAyaRecorderState(it.id) }
                 } else {
                     swipToPrevQuranPage()
                 }
@@ -1111,7 +1111,8 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
                 } // play audio of next aya after current aya audio was finished
                 else {
                     quranPageFragment!!.drawActionShadow(false)
-                    checkAyaRecorderState(quranPageFragment!!.currentAyaId)
+                    // Page ayas may still be unloaded, so currentAya is null (Crashlytics 5028a1f7).
+                    quranPageFragment!!.currentAya?.let { checkAyaRecorderState(it.id) }
                 }
             }
             AudioPlaybackState.NOT_DOWNLOADED -> {
