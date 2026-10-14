@@ -54,7 +54,7 @@ Single source tree under `app/src/main/java/app/quranhub/`:
 
 ## Toolchain & commands
 
-- JDK 21 (Temurin), Gradle 9.7.1 wrapper, AGP 9.3.2, Kotlin 2.4.10, KSP. compileSdk 37 / targetSdk 36 / minSdk 23.
+- JDK 21 (Temurin), Gradle 9.7.1 wrapper, AGP 9.3.2, Kotlin 2.4.10, KSP. compileSdk 37 / targetSdk 36 / minSdk 24.
 - Verify changes with `./gradlew build` — this is exactly what CI runs (GitHub Actions `android.yml`, master push/PR only). `lint` has `abortOnError = false`, so lint failures don't fail the build.
 - Tests are scaffolding only (`ExampleUnitTest`, `ExampleInstrumentedTest`). There is no real test suite; don't treat `test`/`connectedAndroidTest` as meaningful verification.
 
