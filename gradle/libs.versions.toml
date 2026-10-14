@@ -1,7 +1,7 @@
 [versions]
 compileSdkVersion = "37"
 targetSdkVersion = "36"
-minSdkVersion = "23"
+minSdkVersion = "24"
 kotlin = "2.4.20"
 coroutines = "1.11.0"
 androidGradlePlugin = "9.4.1"
