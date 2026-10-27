@@ -1,5 +1,6 @@
 package app.quranhub.feature.mushaf.audio_manager
 
+import app.quranhub.core.data.util.QuranAudioFileUtils
 import android.app.ForegroundServiceStartNotAllowedException
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -484,10 +485,11 @@ class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener 
             try {
                 val result = userDatabase!!.quranAudioDao
                     .getAyaAudioPath(ayaId, recitationId, sheikhId)
-                if (result != null) {
-                    checkFileAudioExist(
-                        applicationContext.getExternalFilesDir(null).toString() + result
-                    )
+                // null when not in DB or when external storage is unavailable; previously the
+                // latter produced a bogus "null/..." path.
+                val audioPath = QuranAudioFileUtils.getAbsolutePath(applicationContext, result)
+                if (audioPath != null) {
+                    checkFileAudioExist(audioPath)
                 } else {
                     AudioPlaybackStateHolder.update(AudioPlaybackState.NOT_DOWNLOADED)
                 }

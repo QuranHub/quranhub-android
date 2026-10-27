@@ -76,10 +76,14 @@ object QuranAudioDeleteUtils {
                 .getForSura(recitationId, reciterId, suraId)
             for (q in quranAudios) {
                 q?.let {
-                    val audioFilePath = context.getExternalFilesDir(null)!!.path + it.filePath
-                    val audioFile = File(audioFilePath)
-                    if (audioFile.exists()) {
-                        audioFile.delete()
+                    // Same behaviour as the recitation/reciter deletes: if storage is
+                    // unavailable the files can't be reached, so only the DB rows are removed.
+                    val audioFilePath = QuranAudioFileUtils.getAbsolutePath(context, it.filePath)
+                    if (audioFilePath != null) {
+                        val audioFile = File(audioFilePath)
+                        if (audioFile.exists()) {
+                            audioFile.delete()
+                        }
                     }
                 }
             }

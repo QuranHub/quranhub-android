@@ -33,8 +33,7 @@ object QuranAudioFileUtils {
      *
      * @param recitationId Recitation ID as in [Constants.Recitation].
      * @param sheikhId     Reciter sheikh ID.
-     * @return Directory relative path as a String, or `null` if external storage
-     * is currently unavailable or the given
+     * @return Directory relative path as a String, or `null` if the given
      * `recitationId` or `sheikhId` args is incorrect
      */
     fun getLocalRelativeDirPath(recitationId: Int, sheikhId: String?): String? {
@@ -52,8 +51,7 @@ object QuranAudioFileUtils {
      * given `recitationId`.
      *
      * @param recitationId Recitation ID as in [Constants.Recitation].
-     * @return Directory relative path as a String, or `null` if external storage
-     * is currently unavailable or the given
+     * @return Directory relative path as a String, or `null` if the given
      * `recitationId` or `sheikhId` args is incorrect
      */
     fun getLocalRelativeDirPath(recitationId: Int): String? {
@@ -76,10 +74,7 @@ object QuranAudioFileUtils {
      */
     fun getLocalDirPath(context: Context, recitationId: Int, sheikhId: String?): String? {
         val relativeDirPath = getLocalRelativeDirPath(recitationId, sheikhId)
-        // getExternalFilesDir() returns null when shared storage is unavailable
-        // (e.g. not mounted / being scanned), so treat that as "no path" too.
-        val baseDir = context.getExternalFilesDir(null) ?: return null
-        return if (relativeDirPath != null) baseDir.path + relativeDirPath else null
+        return getAbsolutePath(context, relativeDirPath)
     }
 
     /**
@@ -94,9 +89,22 @@ object QuranAudioFileUtils {
      */
     fun getLocalDirPath(context: Context, recitationId: Int): String? {
         val relativeDirPath = getLocalRelativeDirPath(recitationId)
-        // getExternalFilesDir() returns null when shared storage is unavailable
-        // (e.g. not mounted / being scanned), so treat that as "no path" too.
-        val baseDir = context.getExternalFilesDir(null) ?: return null
-        return if (relativeDirPath != null) baseDir.path + relativeDirPath else null
+        return getAbsolutePath(context, relativeDirPath)
+    }
+
+    /**
+     * Resolves a path relative to the app's external files dir (the format stored in the
+     * `quran_audio` table and returned by [getLocalRelativeDirPath]).
+     *
+     * @return The absolute path, or `null` if `relativePath` is `null` or external storage is
+     * currently unavailable ([Context.getExternalFilesDir] returns `null` while shared storage
+     * is not mounted).
+     */
+    fun getAbsolutePath(context: Context, relativePath: String?): String? =
+        resolve(context.getExternalFilesDir(null), relativePath)
+
+    internal fun resolve(baseDir: File?, relativePath: String?): String? {
+        if (baseDir == null || relativePath == null) return null
+        return baseDir.path + relativePath
     }
 }
