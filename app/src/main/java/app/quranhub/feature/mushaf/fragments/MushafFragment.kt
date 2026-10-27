@@ -776,21 +776,23 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
         if (isAudioPlay) {
             togglePauseState(true)
         } else {
-            if (quranPageFragment!!.currentAya == null) quranPageFragment!!.playFirstAyaAudio() else togglePlayState(
-                true
-            )
+            // The audio popup is a PopupWindow and can still deliver clicks while this
+            // fragment's view is gone or the pager has no resolved page yet (e.g. right
+            // after returning from DownloadsManagerActivity). There is no page to act on.
+            val page = quranPageFragment ?: return
+            if (page.currentAya == null) page.playFirstAyaAudio() else togglePlayState(true)
         }
     }
 
     override fun onClickRepeat() {
         setCurrentQuranPageFragment()
-        val currentAya = quranPageFragment!!.currentAya
+        val currentAya = (quranPageFragment ?: return).currentAya
         val repeatDialog = getInstance(suraVersesNumberArrayList, currentAya)
         repeatDialog.show(childFragmentManager, "AyaRepeatDialog")
     }
 
     fun playNextAyaAudio() {
-        if (quranPageFragment!!.currentAya != null) {
+        if (quranPageFragment?.currentAya != null) {
             if (quranPageFragment!!.currentAyaIndex != quranPageFragment!!.numOfAyaInPage - 1) {
                 audioServiceIntent!!.action = AyaAudioService.ACTION_NEXT
                 audioServiceIntent!!.putExtra(
@@ -805,7 +807,7 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
     }
 
     fun playPrevAyaAudio() {
-        if (quranPageFragment!!.currentAya != null) {
+        if (quranPageFragment?.currentAya != null) {
             if (quranPageFragment!!.currentAyaIndex != 0) {
                 audioServiceIntent!!.action = AyaAudioService.ACTION_PREVIOUS
                 audioServiceIntent!!.putExtra(
