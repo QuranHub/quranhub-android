@@ -2,6 +2,7 @@ package app.quranhub.core.common.util
 
 import android.os.BadParcelableException
 import android.util.Log
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 
 /**
  * Works around a platform bug on some Android 15 builds (seen on Samsung) where the system
@@ -11,38 +12,42 @@ import android.util.Log
  *
  * The exception is thrown inside `ConnectivityManager$CallbackHandler` while delivering a
  * network callback registered by a library (e.g. Firebase), so there is no app frame to put a
- * try/catch around. We only swallow this exact failure on that exact thread; everything else
- * is forwarded to the previous handler (Crashlytics, then the system default).
+ * try/catch around. Only this exact failure is swallowed; everything else is forwarded to the
+ * previous handler (Crashlytics, then the system default).
+ *
+ * Caveat: the uncaught exception still terminates that HandlerThread, so connectivity
+ * callbacks stop being delivered for the rest of the process. That is strictly better than
+ * killing the app, and the event is still reported to Crashlytics as a non-fatal.
  */
 object ConnectivityCrashGuard {
 
     private const val TAG = "ConnectivityCrashGuard"
-    private const val CONNECTIVITY_THREAD = "ConnectivityThread"
-    private const val MISSING_CLASS = "android.net.UidRange"
+    internal const val CONNECTIVITY_THREAD = "ConnectivityThread"
+    internal const val MISSING_CLASS = "android.net.UidRange"
+    internal const val CALLBACK_HANDLER = "android.net.ConnectivityManager\$CallbackHandler"
 
     fun install() {
         val previous = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
-            if (isUidRangeUnmarshalCrash(thread, throwable)) {
-                // The ConnectivityThread dies, but the app keeps running; affected callbacks
-                // only lose connectivity updates, which the libraries tolerate.
+            if (throwable is BadParcelableException && matches(thread.name, throwable)) {
                 Log.w(TAG, "Ignoring platform UidRange unmarshalling crash", throwable)
+                runCatching { FirebaseCrashlytics.getInstance().recordException(throwable) }
             } else {
                 previous?.uncaughtException(thread, throwable)
             }
         }
     }
 
-    internal fun isUidRangeUnmarshalCrash(thread: Thread, throwable: Throwable): Boolean {
-        if (thread.name != CONNECTIVITY_THREAD) return false
-        if (throwable !is BadParcelableException) return false
-        var cause: Throwable? = throwable
-        while (cause != null) {
-            if (cause is ClassNotFoundException && cause.message?.contains(MISSING_CLASS) == true) {
-                return true
-            }
-            cause = cause.cause
-        }
-        return throwable.message?.contains(MISSING_CLASS) == true
+    /**
+     * Type-independent part of the match, so it can be unit tested without android.jar stubs:
+     * the right thread, a [ClassNotFoundException] for exactly [MISSING_CLASS] in the cause
+     * chain, and the throw coming from ConnectivityManager's callback handler.
+     */
+    internal fun matches(threadName: String, throwable: Throwable): Boolean {
+        if (threadName != CONNECTIVITY_THREAD) return false
+        if (throwable.stackTrace.none { it.className == CALLBACK_HANDLER }) return false
+        return generateSequence(throwable) { it.cause }
+            .take(10) // guard against cyclic cause chains
+            .any { it is ClassNotFoundException && it.message == MISSING_CLASS }
     }
 }
