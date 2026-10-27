@@ -3,6 +3,7 @@ package app.quranhub
 import android.content.Context
 import android.content.res.Configuration
 import androidx.multidex.MultiDexApplication
+import app.quranhub.core.common.util.ConnectivityCrashGuard
 import app.quranhub.core.common.util.LocaleUtils
 import com.downloader.PRDownloader
 import com.google.firebase.Firebase
@@ -22,6 +23,9 @@ class QuranhubApplication : MultiDexApplication() {
         Firebase.appCheck.installAppCheckProviderFactory(
             PlayIntegrityAppCheckProviderFactory.getInstance()
         )
+
+        // Installed after Firebase so Crashlytics' handler stays in the chain for real crashes.
+        ConnectivityCrashGuard.install()
 
         // initialize PRDownloader library (for downloading files)
         PRDownloader.initialize(applicationContext)
