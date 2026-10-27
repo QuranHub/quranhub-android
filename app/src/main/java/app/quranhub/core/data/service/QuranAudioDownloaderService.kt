@@ -57,16 +57,19 @@ class QuranAudioDownloaderService : PRDownloaderService() {
                         " start intent of QuranAudioDownloaderService."
             )
         }
+        val dirPath = QuranAudioFileUtils.getLocalDirPath(this, recitationId, reciterId)
+        if (dirPath == null) {
+            // External storage unavailable (or bad ids): nothing can be saved, so start no
+            // downloads; PRDownloaderService stops itself when the list is empty.
+            Log.w(TAG, "Audio dir unavailable; skipping download of ayas $startAyaId..$endAyaId")
+            return emptyArray()
+        }
         val ayaDao = MushafDatabase.getInstance(this).ayaDao
         val downloadRequestInfos: MutableList<DownloadRequestInfo> = ArrayList()
         for (ayaId in startAyaId..endAyaId) {
             val aya = ayaDao.findAyaById(ayaId)
             val urlPath = QuranAudioDownloadUtils.getDownloadUrlPath(
                 recitationId, reciterId, aya!!.sura, aya.suraAya
-            )
-            val dirPath = QuranAudioFileUtils.getLocalDirPath(
-                this,
-                recitationId, reciterId
             )
             val extraInfo = Bundle()
             extraInfo.putInt(DRI_EXTRA_INFO_AYA_ID, ayaId)
