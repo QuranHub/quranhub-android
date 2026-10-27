@@ -1020,7 +1020,7 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
 
     override fun onReciterSelected(recitationId: Int, reciter: ReciterModel) {
         setCurrentQuranPageFragment()
-        quranPageFragment!!.onListenClick()
+        quranPageFragment?.onListenClick()
     }
 
     private fun setAudioService() {
@@ -1047,10 +1047,11 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
 
     fun playAudioService() {
         setCurrentQuranPageFragment()
-        if (quranPageFragment!!.currentAya != null) {
+        val page = quranPageFragment ?: return
+        if (page.currentAya != null) {
             audioServiceIntent!!.putExtra(
                 AyaAudioService.AYA_ID_KEY,
-                quranPageFragment!!.currentAyaId
+                page.currentAyaId
             )
             audioServiceIntent!!.action = AyaAudioService.ACTION_PLAY
             requireActivity().startService(audioServiceIntent)
@@ -1062,7 +1063,8 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
         isAudioPlay = true
         ayaAudioPopup!!.setPlayState()
         if (checkPlayAudio) {
-            if (quranPageFragment!!.isAyaAudioDownloaded) resumeAyaAudio() else playAudioService()
+            val page = quranPageFragment ?: return
+            if (page.isAyaAudioDownloaded) resumeAyaAudio() else playAudioService()
         }
     }
 
