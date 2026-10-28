@@ -68,16 +68,13 @@ object QuranAudioFileUtils {
      * @param context      A valid Context.
      * @param recitationId Recitation ID as in [Constants.Recitation].
      * @param sheikhId     Reciter sheikh ID.
-     * @return Directory, absolute, path as a String, or `null` if the given
+     * @return Directory, absolute, path as a String, or `null` if external storage
+     * is currently unavailable or the given
      * `recitationId` or `sheikhId` args is incorrect.
      */
     fun getLocalDirPath(context: Context, recitationId: Int, sheikhId: String?): String? {
         val relativeDirPath = getLocalRelativeDirPath(recitationId, sheikhId)
-        return if (relativeDirPath != null) {
-            context.getExternalFilesDir(null)!!.path + relativeDirPath
-        } else {
-            null
-        }
+        return getAbsolutePath(context, relativeDirPath)
     }
 
     /**
@@ -86,15 +83,28 @@ object QuranAudioFileUtils {
      *
      * @param context      A valid Context.
      * @param recitationId Recitation ID as in [Constants.Recitation].
-     * @return Directory, absolute, path as a String, or `null` if the given
+     * @return Directory, absolute, path as a String, or `null` if external storage
+     * is currently unavailable or the given
      * `recitationId` or `sheikhId` args is incorrect.
      */
     fun getLocalDirPath(context: Context, recitationId: Int): String? {
         val relativeDirPath = getLocalRelativeDirPath(recitationId)
-        return if (relativeDirPath != null) {
-            context.getExternalFilesDir(null)!!.path + relativeDirPath
-        } else {
-            null
-        }
+        return getAbsolutePath(context, relativeDirPath)
+    }
+
+    /**
+     * Resolves a path relative to the app's external files dir (the format stored in the
+     * `quran_audio` table and returned by [getLocalRelativeDirPath]).
+     *
+     * @return The absolute path, or `null` if `relativePath` is `null` or external storage is
+     * currently unavailable ([Context.getExternalFilesDir] returns `null` while shared storage
+     * is not mounted).
+     */
+    fun getAbsolutePath(context: Context, relativePath: String?): String? =
+        resolve(context.getExternalFilesDir(null), relativePath)
+
+    internal fun resolve(baseDir: File?, relativePath: String?): String? {
+        if (baseDir == null || relativePath == null) return null
+        return baseDir.path + relativePath
     }
 }
