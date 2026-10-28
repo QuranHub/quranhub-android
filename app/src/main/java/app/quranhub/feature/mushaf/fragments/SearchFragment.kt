@@ -9,6 +9,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
@@ -294,6 +295,16 @@ class SearchFragment : Fragment(), ItemSelectionListener<SearchModel>,
         }
     }
 
+    /**
+     * Filter clicks can be delivered after onSaveInstanceState (queued click, activity
+     * going to background), and DialogFragment.show() then throws IllegalStateException.
+     * The user is leaving the screen anyway, so drop the click instead of committing.
+     */
+    private fun showFilterDialog(dialog: DialogFragment, tag: String) {
+        if (!isAdded || childFragmentManager.isStateSaved) return
+        dialog.show(childFragmentManager, tag)
+    }
+
     private fun onNavHamburgerClick() {
         navDrawerListener!!.onNavDrawerClick()
     }
@@ -311,7 +322,7 @@ class SearchFragment : Fragment(), ItemSelectionListener<SearchModel>,
             requireActivity().resources.getStringArray(R.array.agza2_name)[selectedJuz - 1]
         }
         val dialog = getInstance(juzOptions, option, JUZ_FILTER_CODE, getString(R.string.chapters))
-        dialog.show(childFragmentManager, "JuzDialog")
+        showFilterDialog(dialog, "JuzDialog")
     }
 
     private fun setSuraDialog() {
@@ -321,7 +332,7 @@ class SearchFragment : Fragment(), ItemSelectionListener<SearchModel>,
             requireActivity().resources.getStringArray(R.array.sura_name)[selectedSura - 1]
         }
         val dialog = getInstance(suraOptions, option, SURA_FILTER_CODE, getString(R.string.suras))
-        dialog.show(childFragmentManager, "OptionDialog")
+        showFilterDialog(dialog, "OptionDialog")
     }
 
     private fun onClickSuraFilter() {
@@ -352,7 +363,7 @@ class SearchFragment : Fragment(), ItemSelectionListener<SearchModel>,
             REQUEST_HEZB_FILTER,
             HEZB_FILTER_CODE
         )
-        fragment.show(childFragmentManager, "HizbFilterDialog")
+        showFilterDialog(fragment, "HizbFilterDialog")
     }
 
     private fun onClickQuarterFilter() {
@@ -373,7 +384,7 @@ class SearchFragment : Fragment(), ItemSelectionListener<SearchModel>,
             REQUEST_QUARTER_FILTER,
             QUARTER_FILTER_CODE
         )
-        fragment.show(childFragmentManager, "QuarterFilterDialog")
+        showFilterDialog(fragment, "QuarterFilterDialog")
     }
 
     override fun onSelectItem(item: SearchModel) {
