@@ -1,9 +1,7 @@
 package app.quranhub.core.common.util
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Configuration
-import android.os.Build
 import android.util.Log
 import androidx.core.view.ViewCompat
 import app.quranhub.core.data.local.prefs.AppPreferencesManager
@@ -17,23 +15,19 @@ object LocaleUtils {
     val appLanguage: String
         get() = Locale.getDefault().language
 
+    /**
+     * Applies [langCode] to [ctx] and returns a configuration-wrapped context.
+     * minSdk is 24, so createConfigurationContext is always available; the old
+     * updateConfiguration / Configuration.locale path is unused and removed.
+     */
     @JvmStatic
-    @SuppressLint("ObsoleteSdkInt")
     fun setAppLanguage(ctx: Context, langCode: String): Context {
-        var context = ctx
         Log.d(TAG, "Setting app language: $langCode")
-        val locale = Locale(langCode)
+        val locale = Locale.Builder().setLanguage(langCode).build()
         Locale.setDefault(locale)
-        val res = context.resources
-        val config = Configuration(res.configuration)
-        if (Build.VERSION.SDK_INT >= 17) {
-            config.setLocale(locale)
-            context = context.createConfigurationContext(config)
-        } else {
-            config.locale = locale
-            res.updateConfiguration(config, res.displayMetrics)
-        }
-        return context
+        val config = Configuration(ctx.resources.configuration)
+        config.setLocale(locale)
+        return ctx.createConfigurationContext(config)
     }
 
     @JvmStatic
