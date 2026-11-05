@@ -21,10 +21,12 @@ private fun getAppInstaller(context: Context): String {
         val appPackageManager = appContext.packageManager
         val appPackageName = appContext.packageName
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             appPackageManager.getInstallSourceInfo(appPackageName).installingPackageName
-        else
+        } else {
+            @Suppress("DEPRECATION")
             appPackageManager.getInstallerPackageName(appPackageName)
+        }
     } catch (e: Exception) {
         e.printStackTrace()
         "--"
