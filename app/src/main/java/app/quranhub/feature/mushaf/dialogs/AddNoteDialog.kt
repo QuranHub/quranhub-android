@@ -30,6 +30,7 @@ import app.quranhub.feature.mushaf.util.RecorderMediaHelper.MediaPlayerCallback
 import app.quranhub.feature.mushaf.util.RecorderMediaHelper.PlaybackState
 import java.io.File
 import java.io.IOException
+import androidx.core.os.BundleCompat
 
 class AddNoteDialog : DialogFragment(), MediaPlayerCallback {
 
@@ -90,7 +91,7 @@ class AddNoteDialog : DialogFragment(), MediaPlayerCallback {
     private fun readArgs() {
         arguments?.let {
             ayaId = it.getInt("aya_id")
-            note = it.getParcelable("selected_aya")
+            note = BundleCompat.getParcelable(it, "selected_aya", Note::class.java)
             createRecordingFile()
             if (note != null) {
                 isEditable = true

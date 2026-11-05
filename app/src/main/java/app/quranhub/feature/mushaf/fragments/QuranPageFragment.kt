@@ -53,6 +53,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlin.math.abs
+import androidx.core.os.BundleCompat
 
 class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener,
     ReciterSelectionListener, AudioDownloadListener {
@@ -265,8 +266,8 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener,
     private fun getPrevSavedInstance(savedInstanceState: Bundle?) {
         if (savedInstanceState != null) {
             numOfAyaInPage = savedInstanceState.getInt("num_of_ayas")
-            currentAya = savedInstanceState.getParcelable("current_aya")
-            previousAya = savedInstanceState.getParcelable("prev_aya")
+            currentAya = BundleCompat.getParcelable(savedInstanceState, "current_aya", Aya::class.java)
+            previousAya = BundleCompat.getParcelable(savedInstanceState, "prev_aya", Aya::class.java)
             currentAyaIndex = savedInstanceState.getInt("CURRENT_AYA_INDEX")
             isAyaAudioDownloaded = savedInstanceState.getBoolean("AYA_AUDIO_DOWNLOADED")
             ayaActionsDialog =
@@ -290,7 +291,7 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener,
             noteDialogOpen = savedInstanceState.getBoolean("open_dialog")
             if (noteDialogOpen) {
                 noteDialogOpen = false
-                openAddNoteDialog(savedInstanceState.getParcelable("selected_note"))
+                openAddNoteDialog(BundleCompat.getParcelable(savedInstanceState, "selected_note", Note::class.java))
             }
         }
     }

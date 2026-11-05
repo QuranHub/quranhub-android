@@ -34,6 +34,7 @@ import app.quranhub.core.common.util.ScreenUtils
 import app.quranhub.core.common.util.ScreenUtils.dismissKeyboard
 import app.quranhub.core.common.util.ScreenUtils.getOrientationState
 import kotlinx.coroutines.launch
+import androidx.core.os.BundleCompat
 
 class MyNotesFragment : Fragment(), NoteCallback, AddNoteListener, ItemSelectionListener<Int?> {
 
@@ -91,7 +92,7 @@ class MyNotesFragment : Fragment(), NoteCallback, AddNoteListener, ItemSelection
         openDialog = savedInstanceState.getBoolean("open_dialog")
         if (openDialog) {
             openDialog = false
-            selectedAyaNote = savedInstanceState.getParcelable("selected_note")
+            selectedAyaNote = BundleCompat.getParcelable(savedInstanceState, "selected_note", DisplayedNote::class.java)
             openAddNoteDialog(selectedAyaNote)
         }
     }
