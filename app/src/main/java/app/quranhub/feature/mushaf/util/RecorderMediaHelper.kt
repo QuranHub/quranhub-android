@@ -7,6 +7,7 @@ import java.io.IOException
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
+import android.os.Looper
 
 class RecorderMediaHelper {
 
@@ -145,7 +146,7 @@ class RecorderMediaHelper {
 
     fun startUpdatingAudioTime() {
         if (audioUpdatedTimeTask == null) {
-            audioUpdatedTimeTask = Handler()
+            audioUpdatedTimeTask = Handler(Looper.getMainLooper())
             audioTimeRunnable = Runnable {
                 val player = mediaPlayer ?: return@Runnable
                 try {
