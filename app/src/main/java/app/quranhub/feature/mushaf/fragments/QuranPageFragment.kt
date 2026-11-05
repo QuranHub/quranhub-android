@@ -53,6 +53,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlin.math.abs
+import androidx.core.content.ContextCompat
 
 class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener,
     ReciterSelectionListener, AudioDownloadListener {
@@ -623,9 +624,9 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener,
             binding.quranPageContainer.addView(shadowView)
             params = shadowView.layoutParams as RelativeLayout.LayoutParams
             if (nightMode) {
-                shadowView.setBackgroundColor(resources.getColor(R.color.aya_shadow_color_night_mode))
+                shadowView.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.aya_shadow_color_night_mode))
             } else {
-                shadowView.setBackgroundColor(resources.getColor(R.color.aya_shadow_color))
+                shadowView.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.aya_shadow_color))
             }
             if (!firstLine) {
                 startWidth = start.toInt().toDouble()
