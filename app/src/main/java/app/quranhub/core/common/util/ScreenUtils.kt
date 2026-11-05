@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.res.Configuration
 import android.graphics.Point
+import android.os.Build
 import android.util.Log
 import android.view.View
 import android.view.WindowManager
@@ -62,9 +63,16 @@ object ScreenUtils {
      * @return ScreenSize instance holding width & height information.
      */
     fun getScreenSize(activity: Activity): ScreenSize {
-        val size = Point()
-        activity.windowManager.defaultDisplay.getSize(size)
-        val screenSize = ScreenSize(size.x, size.y)
+        val windowManager = activity.windowManager
+        val screenSize = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val bounds = windowManager.currentWindowMetrics.bounds
+            ScreenSize(bounds.width(), bounds.height())
+        } else {
+            val size = Point()
+            @Suppress("DEPRECATION")
+            windowManager.defaultDisplay.getSize(size)
+            ScreenSize(size.x, size.y)
+        }
         Log.d(
             TAG, "getScreenSize(): width = " + screenSize.width
                     + ", height = " + screenSize.height
