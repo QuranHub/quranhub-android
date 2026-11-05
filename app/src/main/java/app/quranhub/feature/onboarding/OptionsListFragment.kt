@@ -61,6 +61,13 @@ class OptionsListFragment : Fragment(), OptionsListAdapter.ItemClickListener, Se
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        savedInstanceState?.let {
+            val search = it.getString(STATE_SEARCH_TEXT, null)
+            search?.let {
+                searchText = search
+                search(searchText)
+            }
+        }
         observeSelectedOption()
         observeSearchQuery()
     }
@@ -93,16 +100,6 @@ class OptionsListFragment : Fragment(), OptionsListAdapter.ItemClickListener, Se
         }
     }
 
-    override fun onActivityCreated(savedInstanceState: Bundle?) {
-        super.onActivityCreated(savedInstanceState)
-        savedInstanceState?.let {
-            val search = it.getString(STATE_SEARCH_TEXT, null)
-            search?.let {
-                searchText = search
-                search(searchText)
-            }
-        }
-    }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
