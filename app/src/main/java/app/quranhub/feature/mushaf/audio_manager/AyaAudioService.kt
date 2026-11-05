@@ -40,6 +40,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import java.io.File
+import android.os.Looper
 
 class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener {
 
@@ -451,7 +452,7 @@ class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener 
 
     private fun setAudioDelay(ayaRepeatCase: Int, audioDelay: Int) {
         if (playAudioHandler == null) {
-            playAudioHandler = Handler()
+            playAudioHandler = Handler(Looper.getMainLooper())
         }
         when (ayaRepeatCase) {
             AYA_REPEAT_CASE -> playAudioDelayRunnable =
