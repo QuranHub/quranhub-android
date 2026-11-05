@@ -105,16 +105,16 @@ class DownloadsAdapter : RecyclerView.Adapter<DownloadsAdapter.ViewHolder> {
         }
 
         private fun onContentClick() {
-            val clickedDisplayableDownload = displayableDownloads[adapterPosition]
-            clickListener.onClickItem(clickedDisplayableDownload, adapterPosition)
+            val clickedDisplayableDownload = displayableDownloads[bindingAdapterPosition]
+            clickListener.onClickItem(clickedDisplayableDownload, bindingAdapterPosition)
         }
 
         private fun onActionButtonClick() {
-            val clickedDisplayableDownload = displayableDownloads[adapterPosition]
+            val clickedDisplayableDownload = displayableDownloads[bindingAdapterPosition]
             if (edit) {
-                clickListener.onDeleteItem(clickedDisplayableDownload, adapterPosition)
+                clickListener.onDeleteItem(clickedDisplayableDownload, bindingAdapterPosition)
             } else {
-                clickListener.onDownloadItem(clickedDisplayableDownload, adapterPosition)
+                clickListener.onDownloadItem(clickedDisplayableDownload, bindingAdapterPosition)
             }
         }
     }
