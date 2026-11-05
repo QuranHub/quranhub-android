@@ -9,6 +9,8 @@ import app.quranhub.R
 import app.quranhub.core.data.local.entity.BookmarkType
 import app.quranhub.databinding.BookmarkTypeItemBinding
 import app.quranhub.feature.mushaf.listener.ItemSelectionListener
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffColorFilter
 
 class BookmarkTypeAdapter(
     private val bookmarkTypes: List<BookmarkType>?,
@@ -55,7 +57,7 @@ class BookmarkTypeAdapter(
             }
 
             else -> {  // CUSTOM BOOKMARK
-                holder.binding.typeIv.setColorFilter(bookmarkColors[type.colorIndex])
+                holder.binding.typeIv.colorFilter = PorterDuffColorFilter(bookmarkColors[type.colorIndex], PorterDuff.Mode.SRC_IN)
                 holder.binding.typeTv.text = type.bookmarkTypeName
             }
         }
