@@ -10,6 +10,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentStatePagerAdapter
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -57,6 +58,24 @@ class FirstTimeWizardActivity : BaseActivity(), OnOptionClickListener {
         updateViews(viewModel.currentStep.value)
         attachListeners()
         observeViewModel()
+        setupBackNavigation()
+    }
+
+    private fun setupBackNavigation() {
+        onBackPressedDispatcher.addCallback(
+            this,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    if (viewModel.currentStep.value == FirstTimeWizardViewModel.FIRST_STEP) {
+                        // First step: finish the activity (system default).
+                        isEnabled = false
+                        onBackPressedDispatcher.onBackPressed()
+                    } else {
+                        viewModel.onBackClicked()
+                    }
+                }
+            },
+        )
     }
 
     private fun observeViewModel() {
@@ -153,17 +172,6 @@ class FirstTimeWizardActivity : BaseActivity(), OnOptionClickListener {
      */
     private fun stepOfPagerIndex(pagerIndex: Int): Int =
         if (layoutDir == View.LAYOUT_DIRECTION_RTL) NUM_PAGES - 1 - pagerIndex else pagerIndex
-
-    override fun onBackPressed() {
-        if (viewModel.currentStep.value == FirstTimeWizardViewModel.FIRST_STEP) {
-            // If the user is currently looking at the first step, allow the system to handle the
-            // Back button. This calls finish() on this activity and pops the back stack.
-            super.onBackPressed()
-        } else {
-            // Otherwise, select the previous step.
-            viewModel.onBackClicked()
-        }
-    }
 
     private fun backButtonClicked() {
         viewModel.onBackClicked()

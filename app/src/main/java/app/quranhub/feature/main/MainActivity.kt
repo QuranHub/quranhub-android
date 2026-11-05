@@ -5,6 +5,7 @@ import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.view.View
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -91,6 +92,7 @@ class MainActivity :
         slider = findViewById(R.id.slider)
         observeOnDrawerOpen()
         initDrawer(this, slider, savedInstanceState)
+        setupBackNavigation()
         if (savedInstanceState == null) {
             viewModel.computeLaunchDestination(
                 intent.extras?.getBoolean(AyaAudioService.FROM_NOTIFICATION) == true,
@@ -245,17 +247,28 @@ class MainActivity :
         slider.setSelection(itemIdentifier, fireOnClick)
     }
 
-    override fun onBackPressed() {
-        if (drawerLayout.isDrawerOpen(slider)) {
-            drawerLayout.closeDrawer(slider)
-        } else if (currentFragment == "pdf_viewer") {
-            super.onBackPressed()
-            currentFragment = "translation"
-        } else if (currentFragment != "mushaf") {
-            backToMushaf()
-        } else {
-            super.onBackPressed()
-        }
+    private fun setupBackNavigation() {
+        onBackPressedDispatcher.addCallback(
+            this,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    if (drawerLayout.isDrawerOpen(slider)) {
+                        drawerLayout.closeDrawer(slider)
+                    } else if (currentFragment == "pdf_viewer") {
+                        isEnabled = false
+                        onBackPressedDispatcher.onBackPressed()
+                        currentFragment = "translation"
+                        isEnabled = true
+                    } else if (currentFragment != "mushaf") {
+                        backToMushaf()
+                    } else {
+                        isEnabled = false
+                        onBackPressedDispatcher.onBackPressed()
+                        isEnabled = true
+                    }
+                }
+            },
+        )
     }
 
     private fun backToMushaf() {

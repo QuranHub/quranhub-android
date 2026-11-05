@@ -2,7 +2,7 @@
 
 compileSdkVersion = "37"
 
-targetSdkVersion = "36"
+targetSdkVersion = "37"
 
 minSdkVersion = "24"
 
