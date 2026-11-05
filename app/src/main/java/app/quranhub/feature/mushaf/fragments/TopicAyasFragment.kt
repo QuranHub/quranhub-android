@@ -25,6 +25,7 @@ import app.quranhub.feature.mushaf.viewmodel.TopicViewModel
 import app.quranhub.core.common.util.InsetsUtils
 import app.quranhub.core.common.util.ScreenUtils.dismissKeyboard
 import kotlinx.coroutines.launch
+import androidx.core.os.BundleCompat
 
 class TopicAyasFragment : Fragment(), ItemSelectionListener<SearchModel> {
 
@@ -83,7 +84,7 @@ class TopicAyasFragment : Fragment(), ItemSelectionListener<SearchModel> {
     }
 
     private fun setViews() {
-        category = requireArguments().getParcelable(CATEGORY_ARGS)
+        category = BundleCompat.getParcelable(requireArguments(), CATEGORY_ARGS, TopicCategory::class.java)
         binding.topicTv.text = category?.categoryName
     }
 

@@ -18,6 +18,7 @@ import app.quranhub.databinding.DialogAyaRepeatBinding
 import app.quranhub.feature.mushaf.model.RepeatModel
 import app.quranhub.core.data.model.SuraVersesNumber
 import app.quranhub.core.common.util.DialogUtils.adjustDialogSize
+import androidx.core.os.BundleCompat
 
 class AyaRepeatDialogFragment : DialogFragment() {
 
@@ -175,8 +176,8 @@ class AyaRepeatDialogFragment : DialogFragment() {
 
     private fun readArgs() {
         arguments?.let {
-            selectedAya = it.getParcelable(ARG_SELECTED_SURA)
-            suraVersesNumberArrayList = it.getParcelableArrayList(ARG_SURA_VERSES_NUMBER)
+            selectedAya = BundleCompat.getParcelable(it, ARG_SELECTED_SURA, Aya::class.java)
+            suraVersesNumberArrayList = BundleCompat.getParcelableArrayList(it, ARG_SURA_VERSES_NUMBER, SuraVersesNumber::class.java)
         }
     }
 
