@@ -74,14 +74,18 @@ class MainActivity :
 
         addCrashlyticsCustomKeys(this)
 
-        notificationPermissionDelegate = NotificationPermissionDelegate(this)
-
-        // Redirect to `FirstTimeWizardActivity` if not already done
+        // Redirect to `FirstTimeWizardActivity` if not already done.
+        // Must return after finish(): otherwise onStart still runs and the
+        // notification-permission prompt races a dying activity (see #332).
         if (!AppPreferencesManager.isFirstTimeWizardDone(this)) {
             val intent = Intent(this, FirstTimeWizardActivity::class.java)
             startActivity(intent)
             finish()
+            return
         }
+
+        notificationPermissionDelegate = NotificationPermissionDelegate(this)
+
         setContentView(R.layout.activity_main)
         drawerLayout = findViewById(R.id.drawer_layout)
         slider = findViewById(R.id.slider)
@@ -180,7 +184,9 @@ class MainActivity :
         super.onStart()
         isActivityActive = true
 
-        notificationPermissionDelegate.askNotificationPermission()
+        if (!isFinishing && ::notificationPermissionDelegate.isInitialized) {
+            notificationPermissionDelegate.askNotificationPermission()
+        }
     }
 
     override fun onStop() {
