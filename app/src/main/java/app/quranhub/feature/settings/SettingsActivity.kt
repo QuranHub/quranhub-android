@@ -3,6 +3,7 @@ package app.quranhub.feature.settings
 import android.content.Intent
 import android.os.Bundle
 import android.view.MenuItem
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.widget.Toolbar
 import app.quranhub.R
 import app.quranhub.core.common.base.BaseActivity
@@ -20,6 +21,14 @@ class SettingsActivity : BaseActivity() {
         setTitle(R.string.title_activity_settings)
         InsetsUtils.padTopForStatusBar(findViewById(R.id.app_bar))
         InsetsUtils.padBottomForNavigationBar(findViewById(R.id.fragment))
+        onBackPressedDispatcher.addCallback(
+            this,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    returnToMain()
+                }
+            },
+        )
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -29,10 +38,6 @@ class SettingsActivity : BaseActivity() {
             return true
         }
         return super.onOptionsItemSelected(item)
-    }
-
-    override fun onBackPressed() {
-        returnToMain()
     }
 
     private fun returnToMain() {

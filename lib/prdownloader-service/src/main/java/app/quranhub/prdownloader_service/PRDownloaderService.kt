@@ -345,6 +345,16 @@ abstract class PRDownloaderService : Service(), DownloadCallbacks {
         PRDownloader.cancel(downloadTag)
     }
 
+    /**
+     * Android 15+ (API 35) stops `dataSync` foreground services after a shared
+     * 6-hour / 24h budget. Must stop promptly or the system crashes the app.
+     */
+    override fun onTimeout(startId: Int, fgsType: Int) {
+        Log.w(TAG, "dataSync foreground service timed out (startId=$startId, type=$fgsType); stopping")
+        if (downloadCount.get() > 0) cancelAllDownloads()
+        stopSelf()
+    }
+
     @CallSuper
     override fun onDestroy() {
         if (downloadCount.get() > 0) cancelAllDownloads()
