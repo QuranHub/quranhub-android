@@ -30,6 +30,7 @@ import app.quranhub.feature.mushaf.util.RecorderMediaHelper.MediaPlayerCallback
 import app.quranhub.feature.mushaf.util.RecorderMediaHelper.PlaybackState
 import java.io.File
 import java.io.IOException
+import androidx.activity.result.contract.ActivityResultContracts
 
 class AddNoteDialog : DialogFragment(), MediaPlayerCallback {
 
@@ -44,7 +45,6 @@ class AddNoteDialog : DialogFragment(), MediaPlayerCallback {
     private var userSelectedPosition = 0
     private var dialog: Dialog? = null
     private var listener: AddNoteListener? = null
-    private var permissions = arrayOf<String>()
     private var outputRecorderPath: String? = null
     private var ayaId = 0
     private var audioRecorder: MediaRecorder? = null
@@ -52,6 +52,15 @@ class AddNoteDialog : DialogFragment(), MediaPlayerCallback {
     private var outputFile: File? = null
     private var note: Note? = null
     private var isEditable = false
+
+    private val requestRecordingPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            if (isGranted) {
+                initRecording()
+            } else {
+                Toast.makeText(activity, getString(R.string.accept_perm), Toast.LENGTH_LONG).show()
+            }
+        }
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -83,7 +92,6 @@ class AddNoteDialog : DialogFragment(), MediaPlayerCallback {
         dialog!!.setContentView(binding.root)
         dialog!!.window?.setBackgroundDrawableResource(android.R.color.transparent)
         dialog!!.setCanceledOnTouchOutside(false)
-        permissions = arrayOf(Manifest.permission.RECORD_AUDIO)
         attachListeners()
     }
 
@@ -179,17 +187,14 @@ class AddNoteDialog : DialogFragment(), MediaPlayerCallback {
             isRecord = false
             isRecorderAttached = true
         } else {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                if (ContextCompat.checkSelfPermission(
-                        requireActivity(), permissions[0]
-                    ) == PackageManager.PERMISSION_GRANTED
-                ) {
-                    initRecording()
-                } else {
-                    requestPermissions(permissions, 1)
-                }
-            } else {
+            val permission = Manifest.permission.RECORD_AUDIO
+            if (ContextCompat.checkSelfPermission(
+                    requireActivity(), permission
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
                 initRecording()
+            } else {
+                requestRecordingPermissionLauncher.launch(permission)
             }
         }
     }
@@ -312,25 +317,6 @@ class AddNoteDialog : DialogFragment(), MediaPlayerCallback {
         binding.recorderChronometer.start()
     }
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        var isGranted = true
-        for (i in permissions.indices) {
-            if (grantResults[i] != PackageManager.PERMISSION_GRANTED) {
-                isGranted = false
-                break
-            }
-        }
-        if (isGranted) {
-            initRecording()
-        } else {
-            Toast.makeText(activity, getString(R.string.accept_perm), Toast.LENGTH_LONG).show()
-        }
-    }
 
     override fun onDestroyView() {
         super.onDestroyView()
