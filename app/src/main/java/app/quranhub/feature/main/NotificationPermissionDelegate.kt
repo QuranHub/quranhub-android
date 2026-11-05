@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.provider.Settings
+import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -14,41 +15,55 @@ import com.google.android.material.snackbar.Snackbar
 
 class NotificationPermissionDelegate(
     private val activity: ComponentActivity,
-    private val onPermissionGranted: () -> Unit = {}
+    private val onPermissionGranted: () -> Unit = {},
 ) {
     private val requestPermissionLauncher: ActivityResultLauncher<String> =
         activity.registerForActivityResult(
-            ActivityResultContracts.RequestPermission()
+            ActivityResultContracts.RequestPermission(),
         ) { isGranted: Boolean ->
             if (isGranted) {
                 onPermissionGranted()
             } else {
-                Snackbar.make(
-                    activity.findViewById(android.R.id.content),
-                    "${activity.getString(R.string.app_name)} can't post notifications without Notification permission",
-                    Snackbar.LENGTH_LONG
-                ).setAction("Go to Settings") {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        val settingsIntent: Intent =
-                            Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
-                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                .putExtra(Settings.EXTRA_APP_PACKAGE, activity.packageName)
-                        activity.startActivity(settingsIntent)
-                    }
-                }.show()
+                showPermissionDeniedSnackbar()
             }
         }
 
     fun askNotificationPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(
-                    activity, Manifest.permission.POST_NOTIFICATIONS
-                ) == PackageManager.PERMISSION_GRANTED
-            ) {
-                onPermissionGranted()
-            } else {
-                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            }
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        if (!activityIsInteractive()) return
+
+        if (ContextCompat.checkSelfPermission(
+                activity,
+                Manifest.permission.POST_NOTIFICATIONS,
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            onPermissionGranted()
+        } else {
+            requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
+    }
+
+    private fun showPermissionDeniedSnackbar() {
+        if (!activityIsInteractive()) return
+        val content: View = activity.findViewById(android.R.id.content) ?: return
+
+        Snackbar.make(
+            content,
+            "${activity.getString(R.string.app_name)} can't post notifications without Notification permission",
+            Snackbar.LENGTH_LONG,
+        ).setAction("Go to Settings") {
+            if (!activityIsInteractive()) return@setAction
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                val settingsIntent =
+                    Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        .putExtra(Settings.EXTRA_APP_PACKAGE, activity.packageName)
+                activity.startActivity(settingsIntent)
+            }
+        }.show()
+    }
+
+    private fun activityIsInteractive(): Boolean {
+        return !activity.isFinishing && !activity.isDestroyed
     }
 }
