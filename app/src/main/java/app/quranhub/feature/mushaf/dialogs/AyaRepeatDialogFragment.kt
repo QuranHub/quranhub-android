@@ -18,6 +18,7 @@ import app.quranhub.databinding.DialogAyaRepeatBinding
 import app.quranhub.feature.mushaf.model.RepeatModel
 import app.quranhub.core.data.model.SuraVersesNumber
 import app.quranhub.core.common.util.DialogUtils.adjustDialogSize
+import androidx.core.content.ContextCompat
 
 class AyaRepeatDialogFragment : DialogFragment() {
 
@@ -89,7 +90,7 @@ class AyaRepeatDialogFragment : DialogFragment() {
             ) {
                 if (parent?.getChildAt(0) != null) {
                     (parent.getChildAt(0) as TextView).setTextColor(
-                        requireActivity().resources.getColor(R.color.white_color)
+                        ContextCompat.getColor(requireContext(), R.color.white_color)
                     )
                 }
                 maxFromAyaNumber = suraVersesNumberArrayList!![position].ayas
@@ -109,7 +110,7 @@ class AyaRepeatDialogFragment : DialogFragment() {
                 id: Long
             ) {
                 if (parent?.getChildAt(0) != null) (parent.getChildAt(0) as TextView).setTextColor(
-                    requireActivity().resources.getColor(R.color.white_color)
+                    ContextCompat.getColor(requireContext(), R.color.white_color)
                 )
                 maxToAyaNumber = suraVersesNumberArrayList!![position].ayas
                 if (fromUser) {
