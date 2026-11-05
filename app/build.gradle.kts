@@ -19,7 +19,6 @@ android {
         versionCode = 20
         versionName = "1.9.1"
 
-        multiDexEnabled = true
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -75,7 +74,6 @@ dependencies {
     implementation(libs.appcompat)
     implementation(libs.activity.ktx)
     implementation(libs.fragment.ktx)
-    implementation(libs.multidex)
     implementation(libs.easypermissions)
     implementation(libs.androidx.annotation)
     implementation(libs.kotlin.parcelize.runtime)
