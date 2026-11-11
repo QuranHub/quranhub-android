@@ -854,12 +854,16 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
     }
 
     override fun onClickStop() {
+        // Audio service can emit STOPPED after this fragment has already
+        // detached (leave mushaf, process teardown, config-change race).
+        // requireActivity() then throws IllegalStateException (issue #354).
+        if (!isAdded) return
         setCurrentQuranPageFragment()
         isAudioPlay = false
         ayaHasRecorder = false
         isAudioDialogOpen = false
-        ayaAudioPopup!!.dismissPopup()
-        requireActivity().stopService(audioServiceIntent)
+        ayaAudioPopup?.dismissPopup()
+        activity?.stopService(audioServiceIntent)
     }
 
     private fun openAyaRecorderPlayer() {
