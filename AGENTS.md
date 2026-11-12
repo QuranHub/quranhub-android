@@ -23,7 +23,7 @@ Single source tree under `app/src/main/java/app/quranhub/`:
 - `core/` — shared code, must never import from `feature/`:
   - `core/data` — Room DBs/DAOs/entities, prefs, repositories, downloaders, audio-download + messaging services, shared Quran metadata models.
   - `core/common` — app-wide utils, `base/` activities/services, typed flow holders (`flowholder/`: audio playback state, download-finished).
-  - `core/ui` — shared dialogs (incl. reciter/audio-amount pickers + their ViewModels), shared list adapter, toolbar/search contracts, drawer helper.
+  - `core/ui` — shared dialogs (incl. reciter/audio-amount pickers + their ViewModels), shared widgets (`widget/SafeViewPager`, use it instead of plain `ViewPager`), shared list adapter, toolbar/search contracts, drawer helper.
 - Navigation between features uses explicit Activity `Intent`s and the `feature/main` host (fragment swaps); there is no navigation graph. `res/` stays flat (Android constraint).
 
 ## Intent Layer
