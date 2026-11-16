@@ -52,7 +52,7 @@ viewpager = "1.1.0"
 
 firebaseBom = "35.1.0"
 
-glide = "5.0.9"
+glide = "5.0.10"
 
 desugarJdkLibs = "2.1.5"
 
