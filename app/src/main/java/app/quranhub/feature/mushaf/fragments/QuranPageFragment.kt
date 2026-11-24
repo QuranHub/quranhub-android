@@ -14,6 +14,7 @@ import android.view.ViewGroup
 import android.view.ViewTreeObserver.OnGlobalLayoutListener
 import android.widget.RelativeLayout
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -168,6 +169,11 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener,
             OnGlobalLayoutListener {
             override fun onGlobalLayout() {
                 if (_binding == null) return
+
+                // A layout pass can run while the page is hidden/backgrounded
+                // with a zero-sized container; computing metrics then leaves
+                // imageScaleFactor (and lineHeight) at 0. Wait for a real size.
+                if (binding.containerSv.width <= 0 || binding.containerSv.height <= 0) return
 
                 if (_binding?.containerSv?.viewTreeObserver != null) {
                     binding.containerSv.viewTreeObserver.removeOnGlobalLayoutListener(this)
@@ -567,7 +573,15 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener,
 
     // draw shadow on the selected aya
     private fun drawShadow() {
-        if (!isSafeFragment(this)) return
+        if (!isSafeFragment(this) || _binding == null) return
+        // Page metrics are computed on the first real layout; until then
+        // lineHeight is 0 and the line loop below would never advance,
+        // spinning the main thread forever (ANR fe589865, issue #364).
+        if (lineHeight <= 0.0 || !lineHeight.isFinite()) return
+        val ayaShadowColor = ContextCompat.getColor(
+            requireContext(),
+            if (nightMode) R.color.aya_shadow_color_night_mode else R.color.aya_shadow_color
+        )
 
         removePrevAyaShadows() // remove any if exists
         var shadowView: View
@@ -622,11 +636,7 @@ class QuranPageFragment : Fragment(), AyaPropertiesListener, AddNoteListener,
             ayaShadowsViews!!.add(shadowView)
             binding.quranPageContainer.addView(shadowView)
             params = shadowView.layoutParams as RelativeLayout.LayoutParams
-            if (nightMode) {
-                shadowView.setBackgroundColor(resources.getColor(R.color.aya_shadow_color_night_mode))
-            } else {
-                shadowView.setBackgroundColor(resources.getColor(R.color.aya_shadow_color))
-            }
+            shadowView.setBackgroundColor(ayaShadowColor)
             if (!firstLine) {
                 startWidth = start.toInt().toDouble()
             }
