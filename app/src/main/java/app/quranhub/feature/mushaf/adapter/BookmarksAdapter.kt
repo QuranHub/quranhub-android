@@ -17,6 +17,8 @@ import app.quranhub.feature.mushaf.listener.ItemSelectionListener
 import app.quranhub.feature.mushaf.model.DisplayableBookmark
 import app.quranhub.core.common.util.LocaleUtils.formatNumber
 import java.util.Locale
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffColorFilter
 
 class BookmarksAdapter(
     private val context: Context, private val bookmarkActionListener: BookmarkActionListener
@@ -162,7 +164,7 @@ class BookmarksAdapter(
                 binding.ivBookmarkType.setImageResource(R.drawable.fav_added__gold_ic)
             } else {
                 binding.ivBookmarkType.setImageResource(R.drawable.bookmark_gold)
-                binding.ivBookmarkType.setColorFilter(bookmarkColors[displayableBookmark.colorIndex])
+                binding.ivBookmarkType.colorFilter = PorterDuffColorFilter(bookmarkColors[displayableBookmark.colorIndex], PorterDuff.Mode.SRC_IN)
             }
             binding.tvAyaContent.text = displayableBookmark.ayaContent
             binding.tvAyaNum.text =

@@ -4,12 +4,12 @@ import android.app.Activity
 import android.content.Context
 import android.content.res.Configuration
 import android.graphics.Point
+import android.os.Build
 import android.util.Log
 import android.view.View
 import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 import android.widget.ImageView
-import androidx.core.view.ViewCompat
 import app.quranhub.core.data.model.ScreenSize
 
 object ScreenUtils {
@@ -62,9 +62,16 @@ object ScreenUtils {
      * @return ScreenSize instance holding width & height information.
      */
     fun getScreenSize(activity: Activity): ScreenSize {
-        val size = Point()
-        activity.windowManager.defaultDisplay.getSize(size)
-        val screenSize = ScreenSize(size.x, size.y)
+        val windowManager = activity.windowManager
+        val screenSize = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val bounds = windowManager.currentWindowMetrics.bounds
+            ScreenSize(bounds.width(), bounds.height())
+        } else {
+            val size = Point()
+            @Suppress("DEPRECATION")
+            windowManager.defaultDisplay.getSize(size)
+            ScreenSize(size.x, size.y)
+        }
         Log.d(
             TAG, "getScreenSize(): width = " + screenSize.width
                     + ", height = " + screenSize.height
@@ -88,6 +95,6 @@ object ScreenUtils {
     }
 
     fun isLayoutRtl(view: View): Boolean {
-        return ViewCompat.getLayoutDirection(view) == ViewCompat.LAYOUT_DIRECTION_RTL
+        return view.layoutDirection == View.LAYOUT_DIRECTION_RTL
     }
 }
