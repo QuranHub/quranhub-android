@@ -2,7 +2,7 @@ package app.quranhub
 
 import android.content.Context
 import android.content.res.Configuration
-import androidx.multidex.MultiDexApplication
+import android.app.Application
 import app.quranhub.core.common.util.LocaleUtils
 import com.downloader.PRDownloader
 import com.google.firebase.Firebase
@@ -10,7 +10,7 @@ import com.google.firebase.appcheck.appCheck
 import com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderFactory
 import com.google.firebase.initialize
 
-class QuranhubApplication : MultiDexApplication() {
+class QuranhubApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
