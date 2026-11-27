@@ -24,6 +24,7 @@ import com.downloader.utils.Utils
 import java.io.File
 import java.util.Objects
 import java.util.concurrent.atomic.AtomicInteger
+import androidx.core.content.IntentCompat
 
 /**
  * Base class for any download service.
@@ -165,16 +166,15 @@ abstract class PRDownloaderService : Service(), DownloadCallbacks {
      * @return An array of [DownloadRequestInfo] objects to be downloaded.
      */
     protected open fun provideDownloadRequestInfos(startIntent: Intent): Array<DownloadRequestInfo> {
-        val downloadRequestInfosParcelables = startIntent.getParcelableArrayExtra(
-            EXTRA_DOWNLOAD_REQUEST_INFOS
+        val downloadRequestInfosParcelables = IntentCompat.getParcelableArrayExtra(
+            startIntent,
+            EXTRA_DOWNLOAD_REQUEST_INFOS,
+            DownloadRequestInfo::class.java
         )
         Objects.requireNonNull(downloadRequestInfosParcelables)
-        val n = downloadRequestInfosParcelables!!.size
-        val downloadRequestInfos = mutableListOf<DownloadRequestInfo>()
-        for (i in 0 until n) {
-            downloadRequestInfos += downloadRequestInfosParcelables[i] as DownloadRequestInfo
+        return Array(downloadRequestInfosParcelables!!.size) { i ->
+            downloadRequestInfosParcelables[i] as DownloadRequestInfo
         }
-        return downloadRequestInfos.toTypedArray()
     }
 
     /**

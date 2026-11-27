@@ -41,6 +41,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import java.io.File
 import android.os.Looper
+import androidx.core.content.IntentCompat
 
 class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener {
 
@@ -301,7 +302,7 @@ class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener 
             currentAyaId = intent.getIntExtra(AYA_ID_KEY, currentAyaId)
         }
         if (suraVersesNumberArrayList == null) {
-            suraVersesNumberArrayList = intent.getParcelableArrayListExtra(SURA_VERSES_KEY)
+            suraVersesNumberArrayList = IntentCompat.getParcelableArrayListExtra(intent, SURA_VERSES_KEY, SuraVersesNumber::class.java)
             suras = resources.getStringArray(R.array.sura_name)
             setAyaIdInfo()
         }

@@ -14,6 +14,7 @@ import app.quranhub.databinding.DialogBookmarkFilterBinding
 import app.quranhub.feature.mushaf.adapter.BookmarkTypeAdapter
 import app.quranhub.feature.mushaf.listener.ItemSelectionListener
 import app.quranhub.core.common.util.DialogUtils.adjustDialogSize
+import androidx.core.os.BundleCompat
 
 class BookmarkEditDialog : DialogFragment(), ItemSelectionListener<Int> {
 
@@ -57,7 +58,7 @@ class BookmarkEditDialog : DialogFragment(), ItemSelectionListener<Int> {
     private fun readArgs() {
         arguments?.let {
             selectedFilter = it.getInt(FILTER_TYPE, 0)
-            bookmarkTypes = it.getParcelableArrayList(BOOKMARK_TYPES_ARGS)
+            bookmarkTypes = BundleCompat.getParcelableArrayList(it, BOOKMARK_TYPES_ARGS, BookmarkType::class.java)
             editDialog = it.getBoolean(DIALOG_TYPE)
         }
     }
