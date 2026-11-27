@@ -3,7 +3,7 @@ package app.quranhub.core.common.util
 import android.content.Context
 import android.content.res.Configuration
 import android.util.Log
-import androidx.core.view.ViewCompat
+import android.view.View
 import app.quranhub.core.data.local.prefs.AppPreferencesManager
 import java.util.Locale
 
@@ -57,6 +57,6 @@ object LocaleUtils {
 
     @JvmStatic
     fun isRTL(context: Context): Boolean {
-        return context.resources.configuration.layoutDirection == ViewCompat.LAYOUT_DIRECTION_RTL
+        return context.resources.configuration.layoutDirection == View.LAYOUT_DIRECTION_RTL
     }
 }

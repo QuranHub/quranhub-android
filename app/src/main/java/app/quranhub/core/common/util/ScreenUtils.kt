@@ -9,7 +9,6 @@ import android.view.View
 import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 import android.widget.ImageView
-import androidx.core.view.ViewCompat
 import app.quranhub.core.data.model.ScreenSize
 
 object ScreenUtils {
@@ -88,6 +87,6 @@ object ScreenUtils {
     }
 
     fun isLayoutRtl(view: View): Boolean {
-        return ViewCompat.getLayoutDirection(view) == ViewCompat.LAYOUT_DIRECTION_RTL
+        return view.layoutDirection == View.LAYOUT_DIRECTION_RTL
     }
 }
