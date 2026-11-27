@@ -111,7 +111,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/linearLayout" />
 
-        <androidx.viewpager.widget.ViewPager
+        <app.quranhub.core.ui.widget.SafeViewPager
             android:id="@+id/pager_steps"
             android:layout_width="0dp"
             android:layout_height="0dp"
