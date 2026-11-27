@@ -458,6 +458,10 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
             keepScreenOn(requireActivity(), false)
         }
         dismissAudioPopup()
+        // dismissAudioPopup() is gated on isAudioDialogOpen; the PopupWindow is
+        // its own window and must never outlive the view, or its buttons call
+        // back into a detached fragment (the #354 crash).
+        ayaAudioPopup?.dismissPopup()
     }
 
     private fun listenViewPagerSwipe() {
@@ -809,7 +813,7 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
                     AyaAudioService.AYA_ID_KEY,
                     quranPageFragment!!.currentAyaId + 1
                 )
-                requireActivity().startService(audioServiceIntent)
+                startAudioService()
             } else {
                 swipToNextQuranPage()
             }
@@ -824,7 +828,7 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
                     AyaAudioService.AYA_ID_KEY,
                     quranPageFragment!!.currentAyaId - 1
                 )
-                requireActivity().startService(audioServiceIntent)
+                startAudioService()
             } else {
                 swipToPrevQuranPage()
             }
@@ -864,12 +868,21 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
     }
 
     override fun onClickStop() {
+        // Audio service can emit STOPPED after this fragment has already
+        // detached (leave mushaf, process teardown, config-change race).
+        // requireActivity() then throws IllegalStateException (issue #354).
+        if (!isAdded) {
+            // Never leave the popup (its Stop button re-enters this method)
+            // showing for a detached fragment.
+            ayaAudioPopup?.dismissPopup()
+            return
+        }
         setCurrentQuranPageFragment()
         isAudioPlay = false
         ayaHasRecorder = false
         isAudioDialogOpen = false
-        ayaAudioPopup!!.dismissPopup()
-        requireActivity().stopService(audioServiceIntent)
+        ayaAudioPopup?.dismissPopup()
+        activity?.stopService(audioServiceIntent)
     }
 
     private fun openAyaRecorderPlayer() {
@@ -1015,16 +1028,22 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
         }
     }
 
+    // Popup buttons and service callbacks can reach the fragment after it
+    // detached; requireActivity() would then throw (same class as #354).
+    private fun startAudioService() {
+        activity?.startService(audioServiceIntent)
+    }
+
     // play audio for selected aya
     fun resumeAyaAudio() {
         audioServiceIntent!!.action = AyaAudioService.ACTION_RESUME
-        requireActivity().startService(audioServiceIntent)
+        startAudioService()
     }
 
     // pause audio of selected aya
     fun pauseAyaAudio() {
         audioServiceIntent!!.action = AyaAudioService.ACTION_PAUSE
-        requireActivity().startService(audioServiceIntent)
+        startAudioService()
     }
 
     fun playAudioService() {
@@ -1036,7 +1055,7 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
                 page.currentAyaId
             )
             audioServiceIntent!!.action = AyaAudioService.ACTION_PLAY
-            requireActivity().startService(audioServiceIntent)
+            startAudioService()
         }
     }
 
