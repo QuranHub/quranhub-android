@@ -58,8 +58,8 @@ class TranslationsDialogFragment : DialogFragment(), TranslationSelectionListene
         return inflater.inflate(R.layout.dialog_translations, container, false)
     }
 
-    override fun onActivityCreated(savedInstanceState: Bundle?) {
-        super.onActivityCreated(savedInstanceState)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
         if (savedInstanceState == null) {
             val translationsDataFragment = TranslationsDataFragment.newInstance(
                 languageCode
