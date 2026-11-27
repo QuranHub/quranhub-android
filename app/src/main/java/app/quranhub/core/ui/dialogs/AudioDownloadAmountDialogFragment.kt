@@ -28,6 +28,7 @@ import app.quranhub.core.common.util.DialogUtils.DIALOG_STD_WIDTH_SCREEN_RATIO_P
 import app.quranhub.core.common.util.DialogUtils.adjustDialogSize
 import app.quranhub.core.data.util.NetworkUtil.isNetworkAvailable
 import kotlinx.coroutines.launch
+import androidx.core.content.ContextCompat
 
 /**
  * A `DialogFragment` that allows the user to choose the Quran audio amount he wants to download.
@@ -113,7 +114,7 @@ class AudioDownloadAmountDialogFragment : DialogFragment() {
                 ) {
                     if (parent?.getChildAt(0) != null) {
                         (parent.getChildAt(0) as TextView).setTextColor(
-                            resources.getColor(R.color.white_color)
+                            ContextCompat.getColor(requireContext(), R.color.white_color)
                         )
                     }
                     viewModel.onSuraSelected(position + 1)

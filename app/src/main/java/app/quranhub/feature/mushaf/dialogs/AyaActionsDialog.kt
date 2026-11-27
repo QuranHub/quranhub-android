@@ -23,6 +23,8 @@ import app.quranhub.feature.mushaf.viewmodel.QuranPageViewModel
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffColorFilter
 
 class AyaActionsDialog : DialogFragment() {
 
@@ -127,7 +129,7 @@ class AyaActionsDialog : DialogFragment() {
 
             else -> {    // CUSTOM BOOKMARK
                 binding.bookmarkIv.setImageResource(R.drawable.bookmark_green_selected)
-                binding.bookmarkIv.setColorFilter(requireActivity().resources.getIntArray(R.array.bookmark_colors)[bookmarkModel.colorIndex])
+                binding.bookmarkIv.colorFilter = PorterDuffColorFilter(requireActivity().resources.getIntArray(R.array.bookmark_colors)[bookmarkModel.colorIndex], PorterDuff.Mode.SRC_IN)
             }
         }
     }

@@ -70,12 +70,22 @@ import me.toptas.fancyshowcase.FancyShowCaseView
 import me.toptas.fancyshowcase.FocusShape
 import kotlinx.coroutines.launch
 import java.util.Locale
+import androidx.activity.result.contract.ActivityResultContracts
 
 class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionListener,
     AyaAudioListener, StopRecordingListener, ReciterSelectionListener, AyaRecorderPlayerListener,
     AyaRepeatListener {
 
     private var _binding: FragmentMushafBinding? = null
+
+    private val requestRecordingPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            if (isGranted) {
+                startAyaRecording()
+            } else {
+                Toast.makeText(activity, getString(R.string.accept_perm), Toast.LENGTH_LONG).show()
+            }
+        }
     private val binding: FragmentMushafBinding get() = _binding!!
 
     private val viewModel: MushafViewModel by viewModels {
@@ -869,43 +879,15 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
     }
 
     private fun getRecordingPerm() {
-        val permissions = arrayOf(
-            Manifest.permission.RECORD_AUDIO
-        )
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (ContextCompat.checkSelfPermission(
-                    requireActivity(),
-                    permissions[0]
-                ) == PackageManager.PERMISSION_GRANTED
-            ) {
-                startAyaRecording()
-            } else {
-                requestPermissions(permissions, REQUEST_RECORDING_PERM)
-            }
-        } else {
+        val permission = Manifest.permission.RECORD_AUDIO
+        if (ContextCompat.checkSelfPermission(
+                requireActivity(),
+                permission
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
             startAyaRecording()
-        }
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        var isGranted = true
-        if (requestCode == REQUEST_RECORDING_PERM) {
-            for (i in permissions.indices) {
-                if (grantResults[i] != PackageManager.PERMISSION_GRANTED) {
-                    isGranted = false
-                    break
-                }
-            }
-            if (isGranted) {
-                startAyaRecording()
-            } else {
-                Toast.makeText(activity, getString(R.string.accept_perm), Toast.LENGTH_LONG).show()
-            }
+        } else {
+            requestRecordingPermissionLauncher.launch(permission)
         }
     }
 
@@ -1140,7 +1122,6 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
         private const val ARG_FROM_NOTFICATION = "ARG_FROM_NOTIFICATION"
         private const val ARG_INIT_AYA = "ARG_INIT_AYA"
 
-        private const val REQUEST_RECORDING_PERM = 1
 
         fun newInstance(): MushafFragment {
             return MushafFragment()

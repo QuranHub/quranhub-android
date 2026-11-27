@@ -34,6 +34,8 @@ import app.quranhub.core.common.util.ScreenUtils
 import app.quranhub.core.common.util.ScreenUtils.dismissKeyboard
 import app.quranhub.core.common.util.ScreenUtils.getOrientationState
 import kotlinx.coroutines.launch
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffColorFilter
 import androidx.core.os.BundleCompat
 
 class MyNotesFragment : Fragment(), NoteCallback, AddNoteListener, ItemSelectionListener<Int?> {
@@ -184,15 +186,17 @@ class MyNotesFragment : Fragment(), NoteCallback, AddNoteListener, ItemSelection
     private fun applyToolbarIconsState(isListEditable: Boolean) {
         if (isListEditable) {
             binding.editBtn.setImageResource(R.drawable.edit_gold_ic)
-            binding.editBtn.setColorFilter(null)
-            binding.filterBtn.setColorFilter(null)
+            binding.editBtn.clearColorFilter()
+            binding.filterBtn.clearColorFilter()
         } else {
             binding.editBtn.setImageResource(R.drawable.edit_gold_ic)
-            binding.editBtn.setColorFilter(
-                ContextCompat.getColor(requireContext(), R.color.dark_grey)
+            binding.editBtn.colorFilter = PorterDuffColorFilter(
+                ContextCompat.getColor(requireContext(), R.color.dark_grey),
+                PorterDuff.Mode.SRC_IN
             )
-            binding.filterBtn.setColorFilter(
-                ContextCompat.getColor(requireContext(), R.color.dark_grey)
+            binding.filterBtn.colorFilter = PorterDuffColorFilter(
+                ContextCompat.getColor(requireContext(), R.color.dark_grey),
+                PorterDuff.Mode.SRC_IN
             )
         }
     }
