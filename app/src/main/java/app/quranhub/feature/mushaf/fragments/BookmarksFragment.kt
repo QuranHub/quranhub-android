@@ -22,6 +22,8 @@ import app.quranhub.feature.mushaf.viewmodel.BookmarksViewModel
 import app.quranhub.core.common.util.InsetsUtils
 import app.quranhub.core.common.util.ScreenUtils.dismissKeyboard
 import kotlinx.coroutines.launch
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffColorFilter
 
 class BookmarksFragment : Fragment(), QuranNavigationCallbacks {
 
@@ -97,21 +99,23 @@ class BookmarksFragment : Fragment(), QuranNavigationCallbacks {
                         }
                         if (uiState.isListEditable) {
                             binding.editBtn.setImageResource(R.drawable.edit_gold_ic)
-                            binding.editBtn.setColorFilter(null)
-                            binding.filterBtn.setColorFilter(null)
+                            binding.editBtn.clearColorFilter()
+                            binding.filterBtn.clearColorFilter()
                         } else {
                             binding.editBtn.setImageResource(R.drawable.edit_gold_ic)
-                            binding.editBtn.setColorFilter(
+                            binding.editBtn.colorFilter = PorterDuffColorFilter(
                                 ContextCompat.getColor(
                                     requireContext(),
                                     R.color.dark_grey
-                                )
+                                ),
+                                PorterDuff.Mode.SRC_IN
                             )
-                            binding.filterBtn.setColorFilter(
+                            binding.filterBtn.colorFilter = PorterDuffColorFilter(
                                 ContextCompat.getColor(
                                     requireContext(),
                                     R.color.dark_grey
-                                )
+                                ),
+                                PorterDuff.Mode.SRC_IN
                             )
                         }
                     }
