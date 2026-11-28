@@ -43,6 +43,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import java.io.File
+import kotlin.coroutines.EmptyCoroutineContext
 import android.os.Looper
 
 class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener {
@@ -379,11 +380,7 @@ class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener 
         }
     }
 
-    fun releaseAudio() {
-        if (mediaPlayer != null) {
-            mediaPlayer!!.release()
-        }
-    }
+    fun releaseAudio() = runOnPlayerThread { release() }
 
     val isAudioPlaying: Boolean
         get() = try {
@@ -514,12 +511,24 @@ class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener 
         playAudioHandler!!.postDelayed(playAudioDelayRunnable!!, (audioDelay * 1000).toLong())
     }
 
-    fun stopAudio() {
-        try {
-            mediaPlayer!!.reset()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+    fun stopAudio() = runOnPlayerThread { reset() }
+
+    /**
+     * Runs [block] on [playerDispatcher], after any in-flight load.
+     *
+     * A [MediaPlayer.reset] or [MediaPlayer.release] from another thread while
+     * [MediaPlayer.prepare] is blocked never wakes prepare(), which would wedge
+     * [playerDispatcher] and stop every later load.
+     */
+    private fun runOnPlayerThread(block: MediaPlayer.() -> Unit) {
+        val player = mediaPlayer ?: return
+        playerDispatcher.dispatch(EmptyCoroutineContext, Runnable {
+            try {
+                player.block()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        })
     }
 
     private fun checkAyaAudioDownloaded(ayaId: Int) {
