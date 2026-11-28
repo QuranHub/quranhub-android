@@ -51,6 +51,15 @@ class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener 
     private val serviceScope = CoroutineScope(serviceJob + Dispatchers.Main.immediate)
     private val playerDispatcher = Dispatchers.IO.limitedParallelism(1)
     private var loadAudioJob: Job? = null
+    // Bumped on each new load and on stop so a stale onPrepared cannot start playback.
+    @Volatile
+    private var loadGeneration = 0
+    // Set after prepare() only if that load is still current; onPrepared checks this.
+    @Volatile
+    private var acceptedPrepareToken = -1
+    private var appliedPrepareGeneration = -1
+    private var requestedPlayback = RequestedPlayback.STOP
+    private var pendingAudioPath: String? = null
     private var playAudioDelayRunnable: Runnable? = null
     private var playAudioHandler: Handler? = null
     private var currentAyaRepeatNumber = 1
@@ -255,6 +264,8 @@ class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener 
 
     override fun onDestroy() {
         super.onDestroy()
+        requestedPlayback = RequestedPlayback.STOP
+        loadGeneration++
         serviceJob.cancel()
         releaseAudio()
         stopAyaAudioDelay()
@@ -331,6 +342,7 @@ class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener 
             checkAyaAudioDownloaded(currentAyaId)
         } else if (action == ACTION_PAUSE) {
             Log.d(TAG, "pause $currentAyaId")
+            requestedPlayback = RequestedPlayback.PAUSE
             ayaIdInfoArrayList?.getOrNull(currentAyaId - 1)?.let {
                 updateNotificationContent(true, it)
             }
@@ -339,6 +351,7 @@ class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener 
             pauseAudio()
         } else if (action == ACTION_RESUME) {
             Log.d(TAG, "resume: $currentAyaId")
+            requestedPlayback = RequestedPlayback.PLAY
             updateNotificationState(false)
             AudioPlaybackStateHolder.update(AudioPlaybackState.RESUMED)
             playAudio()
@@ -356,8 +369,11 @@ class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener 
             checkAyaAudioDownloaded(currentAyaId)
         } else if (action == ACTION_STOP) {
             Log.d(TAG, "stop $currentAyaId")
+            requestedPlayback = RequestedPlayback.STOP
+            loadGeneration++
             AudioPlaybackStateHolder.update(AudioPlaybackState.STOPPED)
             loadAudioJob?.cancel()
+            stopAyaAudioDelay()
             releaseAudio()
             stopSelf()
         }
@@ -397,8 +413,33 @@ class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener 
     }
 
     override fun onPrepared(mp: MediaPlayer) {
+        if (mp !== mediaPlayer) return
+        applyPreparedIfCurrent()
+    }
+
+    /**
+     * Applies a completed [MediaPlayer.prepare] on the main thread.
+     *
+     * Called from [onPrepared] (posted to the main looper) and from the load coroutine
+     * after [prepare] returns. Either can run first: [onPrepared] may arrive before
+     * [acceptedPrepareToken] is set, and the coroutine may run after [onPrepared].
+     * The method is idempotent per load generation, starts playback only when the load
+     * is still current and [requestedPlayback] is [RequestedPlayback.PLAY], and saves
+     * [AUDIO_PLAYING] and [currentAudioPath] before emitting [AudioPlaybackState.PLAYING].
+     */
+    private fun applyPreparedIfCurrent() {
+        if (acceptedPrepareToken != loadGeneration) return
+        if (appliedPrepareGeneration == loadGeneration) return
+        val audioPath = pendingAudioPath ?: return
+        appliedPrepareGeneration = loadGeneration
+        currentAudioPath = audioPath
+        if (requestedPlayback != RequestedPlayback.PLAY) return
+        saveBoolean(this, AUDIO_PLAYING, true)
+        ayaIdInfoArrayList?.getOrNull(currentAyaId - 1)?.let {
+            updateNotificationContent(false, it)
+        }
         AudioPlaybackStateHolder.update(AudioPlaybackState.PLAYING)
-        mp.start()
+        playAudio()
     }
 
     private fun checkSelectedAyaInRepeat() {
@@ -484,6 +525,7 @@ class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener 
     private fun checkAyaAudioDownloaded(ayaId: Int) {
         saveInteger(this, AYA_ID_KEY, ayaId)
         currentAyaRepeatNumber = 1
+        requestedPlayback = RequestedPlayback.PLAY
         stopAudio()
         stopAyaAudioDelay()
         val sheikhId = AppPreferencesManager.getReciterSheikhSetting(this)
@@ -495,6 +537,8 @@ class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener 
                 // null when not in DB or when external storage is unavailable; previously the
                 // latter produced a bogus "null/..." path.
                 val audioPath = QuranAudioFileUtils.getAbsolutePath(applicationContext, result)
+                // Stop may have run while the path lookup was in flight.
+                if (requestedPlayback == RequestedPlayback.STOP) return@launch
                 if (audioPath != null) {
                     checkFileAudioExist(audioPath)
                 } else {
@@ -513,35 +557,36 @@ class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener 
      * calls to the media server (and disk I/O), which caused ANRs when run on the main thread, so
      * they run on [playerDispatcher]. That dispatcher is single-threaded, so loads can never
      * overlap, and a newer request cancels the previous one before it touches the player.
-     * [onPrepared] is still delivered on the main thread because the player was created there.
+     * [onPrepared] is still delivered on the main thread because the player was created there;
+     * it starts playback only if this load is still current and the user has not paused or stopped.
      */
     private fun checkFileAudioExist(audioPath: String?) {
         if (audioPath == null) return
+        if (requestedPlayback == RequestedPlayback.STOP) return
+        requestedPlayback = RequestedPlayback.PLAY
+        pendingAudioPath = audioPath
+        val token = ++loadGeneration
         loadAudioJob?.cancel()
         loadAudioJob = serviceScope.launch {
-            val result = withContext(playerDispatcher) { loadAudio(audioPath) }
+            val result = withContext(playerDispatcher) { loadAudio(audioPath, token) }
+            if (token != loadGeneration) return@launch
             when (result) {
                 AudioLoadResult.NOT_FOUND ->
                     AudioPlaybackStateHolder.update(AudioPlaybackState.NOT_DOWNLOADED)
-
-                AudioLoadResult.PREPARED -> {
-                    saveBoolean(this@AyaAudioService, AUDIO_PLAYING, true)
-                    currentAudioPath = audioPath
-                    ayaIdInfoArrayList?.getOrNull(currentAyaId - 1)?.let {
-                        updateNotificationContent(false, it)
-                    }
-                }
-
-                AudioLoadResult.FAILED -> Log.d(TAG, "checkFileAudioExist: Exception")
+                AudioLoadResult.FAILED ->
+                    Log.d(TAG, "checkFileAudioExist: Exception")
+                AudioLoadResult.PREPARED -> applyPreparedIfCurrent()
+                AudioLoadResult.SUPERSEDED -> Unit
             }
         }
     }
 
     /** Must only run on [playerDispatcher]; performs the blocking work off the main thread. */
-    private fun CoroutineScope.loadAudio(audioPath: String): AudioLoadResult {
+    private fun CoroutineScope.loadAudio(audioPath: String, token: Int): AudioLoadResult {
         if (!File(audioPath).exists()) return AudioLoadResult.NOT_FOUND
         // A newer request (or service teardown) may have superseded this one while it was queued.
         ensureActive()
+        if (token != loadGeneration) return AudioLoadResult.SUPERSEDED
         return try {
             mediaPlayer!!.apply {
                 // Start from a clean state: a superseded load may have left a data source set.
@@ -549,13 +594,20 @@ class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener 
                 setDataSource(audioPath)
                 prepare()
             }
-            AudioLoadResult.PREPARED
+            if (token == loadGeneration) {
+                acceptedPrepareToken = token
+                AudioLoadResult.PREPARED
+            } else {
+                AudioLoadResult.SUPERSEDED
+            }
         } catch (e: Exception) {
             AudioLoadResult.FAILED
         }
     }
 
-    private enum class AudioLoadResult { NOT_FOUND, PREPARED, FAILED }
+    private enum class AudioLoadResult { NOT_FOUND, PREPARED, FAILED, SUPERSEDED }
+
+    private enum class RequestedPlayback { PLAY, PAUSE, STOP }
 
     override fun onBind(intent: Intent): IBinder? = null
 
