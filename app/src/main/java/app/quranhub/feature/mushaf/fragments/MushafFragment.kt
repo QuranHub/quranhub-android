@@ -18,7 +18,6 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -715,7 +714,7 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
         val translationsDialog = newInstance(
             transLang, this
         )
-        showDialog(translationsDialog, "trans_dialog", parentFragmentManager)
+        showDialog(translationsDialog, "trans_dialog", useParentFragmentManager = true)
     }
 
     // open tafseer screen to show its Ayas with thier translation
@@ -897,14 +896,18 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
      * Dialog shows can be requested after onSaveInstanceState (queued click,
      * permission result while the activity is stopping), and DialogFragment.show()
      * then throws IllegalStateException. The user is leaving the screen anyway,
-     * so drop the show instead of committing.
+     * so drop the show instead of committing. The manager is resolved after the
+     * isAdded check because child/parentFragmentManager throw once detached.
      */
     private fun showDialog(
         dialog: DialogFragment,
         tag: String,
-        fragmentManager: FragmentManager = childFragmentManager,
+        useParentFragmentManager: Boolean = false,
     ) {
-        if (!isAdded || fragmentManager.isStateSaved) return
+        if (!isAdded) return
+        val fragmentManager =
+            if (useParentFragmentManager) parentFragmentManager else childFragmentManager
+        if (fragmentManager.isStateSaved) return
         dialog.show(fragmentManager, tag)
     }
 
