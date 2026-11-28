@@ -1,7 +1,6 @@
 package app.quranhub.feature.mushaf.dialogs
 
 import android.app.Dialog
-import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
@@ -10,37 +9,44 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.Window
 import androidx.fragment.app.DialogFragment
-import androidx.fragment.app.Fragment
 import app.quranhub.R
+import app.quranhub.core.common.util.DialogUtils.adjustDialogSize
 import app.quranhub.core.data.local.entity.TranslationBook
 import app.quranhub.feature.mushaf.fragments.TranslationsDataFragment
 import app.quranhub.feature.mushaf.fragments.TranslationsDataFragment.TranslationSelectionListener
-import app.quranhub.core.common.util.DialogUtils.adjustDialogSize
 
 /**
  * A dialog that displays translation books for a language & allows the user to download & select one.
- * The target fragment must implement the interface `TranslationsDialogFragment#TranslationSelectionListener`
+ *
+ * Results are delivered via the Fragment Result API
+ * ([androidx.fragment.app.FragmentManager.setFragmentResult]) using the [requestKey] supplied to
+ * [newInstance]. Register a listener on the same FragmentManager the dialog is shown with:
+ *
+ * ```
+ * childFragmentManager.setFragmentResultListener(
+ *     TranslationsDialogFragment.REQUEST_KEY, viewLifecycleOwner
+ * ) { _, bundle ->
+ *     onTranslationSelected(TranslationsDialogFragment.bookFromResult(bundle))
+ * }
+ * ```
+ *
+ * The legacy setTargetFragment mechanism is intentionally not used: it throws
+ * IllegalStateException ("declared target fragment ... does not belong to this
+ * FragmentManager") when the dialog outlives its target (replace/navigation,
+ * process-death restore). See Crashlytics f7817e39e76b1c0284cfbeee6eb4548a
+ * (tag=trans_dialog). PR #295 migrated OptionsListDialogFragment; this dialog
+ * was left on the legacy path.
  */
 class TranslationsDialogFragment : DialogFragment(), TranslationSelectionListener {
 
     private var languageCode: String? = null
-    private var listener: TranslationSelectionListener? = null
-
-    override fun onAttach(context: Context) {
-        super.onAttach(context)
-        listener = if (targetFragment is TranslationSelectionListener) {
-            targetFragment as TranslationSelectionListener?
-        } else {
-            error(
-                "${targetFragment!!.javaClass.simpleName} must implement TranslationsDialogFragment#TranslationSelectionListener"
-            )
-        }
-    }
+    private var requestKey: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {
             languageCode = it.getString(ARG_LANGUAGE_CODE)
+            requestKey = it.getString(ARG_REQUEST_KEY)
         }
     }
 
@@ -75,40 +81,81 @@ class TranslationsDialogFragment : DialogFragment(), TranslationSelectionListene
         adjustDialogSize(this)
     }
 
-    override fun onDetach() {
-        super.onDetach()
-        listener = null
-    }
-
     override fun onTranslationSelected(translationBook: TranslationBook) {
+        requestKey?.let { key ->
+            parentFragmentManager.setFragmentResult(
+                key,
+                Bundle().apply { putBook(this, translationBook) }
+            )
+        }
         dismiss()
-        listener!!.onTranslationSelected(translationBook)
     }
 
     companion object {
 
-        private val TAG = TranslationsDialogFragment::class.java.simpleName
+        const val REQUEST_KEY = "TranslationsDialogFragment:translation_selected"
+
+        const val RESULT_BOOK_ID = "RESULT_BOOK_ID"
+        const val RESULT_BOOK_NAME = "RESULT_BOOK_NAME"
+        const val RESULT_BOOK_AUTHOR = "RESULT_BOOK_AUTHOR"
+        const val RESULT_BOOK_LANGUAGE = "RESULT_BOOK_LANGUAGE"
+        const val RESULT_BOOK_FILE_DOWNLOAD_PATH = "RESULT_BOOK_FILE_DOWNLOAD_PATH"
+        const val RESULT_BOOK_DATABASE_NAME = "RESULT_BOOK_DATABASE_NAME"
+        const val RESULT_BOOK_DOWNLOAD_STATUS = "RESULT_BOOK_DOWNLOAD_STATUS"
+        const val RESULT_BOOK_DOWNLOAD_LEVEL_PERCENTAGE = "RESULT_BOOK_DOWNLOAD_LEVEL_PERCENTAGE"
+
 
         private const val ARG_LANGUAGE_CODE = "ARG_LANGUAGE_CODE"
+        private const val ARG_REQUEST_KEY = "ARG_REQUEST_KEY"
+
+        /**
+         * Reconstruct the selected [TranslationBook] from a Fragment Result bundle.
+         */
+        @JvmStatic
+        fun bookFromResult(bundle: Bundle): TranslationBook {
+            return TranslationBook(
+                id = requireNotNull(bundle.getString(RESULT_BOOK_ID)),
+                name = requireNotNull(bundle.getString(RESULT_BOOK_NAME)),
+                author = requireNotNull(bundle.getString(RESULT_BOOK_AUTHOR)),
+                language = requireNotNull(bundle.getString(RESULT_BOOK_LANGUAGE)),
+                fileDownloadPath = requireNotNull(bundle.getString(RESULT_BOOK_FILE_DOWNLOAD_PATH)),
+                databaseName = requireNotNull(bundle.getString(RESULT_BOOK_DATABASE_NAME)),
+                downloadStatus = bundle.getInt(RESULT_BOOK_DOWNLOAD_STATUS),
+                downloadLevelPercentage = bundle.getInt(RESULT_BOOK_DOWNLOAD_LEVEL_PERCENTAGE)
+            )
+        }
 
         /**
          * Use this factory method to create a new instance of
          * this dialog fragment using the provided parameters.
          *
-         * @param languageCode
-         * @param targetFragment
+         * @param languageCode translation language to list books for
+         * @param requestKey Fragment Result API key; hosts must register a listener
+         * for the same key on the FragmentManager the dialog is shown with
          * @return A new instance of fragment TranslationsDialogFragment.
          */
         @JvmStatic
         fun newInstance(
-            languageCode: String?, targetFragment: Fragment
+            languageCode: String?,
+            requestKey: String = REQUEST_KEY
         ): TranslationsDialogFragment {
             val fragment = TranslationsDialogFragment()
             val args = Bundle()
             args.putString(ARG_LANGUAGE_CODE, languageCode)
+            args.putString(ARG_REQUEST_KEY, requestKey)
             fragment.arguments = args
-            fragment.setTargetFragment(targetFragment, 0)
             return fragment
+        }
+
+        private fun putBook(bundle: Bundle, book: TranslationBook) {
+            bundle.putString(RESULT_BOOK_ID, book.id)
+            bundle.putString(RESULT_BOOK_NAME, book.name)
+            bundle.putString(RESULT_BOOK_AUTHOR, book.author)
+            bundle.putString(RESULT_BOOK_LANGUAGE, book.language)
+            bundle.putString(RESULT_BOOK_FILE_DOWNLOAD_PATH, book.fileDownloadPath)
+            bundle.putString(RESULT_BOOK_DATABASE_NAME, book.databaseName)
+            bundle.putInt(RESULT_BOOK_DOWNLOAD_STATUS, book.downloadStatus)
+            bundle.putInt(RESULT_BOOK_DOWNLOAD_LEVEL_PERCENTAGE, book.downloadLevelPercentage)
         }
     }
 }
