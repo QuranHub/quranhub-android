@@ -28,13 +28,12 @@ import app.quranhub.feature.mushaf.adapter.TafseerAdapter
 import app.quranhub.feature.mushaf.dialogs.OptionDialog
 import app.quranhub.feature.mushaf.dialogs.OptionDialog.Companion.getInstance
 import app.quranhub.feature.mushaf.dialogs.TranslationsDialogFragment
-import app.quranhub.feature.mushaf.fragments.TranslationsDataFragment.TranslationSelectionListener
 import app.quranhub.core.data.model.TafseerModel
 import app.quranhub.feature.mushaf.viewmodel.TafseerViewModel
 import app.quranhub.core.common.util.InsetsUtils
 import kotlinx.coroutines.launch
 
-class TafseerFragment : Fragment(), OptionDialog.ItemClickListener, TranslationSelectionListener,
+class TafseerFragment : Fragment(), OptionDialog.ItemClickListener,
     OptionsListDialogFragment.ItemSelectionListener {
 
     private var _binding: FragmentTafseerBinding? = null
@@ -92,6 +91,11 @@ class TafseerFragment : Fragment(), OptionDialog.ItemClickListener, TranslationS
                 bundle.getInt(OptionsListDialogFragment.RESULT_REQUEST_CODE),
                 bundle.getInt(OptionsListDialogFragment.RESULT_ITEM_INDEX)
             )
+        }
+        childFragmentManager.setFragmentResultListener(
+            TranslationsDialogFragment.REQUEST_KEY, viewLifecycleOwner
+        ) { _, bundle ->
+            onTranslationSelected(TranslationsDialogFragment.bookFromResult(bundle))
         }
     }
 
@@ -209,10 +213,8 @@ class TafseerFragment : Fragment(), OptionDialog.ItemClickListener, TranslationS
 
     private fun onOpenBooksFilter() {
         val transLang = getQuranTranslationLanguage(requireContext())
-        val translationsDialog = TranslationsDialogFragment.newInstance(
-            transLang, this
-        )
-        translationsDialog.show(parentFragmentManager, "trans_book_dialog")
+        val translationsDialog = TranslationsDialogFragment.newInstance(transLang)
+        translationsDialog.show(childFragmentManager, "trans_book_dialog")
     }
 
     private fun onOpenLangFilter() {
@@ -234,7 +236,7 @@ class TafseerFragment : Fragment(), OptionDialog.ItemClickListener, TranslationS
         navDrawerListener!!.onNavDrawerClick()
     }
 
-    override fun onTranslationSelected(translationBook: TranslationBook) {
+    private fun onTranslationSelected(translationBook: TranslationBook) {
         viewModel.onBookSelected(
             translationBook.databaseName, translationBook.id, translationBook.name
         )

@@ -46,9 +46,9 @@ import app.quranhub.feature.mushaf.dialogs.AyaRecorderPlayerDialog
 import app.quranhub.feature.mushaf.dialogs.AyaRecorderPlayerDialog.AyaRecorderPlayerListener
 import app.quranhub.feature.mushaf.dialogs.AyaRepeatDialogFragment.AyaRepeatListener
 import app.quranhub.feature.mushaf.dialogs.AyaRepeatDialogFragment.Companion.getInstance
+import app.quranhub.feature.mushaf.dialogs.TranslationsDialogFragment
 import app.quranhub.feature.mushaf.dialogs.TranslationsDialogFragment.Companion.newInstance
 import app.quranhub.feature.mushaf.fragments.MushafBottomBarFragment.QuranFooterCallbacks
-import app.quranhub.feature.mushaf.fragments.TranslationsDataFragment.TranslationSelectionListener
 import app.quranhub.core.common.flowholder.AudioPlaybackState
 import app.quranhub.core.common.flowholder.AudioPlaybackStateHolder
 import app.quranhub.feature.mushaf.flowholder.QuranPageClickHolder
@@ -72,7 +72,7 @@ import kotlinx.coroutines.launch
 import java.util.Locale
 import androidx.activity.result.contract.ActivityResultContracts
 
-class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionListener,
+class MushafFragment : Fragment(), QuranFooterCallbacks,
     AyaAudioListener, StopRecordingListener, ReciterSelectionListener, AyaRecorderPlayerListener,
     AyaRepeatListener {
 
@@ -165,6 +165,7 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
         super.onViewCreated(view, savedInstanceState)
         InsetsUtils.padBottomMarginForNavigationBar(binding.quranSeekbar)
         attachListeners()
+        observeTranslationDialogResult()
         observeViewModel()
 
         quranPageIndex = Constants.Quran.NUM_OF_PAGES - 1
@@ -707,13 +708,20 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
         }
     }
 
+    // deliver the book picked in TranslationsDialogFragment (Fragment Result API)
+    private fun observeTranslationDialogResult() {
+        childFragmentManager.setFragmentResultListener(
+            TranslationsDialogFragment.REQUEST_KEY, viewLifecycleOwner
+        ) { _, bundle ->
+            onTranslationSelected(TranslationsDialogFragment.bookFromResult(bundle))
+        }
+    }
+
     // show list of available books for translation language
     private fun onBookNameClicked() {
         val transLang = AppPreferencesManager.getQuranTranslationLanguage(requireContext())
-        val translationsDialog = newInstance(
-            transLang, this
-        )
-        translationsDialog.show(parentFragmentManager, "trans_dialog")
+        val translationsDialog = newInstance(transLang)
+        translationsDialog.show(childFragmentManager, "trans_dialog")
     }
 
     // open tafseer screen to show its Ayas with thier translation
@@ -723,7 +731,7 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
     }
 
     // User choose book from available downloaded translation books
-    override fun onTranslationSelected(translationBook: TranslationBook) {
+    private fun onTranslationSelected(translationBook: TranslationBook) {
         viewModel.selectTranslationBook(translationBook)
         currentTafseerId = translationBook.id
     }
