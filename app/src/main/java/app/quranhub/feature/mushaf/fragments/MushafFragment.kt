@@ -16,6 +16,7 @@ import android.widget.SeekBar
 import android.widget.SeekBar.OnSeekBarChangeListener
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -713,7 +714,7 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
         val translationsDialog = newInstance(
             transLang, this
         )
-        translationsDialog.show(parentFragmentManager, "trans_dialog")
+        showDialog(translationsDialog, "trans_dialog", useParentFragmentManager = true)
     }
 
     // open tafseer screen to show its Ayas with thier translation
@@ -798,7 +799,7 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
         setCurrentQuranPageFragment()
         val currentAya = (quranPageFragment ?: return).currentAya
         val repeatDialog = getInstance(suraVersesNumberArrayList, currentAya)
-        repeatDialog.show(childFragmentManager, "AyaRepeatDialog")
+        showDialog(repeatDialog, "AyaRepeatDialog")
     }
 
     fun playNextAyaAudio() {
@@ -860,7 +861,7 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
     override fun onClickReciter() {
         val recitersDialogFragment = QuranRecitersDialogFragment
             .newInstance(recitationId)
-        recitersDialogFragment.show(childFragmentManager, "QuranRecitersDialogFragment")
+        showDialog(recitersDialogFragment, "QuranRecitersDialogFragment")
     }
 
     override fun onClickStop() {
@@ -875,7 +876,7 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
     private fun openAyaRecorderPlayer() {
         isAudioDialogOpen = false
         val dialog = AyaRecorderPlayerDialog.getInstance(ayaId)
-        dialog.show(childFragmentManager, "AyaRecorderPlayerDialog")
+        showDialog(dialog, "AyaRecorderPlayerDialog")
     }
 
     private fun getRecordingPerm() {
@@ -891,11 +892,30 @@ class MushafFragment : Fragment(), QuranFooterCallbacks, TranslationSelectionLis
         }
     }
 
+    /**
+     * Dialog shows can be requested after onSaveInstanceState (queued click,
+     * permission result while the activity is stopping), and DialogFragment.show()
+     * then throws IllegalStateException. The user is leaving the screen anyway,
+     * so drop the show instead of committing. The manager is resolved after the
+     * isAdded check because child/parentFragmentManager throw once detached.
+     */
+    private fun showDialog(
+        dialog: DialogFragment,
+        tag: String,
+        useParentFragmentManager: Boolean = false,
+    ) {
+        if (!isAdded) return
+        val fragmentManager =
+            if (useParentFragmentManager) parentFragmentManager else childFragmentManager
+        if (fragmentManager.isStateSaved) return
+        dialog.show(fragmentManager, tag)
+    }
+
     // start voice recording of selected aya
     private fun startAyaRecording() {
         isAudioDialogOpen = false
         val recorderDialog = AyaRecorderDialog.getInstance(ayaId)
-        recorderDialog.show(childFragmentManager, "AyaRecorderDialog")
+        showDialog(recorderDialog, "AyaRecorderDialog")
     }
 
     override fun onStopRecording(filePath: String?) {
