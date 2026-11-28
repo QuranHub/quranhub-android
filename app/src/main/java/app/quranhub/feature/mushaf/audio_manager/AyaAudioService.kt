@@ -36,7 +36,10 @@ import app.quranhub.core.common.flowholder.AudioPlaybackState
 import app.quranhub.core.common.flowholder.AudioPlaybackStateHolder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import java.io.File
@@ -46,6 +49,8 @@ class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener 
 
     private val serviceJob = SupervisorJob()
     private val serviceScope = CoroutineScope(serviceJob + Dispatchers.Main.immediate)
+    private val playerDispatcher = Dispatchers.IO.limitedParallelism(1)
+    private var loadAudioJob: Job? = null
     private var playAudioDelayRunnable: Runnable? = null
     private var playAudioHandler: Handler? = null
     private var currentAyaRepeatNumber = 1
@@ -352,6 +357,7 @@ class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener 
         } else if (action == ACTION_STOP) {
             Log.d(TAG, "stop $currentAyaId")
             AudioPlaybackStateHolder.update(AudioPlaybackState.STOPPED)
+            loadAudioJob?.cancel()
             releaseAudio()
             stopSelf()
         }
@@ -500,24 +506,56 @@ class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener 
         }
     }
 
+    /**
+     * Loads [audioPath] into the [mediaPlayer] and starts preparing it.
+     *
+     * The file-system check, [MediaPlayer.setDataSource] and [MediaPlayer.prepare] block on binder
+     * calls to the media server (and disk I/O), which caused ANRs when run on the main thread, so
+     * they run on [playerDispatcher]. That dispatcher is single-threaded, so loads can never
+     * overlap, and a newer request cancels the previous one before it touches the player.
+     * [onPrepared] is still delivered on the main thread because the player was created there.
+     */
     private fun checkFileAudioExist(audioPath: String?) {
-        if (audioPath != null) {
-            val audioFile = File(audioPath)
-            if (audioFile.exists()) {
-                try {
-                    mediaPlayer!!.setDataSource(audioPath)
-                    mediaPlayer!!.prepare()
-                    saveBoolean(this, AUDIO_PLAYING, true)
+        if (audioPath == null) return
+        loadAudioJob?.cancel()
+        loadAudioJob = serviceScope.launch {
+            val result = withContext(playerDispatcher) { loadAudio(audioPath) }
+            when (result) {
+                AudioLoadResult.NOT_FOUND ->
+                    AudioPlaybackStateHolder.update(AudioPlaybackState.NOT_DOWNLOADED)
+
+                AudioLoadResult.PREPARED -> {
+                    saveBoolean(this@AyaAudioService, AUDIO_PLAYING, true)
                     currentAudioPath = audioPath
-                    updateNotificationContent(false, ayaIdInfoArrayList!![currentAyaId - 1])
-                } catch (e: Exception) {
-                    Log.d(TAG, "checkFileAudioExist: Exception")
+                    ayaIdInfoArrayList?.getOrNull(currentAyaId - 1)?.let {
+                        updateNotificationContent(false, it)
+                    }
                 }
-            } else {
-                AudioPlaybackStateHolder.update(AudioPlaybackState.NOT_DOWNLOADED)
+
+                AudioLoadResult.FAILED -> Log.d(TAG, "checkFileAudioExist: Exception")
             }
         }
     }
+
+    /** Must only run on [playerDispatcher]; performs the blocking work off the main thread. */
+    private fun CoroutineScope.loadAudio(audioPath: String): AudioLoadResult {
+        if (!File(audioPath).exists()) return AudioLoadResult.NOT_FOUND
+        // A newer request (or service teardown) may have superseded this one while it was queued.
+        ensureActive()
+        return try {
+            mediaPlayer!!.apply {
+                // Start from a clean state: a superseded load may have left a data source set.
+                reset()
+                setDataSource(audioPath)
+                prepare()
+            }
+            AudioLoadResult.PREPARED
+        } catch (e: Exception) {
+            AudioLoadResult.FAILED
+        }
+    }
+
+    private enum class AudioLoadResult { NOT_FOUND, PREPARED, FAILED }
 
     override fun onBind(intent: Intent): IBinder? = null
 
