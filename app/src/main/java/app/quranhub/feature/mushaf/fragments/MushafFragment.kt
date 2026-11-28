@@ -708,7 +708,7 @@ class MushafFragment : Fragment(), QuranFooterCallbacks,
         }
     }
 
-    // show list of available books for translation language
+    // deliver the book picked in TranslationsDialogFragment (Fragment Result API)
     private fun observeTranslationDialogResult() {
         childFragmentManager.setFragmentResultListener(
             TranslationsDialogFragment.REQUEST_KEY, viewLifecycleOwner
@@ -717,6 +717,7 @@ class MushafFragment : Fragment(), QuranFooterCallbacks,
         }
     }
 
+    // show list of available books for translation language
     private fun onBookNameClicked() {
         val transLang = AppPreferencesManager.getQuranTranslationLanguage(requireContext())
         val translationsDialog = newInstance(transLang)

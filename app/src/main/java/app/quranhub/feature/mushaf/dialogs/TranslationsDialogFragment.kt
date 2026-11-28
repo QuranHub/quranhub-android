@@ -104,7 +104,6 @@ class TranslationsDialogFragment : DialogFragment(), TranslationSelectionListene
         const val RESULT_BOOK_DOWNLOAD_STATUS = "RESULT_BOOK_DOWNLOAD_STATUS"
         const val RESULT_BOOK_DOWNLOAD_LEVEL_PERCENTAGE = "RESULT_BOOK_DOWNLOAD_LEVEL_PERCENTAGE"
 
-
         private const val ARG_LANGUAGE_CODE = "ARG_LANGUAGE_CODE"
         private const val ARG_REQUEST_KEY = "ARG_REQUEST_KEY"
 
