@@ -13,7 +13,6 @@ import android.graphics.Canvas
 import android.graphics.drawable.ColorDrawable
 import android.media.MediaPlayer
 import android.media.MediaPlayer.OnCompletionListener
-import android.media.MediaPlayer.OnPreparedListener
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
@@ -46,21 +45,16 @@ import java.io.File
 import kotlin.coroutines.EmptyCoroutineContext
 import android.os.Looper
 
-class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener {
+class AyaAudioService : BaseService(), OnCompletionListener {
 
     private val serviceJob = SupervisorJob()
     private val serviceScope = CoroutineScope(serviceJob + Dispatchers.Main.immediate)
     private val playerDispatcher = Dispatchers.IO.limitedParallelism(1)
     private var loadAudioJob: Job? = null
-    // Bumped on each new load and on stop so a stale onPrepared cannot start playback.
+    // Bumped on each aya request, load and stop so stale work cannot start playback.
     @Volatile
     private var loadGeneration = 0
-    // Set after prepare() only if that load is still current; onPrepared checks this.
-    @Volatile
-    private var acceptedPrepareToken = -1
-    private var appliedPrepareGeneration = -1
     private var requestedPlayback = RequestedPlayback.STOP
-    private var pendingAudioPath: String? = null
     private var playAudioDelayRunnable: Runnable? = null
     private var playAudioHandler: Handler? = null
     private var currentAyaRepeatNumber = 1
@@ -93,7 +87,6 @@ class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener 
 
     private fun initPlayer() {
         mediaPlayer = MediaPlayer()
-        mediaPlayer!!.setOnPreparedListener(this)
         mediaPlayer!!.setOnCompletionListener(this)
     }
 
@@ -408,26 +401,11 @@ class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener 
         }
     }
 
-    override fun onPrepared(mp: MediaPlayer) {
-        if (mp !== mediaPlayer) return
-        applyPreparedIfCurrent()
-    }
-
     /**
-     * Applies a completed [MediaPlayer.prepare] on the main thread.
-     *
-     * Called from [onPrepared] (posted to the main looper) and from the load coroutine
-     * after [prepare] returns. Either can run first: [onPrepared] may arrive before
-     * [acceptedPrepareToken] is set, and the coroutine may run after [onPrepared].
-     * The method is idempotent per load generation, starts playback only when the load
-     * is still current and [requestedPlayback] is [RequestedPlayback.PLAY], and saves
-     * [AUDIO_PLAYING] and [currentAudioPath] before emitting [AudioPlaybackState.PLAYING].
+     * Applies a load whose [MediaPlayer.prepare] returned while it was still current.
+     * Starts playback only if the user has not paused since requesting it.
      */
-    private fun applyPreparedIfCurrent() {
-        if (acceptedPrepareToken != loadGeneration) return
-        if (appliedPrepareGeneration == loadGeneration) return
-        val audioPath = pendingAudioPath ?: return
-        appliedPrepareGeneration = loadGeneration
+    private fun onAudioPrepared(audioPath: String) {
         currentAudioPath = audioPath
         if (requestedPlayback != RequestedPlayback.PLAY) return
         saveBoolean(this, AUDIO_PLAYING, true)
@@ -575,13 +553,12 @@ class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener 
      * calls to the media server (and disk I/O), which caused ANRs when run on the main thread, so
      * they run on [playerDispatcher]. That dispatcher is single-threaded, so loads can never
      * overlap, and a newer request cancels the previous one before it touches the player.
-     * [onPrepared] is still delivered on the main thread because the player was created there;
-     * it starts playback only if this load is still current and the user has not paused or stopped.
+     * prepare() is synchronous, so once it returns the coroutine applies the result on the main
+     * thread, and only if no newer request or stop has superseded this load.
      */
     private fun checkFileAudioExist(audioPath: String?) {
         if (audioPath == null) return
         if (requestedPlayback == RequestedPlayback.STOP) return
-        pendingAudioPath = audioPath
         val token = ++loadGeneration
         loadAudioJob?.cancel()
         loadAudioJob = serviceScope.launch {
@@ -592,7 +569,7 @@ class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener 
                     AudioPlaybackStateHolder.update(AudioPlaybackState.NOT_DOWNLOADED)
                 AudioLoadResult.FAILED ->
                     Log.d(TAG, "checkFileAudioExist: Exception")
-                AudioLoadResult.PREPARED -> applyPreparedIfCurrent()
+                AudioLoadResult.PREPARED -> onAudioPrepared(audioPath)
                 AudioLoadResult.SUPERSEDED -> Unit
             }
         }
@@ -611,12 +588,7 @@ class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener 
                 setDataSource(audioPath)
                 prepare()
             }
-            if (token == loadGeneration) {
-                acceptedPrepareToken = token
-                AudioLoadResult.PREPARED
-            } else {
-                AudioLoadResult.SUPERSEDED
-            }
+            AudioLoadResult.PREPARED
         } catch (e: Exception) {
             AudioLoadResult.FAILED
         }
