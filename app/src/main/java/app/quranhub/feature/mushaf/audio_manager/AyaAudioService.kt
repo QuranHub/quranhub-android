@@ -266,7 +266,7 @@ class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener 
     override fun onDestroy() {
         super.onDestroy()
         requestedPlayback = RequestedPlayback.STOP
-        loadGeneration++
+        invalidateLoad()
         serviceJob.cancel()
         releaseAudio()
         stopAyaAudioDelay()
@@ -371,9 +371,8 @@ class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener 
         } else if (action == ACTION_STOP) {
             Log.d(TAG, "stop $currentAyaId")
             requestedPlayback = RequestedPlayback.STOP
-            loadGeneration++
+            invalidateLoad()
             AudioPlaybackStateHolder.update(AudioPlaybackState.STOPPED)
-            loadAudioJob?.cancel()
             stopAyaAudioDelay()
             releaseAudio()
             stopSelf()
@@ -535,6 +534,8 @@ class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener 
         saveInteger(this, AYA_ID_KEY, ayaId)
         currentAyaRepeatNumber = 1
         requestedPlayback = RequestedPlayback.PLAY
+        invalidateLoad()
+        val generation = loadGeneration
         stopAudio()
         stopAyaAudioDelay()
         val sheikhId = AppPreferencesManager.getReciterSheikhSetting(this)
@@ -546,17 +547,25 @@ class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener 
                 // null when not in DB or when external storage is unavailable; previously the
                 // latter produced a bogus "null/..." path.
                 val audioPath = QuranAudioFileUtils.getAbsolutePath(applicationContext, result)
-                // Stop may have run while the path lookup was in flight.
-                if (requestedPlayback == RequestedPlayback.STOP) return@launch
+                // A newer aya request or a stop may have run while the lookup was in flight.
+                if (generation != loadGeneration) return@launch
                 if (audioPath != null) {
                     checkFileAudioExist(audioPath)
                 } else {
                     AudioPlaybackStateHolder.update(AudioPlaybackState.NOT_DOWNLOADED)
                 }
             } catch (e: Exception) {
-                AudioPlaybackStateHolder.update(AudioPlaybackState.NOT_DOWNLOADED)
+                if (generation == loadGeneration) {
+                    AudioPlaybackStateHolder.update(AudioPlaybackState.NOT_DOWNLOADED)
+                }
             }
         }
+    }
+
+    /** Makes any in-flight lookup or load stale so it cannot touch playback. */
+    private fun invalidateLoad() {
+        loadGeneration++
+        loadAudioJob?.cancel()
     }
 
     /**
@@ -572,7 +581,6 @@ class AyaAudioService : BaseService(), OnPreparedListener, OnCompletionListener 
     private fun checkFileAudioExist(audioPath: String?) {
         if (audioPath == null) return
         if (requestedPlayback == RequestedPlayback.STOP) return
-        requestedPlayback = RequestedPlayback.PLAY
         pendingAudioPath = audioPath
         val token = ++loadGeneration
         loadAudioJob?.cancel()
