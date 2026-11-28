@@ -175,14 +175,12 @@ class SettingsFragment : Fragment(), OptionsListDialogFragment.ItemSelectionList
             startActivity(Intent(requireContext(), DownloadsManagerActivity::class.java))
         }
         binding.settingAboutAppVersion.setOnClickListener {
-            // TODO aboutAppVersionSetting click listener
             Toast.makeText(
                 requireContext(), "v" + BuildConfig.VERSION_NAME,
                 Toast.LENGTH_SHORT
             ).show()
         }
         binding.settingShareApp.setOnClickListener {
-            // TODO shareAppSetting click listener
             val shareIntent = Intent(Intent.ACTION_SEND)
             shareIntent.type = "text/plain"
             shareIntent.putExtra(
